@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Login Page";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/LoginPageStyle.css" asp-append-version="true">
+    <title>Login Page</title>
+</head>
+<body>
+
+    <div class="main-container" id="main-container">
+
+        <!-- Регистрация (Sign Up) -->
+        <div class="form-container sign-up-container">
+            <form action="#" method="post">
+                <h1>Create Account</h1>
+                <span>Use your verification code for registration</span>
+
+                <input type="text" name="username" placeholder="Name" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <input type="text" name="verificationCode" placeholder="Verification-code" required />
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+
+        <!-- Вход (Sign In) -->
+        <div class="form-container sign-in-container">
+            <form action="#" method="post">
+                <h1>Sign In</h1>
+                <span>Use your name and password</span>
+
+                <input type="text" name="username" placeholder="Name" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <a href="#">Forget Your Password?</a>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
+
+        <!-- Панель переключения между входом и регистрацией -->
+        <div class="toggle-container">
+            <div class="toggle">
+                <div class="toggle-panel toggle-left">
+                    <h1>Welcome Back!</h1>
+                    <p>Enter your personal details to use all of site features</p>
+                    <button class="hidden" id="login">Sign in</button>
+                </div>
+                <div class="toggle-panel toggle-right">
+                    <h1>Hello, Worker</h1>
+                    <p>Register with your personal details to use all of site features</p>
+                    <button class="hidden" id="register">Sign Up</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="~/js/LoginPageScript.js" asp-append-version="true"></script>
+</body>
+</html>
