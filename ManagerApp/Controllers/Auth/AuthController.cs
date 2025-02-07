@@ -2,10 +2,10 @@
 
 namespace ManagerApp.Controllers.Authentication
 {
-    public class AuthenticationController : Controller
+    public class AuthController : Controller
     {
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Auth()
         {
             return View();
         }

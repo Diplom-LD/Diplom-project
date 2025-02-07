@@ -1,0 +1,58 @@
+# Игнорируются скомпилированные файлы и кеши
+bin/
+obj/
+out/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.vs/
+.vscode/
+*.swp
+
+# Конфигурационные файлы Visual Studio и IDE
+*.suo
+*.user
+*.dbmdl
+*.opendb
+*.bak
+*.lock.json
+
+# NuGet-пакеты
+packages/
+project.lock.json
+*.nupkg
+*.snupkg
+.nuget/
+
+# Node.js и фронтенд-зависимости (если будут)
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# Docker 
+docker-compose*.yml
+docker-compose.override.yml
+
+# Логи и временные файлы
+logs/
+*.log
+*.tlog
+*.pid
+*.err
+
+# Игнорируются локальные файлы конфигурации (но оставляется `appsettings.json`)
+appsettings.Development.json
+secrets.json
+
+# 🔹 Игнорируются файлы базы данных 
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Игнорируются файлы публикации (`dotnet publish`)
+publish/
+wwwroot/lib/

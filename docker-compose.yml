@@ -1,6 +1,39 @@
-version: '3.8'
+networks:
+  app-network: # Создаем общую сеть
+    driver: bridge
 
 services:
+  postgre:
+    image: postgres:latest
+    container_name: postgre
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydb
+    volumes:
+      - postgre_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app-network  
+
+  authservice:
+    build:
+      context: .
+      dockerfile: AuthService/Dockerfile
+    container_name: auth-service
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
+    depends_on:
+      - postgre
+    restart: always
+    networks:
+      - app-network  
+
   managerapp:
     build:
       context: .
@@ -10,4 +43,12 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - AUTH_SERVICE_URL=http://authservice:8080
+    depends_on:
+      - authservice
     restart: always
+    networks:
+      - app-network  
+
+volumes:
+  postgre_data:

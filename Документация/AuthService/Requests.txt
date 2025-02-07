@@ -1,0 +1,17 @@
+Метод: Register;
+Описание: Метод Register используется для регистрации нового пользователя в системе. В зависимости от переданной роли (client, manager, worker), создаётся соответствующий объект пользователя и сохраняется в базе данных;
+Путь запроса: POST /AuthService/register.
+Обязательные поля: Login, Email, Password, Role.
+Пример запроса:
+{
+    "Login": "client_user",
+    "Email": "client@example.com",
+    "Password": "Client123",
+    "Role": "client",
+    "FirstName": "John",
+    "LastName": "Doe",
+    "Phone": "1234567890",
+    "Address": "123 Main St"
+}
+
+
