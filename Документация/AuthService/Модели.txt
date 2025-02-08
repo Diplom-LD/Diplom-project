@@ -1,0 +1,10 @@
+Модель RegisterRequest
+Поле	 Тип данных	Ограничения
+login	   string	4-20 символов, только буквы, цифры, _, -
+email	   string	Должен быть в формате email
+password   string	Минимум 6 символов
+role	   string	client, manager, worker
+firstName  string?	Только буквы, максимум 50 символов
+lastName   string?	Только буквы, максимум 50 символов
+phone	   string?	10-15 цифр, может начинаться с +
+address	   string?	6-200 символов

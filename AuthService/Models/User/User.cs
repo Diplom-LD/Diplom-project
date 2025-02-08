@@ -10,6 +10,10 @@ namespace AuthService.Models.User
         public string? LastName { get; set; } // Last name of the user
         public string? Phone { get; set; } // Phone number (inherited from IdentityUser)
         public string? Address { get; set; } // Address of the user
+
+        // Если разные устройства добавлять флаг "isRevoked" для разлогиневания с любых устройств
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
     }
 
     // IdentityUser already includes:

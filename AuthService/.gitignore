@@ -56,3 +56,6 @@ secrets.json
 # Игнорируются файлы публикации (`dotnet publish`)
 publish/
 wwwroot/lib/
+
+# 🔹 Игнорируются файлы миграций Entity Framework
+Migrations/

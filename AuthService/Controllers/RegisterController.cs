@@ -12,104 +12,97 @@ namespace AuthService.Controllers
 {
     [Route("AuthService/register")]
     [ApiController]
-    public class RegisterController : ControllerBase
+    public partial class RegisterController(AuthDbContext _dbContext) : ControllerBase
     {
-        private readonly AuthDbContext _dbContext;
         private readonly PasswordHasher<User> _passwordHasher = new();
-
-        public RegisterController(AuthDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
 
         [HttpPost]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var validationError = await ValidateRegistrationRequest(request);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
+
             return await ProcessRegistration(request);
         }
 
         [HttpPost("form")]
         public async Task<IActionResult> RegisterForm([FromForm] RegisterRequest request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var validationError = await ValidateRegistrationRequest(request);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
+
             return await ProcessRegistration(request);
         }
 
         private async Task<IActionResult> ProcessRegistration(RegisterRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!Regex.IsMatch(request.Login, "^[a-zA-Z0-9_-]{4,20}$"))
-                return BadRequest("Login must be 4-20 characters and can only contain letters, numbers, hyphens, and underscores.");
-
-            if (await _dbContext.Users.AnyAsync(u => u.Email == request.Email))
-                return BadRequest("User with this email already exists");
-
-            if (await _dbContext.Users.AnyAsync(u => u.UserName == request.Login))
-                return BadRequest("User with this login already exists");
-
-            if (!string.IsNullOrWhiteSpace(request.Phone) && await _dbContext.Users.AnyAsync(u => u.Phone == request.Phone))
-                return BadRequest("A user with this phone number already exists.");
-
-            if (!string.IsNullOrWhiteSpace(request.Address) && request.Address.Length < 6)
-                return BadRequest("Address must be at least 6 characters long.");
-
-            if (request.Password.Length < 6)
-                return BadRequest("Password must be at least 6 characters long");
-
-            string role = request.Role.ToLower();
-            if (role != "manager" && role != "worker" && role != "client")
+            User user = new()
             {
-                return BadRequest("Invalid role. Allowed roles: manager, worker, client");
-            }
-
-            User user = role switch
-            {
-                "manager" => new Manager
-                {
-                    UserName = request.Login,
-                    Email = request.Email,
-                    Role = role,
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Phone = request.Phone,
-                    Address = request.Address
-                },
-                "worker" => new Worker
-                {
-                    UserName = request.Login,
-                    Email = request.Email,
-                    Role = role,
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Phone = request.Phone,
-                    Address = request.Address
-                },
-                "client" => new Client
-                {
-                    UserName = request.Login,
-                    Email = request.Email,
-                    Role = role,
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Phone = request.Phone,
-                    Address = request.Address
-                },
-                _ => throw new InvalidOperationException("Unexpected role value")
+                UserName = request.Login.Trim(),
+                Email = request.Email.Trim(),
+                Role = request.Role.Trim().ToLower(),
+                FirstName = request.FirstName?.Trim(),
+                LastName = request.LastName?.Trim(),
+                Phone = request.Phone?.Trim(),
+                Address = request.Address?.Trim()
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
-            if (user is Manager)
-                _dbContext.Managers.Add((Manager)user);
-            else if (user is Worker)
-                _dbContext.Workers.Add((Worker)user);
-            else
-                _dbContext.Clients.Add((Client)user);
-
+            _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            return Ok(new { Message = $"{role} registered successfully" });
+            return Ok(new { Message = $"{user.Role} registered successfully" });
         }
+
+        private async Task<string?> ValidateRegistrationRequest(RegisterRequest request)
+        {
+            if (!LoginRegex().IsMatch(request.Login))
+                return "Login must be 4-20 characters and can only contain letters, numbers, hyphens, and underscores.";
+
+            if (await FindUserAsync(request.Email, request.Login, request.Phone) != null)
+                return "User with this email, login, or phone number already exists.";
+
+            if (!string.IsNullOrWhiteSpace(request.FirstName) && !NameRegex().IsMatch(request.FirstName))
+                return "First name can only contain letters.";
+
+            if (!string.IsNullOrWhiteSpace(request.LastName) && !NameRegex().IsMatch(request.LastName))
+                return "Last name can only contain letters.";
+
+            if (!string.IsNullOrWhiteSpace(request.Phone) && !PhoneRegex().IsMatch(request.Phone))
+                return "Phone number must be 10-15 digits and can start with '+'.";
+
+            if (!string.IsNullOrWhiteSpace(request.Address) && request.Address.Length < 6)
+                return "Address must be at least 6 characters long.";
+
+            string role = request.Role.Trim().ToLower();
+            if (role != "manager" && role != "worker" && role != "client")
+                return "Invalid role. Allowed roles: manager, worker, client.";
+
+            return null;
+        }
+
+        private async Task<User?> FindUserAsync(string email, string login, string? phone)
+        {
+            return await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email == email || u.UserName == login || (phone != null && u.Phone == phone));
+        }
+
+        [GeneratedRegex("^[a-zA-Z0-9_-]{4,20}$")]
+        private static partial Regex LoginRegex();
+
+        [GeneratedRegex("^[a-zA-Zа-яА-ЯёЁ]+$")]
+        private static partial Regex NameRegex();
+
+        [GeneratedRegex(@"^\+?\d{10,15}$")]
+        private static partial Regex PhoneRegex();
     }
 }

@@ -1,5 +1,5 @@
-Метод: Register;
-Описание: Метод Register используется для регистрации нового пользователя в системе. В зависимости от переданной роли (client, manager, worker), создаётся соответствующий объект пользователя и сохраняется в базе данных;
+Метод: register;
+Описание: метод register используется для регистрации нового пользователя в системе. В зависимости от переданной роли (client, manager, worker) создаётся соответствующий объект пользователя и сохраняется в базе данных (при регистрации не выдаются сразу токены, для возможной масштабируемости с подтверждением email;
 Путь запроса: POST /AuthService/register.
 Обязательные поля: Login, Email, Password, Role.
 Пример запроса:
@@ -13,5 +13,65 @@
     "Phone": "1234567890",
     "Address": "123 Main St"
 }
+
+Метод: login
+Описание: метод login используется для входа пользователя в систему. При успешной аутентификации возвращает accessToken, а refreshToken передается по-разному в зависимости от платформы:
+- Web: refreshToken передаётся в HttpOnly Cookie;
+- Android: refreshToken передаётся в заголовке X-Refresh-Token
+Путь запроса: POST /AuthService/auth/login;
+Обязательные поля: Identifier (string) - Логин или email пользователя, Password (string) - Пароль;
+Пример запроса:
+{
+    "Identifier": "test1@example.com",
+    "Password": "Test1234"
+}
+Headers (Web): Set-Cookie: refreshToken=aueIRUB0dWcgH5DFUAsX...; HttpOnly; Secure; SameSite=Strict;
+Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...;
+
+Метод: RefreshToken
+Описание: метод RefreshToken используется для обновления accessToken. 
+- Web: refreshToken передаётся в HttpOnly Cookie;
+- Android: refreshToken передаётся в заголовке X-Refresh-Token
+Путь запроса: POST /AuthService/auth/refresh;
+Требования: refreshToken передаётся в HttpOnly Cookie;
+Пример успешного ответа (200 OK):
+{
+    "accessToken": "eyJhbGciOiJIUz...",
+}
+- Headers (Web): Set-Cookie: refreshToken=aueIRUB0dWcgH5DFUAsX...; HttpOnly; Secure; SameSite=Strict;
+- Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...
+
+Метод: logout
+Описание: Метод logout удаляет refreshToken из базы данных и очищает куки у клиента:
+- Web: удаляется кук refreshToken;
+- Android: заголовок X-Refresh-Token не используется после выхода.
+Путь запроса: POST /AuthService/auth/logout;
+Headers (Web): Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Strict
+Пример ответа:
+{
+    "message": "Logged out successfully"
+}
+
+Метод: myprofile
+Описание: Метод myprofile используется для получения профиля авторизованного пользователя.
+Запрос требует валидного accessToken, передаваемого в заголовке Authorization: Bearer <token>.
+Путь запроса: GET /AuthService/auth/myprofile
+Требования: 
+ - Аутентификация обязательна ([Authorize]);
+ - Клиент должен передавать accessToken в заголовке Authorization;
+ - Если accessToken истёк, клиент должен сначала обновить его через refreshToken
+Пример запросов:
+
+Web-клиент (c accessToken в заголовке):
+GET /AuthService/auth/myprofile HTTP/1.1
+Host: localhost:5001
+Authorization: Bearer eyJhbGciOiJIUzI1...
+
+Android-клиент (c accessToken в заголовке)
+GET /AuthService/auth/myprofile HTTP/1.1
+Host: localhost:5001
+Authorization: Bearer eyJhbGciOiJIUzI1...
+X-Platform: android
+
 
 
