@@ -73,5 +73,26 @@ Host: localhost:5001
 Authorization: Bearer eyJhbGciOiJIUzI1...
 X-Platform: android
 
+Метод: change-password
+Описание: метод change-password позволяет пользователю изменить свой пароль. Для выполнения запроса необходимо передать старый пароль (currentPassword) и новый пароль (newPassword).
+Путь запроса: POST /AuthService/auth/change-password
+Headers (Web, Android):
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+Пример запроса:
+{
+    "currentPassword": "OldPassword123",
+    "newPassword": "NewPassword456"
+}
 
+Метод: delete-account
+Описание: метод delete-account позволяет пользователю удалить свой аккаунт. Для выполнения запроса необходимо передать пароль (password) в body. Удаляются accessToken, refreshToken, обновляется SecurityStamp и аккаунт удаляется из базы.
+Путь запроса: DELETE /AuthService/auth/delete-account.
+Headers (Web, Android):
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+Пример запроса:
+{
+    "password": "TestPassword123"
+}
 

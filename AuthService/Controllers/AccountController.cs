@@ -1,6 +1,7 @@
 ﻿using AuthService.Data;
 using AuthService.Models.User;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -118,5 +119,98 @@ namespace AuthService.Controllers
 
             return Ok(new { message = "Profile updated successfully" });
         }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "User ID is missing in the token" });
+            }
+
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("ChangePassword: User {UserId} not found", userId);
+                return NotFound(new { message = "User not found" });
+            }
+
+            var passwordHasher = new PasswordHasher<User>();
+
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                _logger.LogWarning("ChangePassword: User {UserId} has no password set", userId);
+                return BadRequest(new { message = "User does not have a password set. Please reset your password." });
+            }
+
+            if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) != PasswordVerificationResult.Success)
+            {
+                return BadRequest(new { message = "Current password is incorrect" });
+            }
+
+            user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} changed password successfully", userId);
+            return Ok(new { message = "Password changed successfully" });
+        }
+
+        [HttpDelete("delete-account")]
+        public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request)
+        {
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "User ID is missing in the token" });
+            }
+
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                _logger.LogWarning("DeleteAccount: User {UserId} not found", userId);
+                return NotFound(new { message = "User not found" });
+            }
+
+            var passwordHasher = new PasswordHasher<User>();
+
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                return BadRequest(new { message = "Your account does not have a password. Use an OAuth method to remove your account." });
+            }
+
+            if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) != PasswordVerificationResult.Success)
+            {
+                _logger.LogWarning("DeleteAccount failed: Incorrect password for user {UserId}", userId);
+                return BadRequest(new { message = "Password is incorrect" });
+            }
+
+            if (HttpContext.RequestServices.GetService<UserManager<User>>() is { } userManager)
+            {
+                await userManager.UpdateSecurityStampAsync(user);
+            }
+
+            Response.Cookies.Delete("refreshToken");
+            _logger.LogInformation("User {UserId} is deleting their account", userId);
+            try
+            {
+                _dbContext.Users.Remove(user);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting account for user {UserId}", userId);
+                return StatusCode(500, new { message = "An error occurred while deleting the account. Please try again later." });
+            }
+
+            _logger.LogInformation("User {UserId} deleted their account successfully", userId);
+            return Ok(new { message = "Account deleted successfully" });
+        }
+
     }
 }
