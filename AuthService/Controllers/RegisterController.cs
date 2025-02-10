@@ -71,18 +71,6 @@ namespace AuthService.Controllers
             if (await FindUserAsync(request.Email, request.Login, request.Phone) != null)
                 return "User with this email, login, or phone number already exists.";
 
-            if (!string.IsNullOrWhiteSpace(request.FirstName) && !NameRegex().IsMatch(request.FirstName))
-                return "First name can only contain letters.";
-
-            if (!string.IsNullOrWhiteSpace(request.LastName) && !NameRegex().IsMatch(request.LastName))
-                return "Last name can only contain letters.";
-
-            if (!string.IsNullOrWhiteSpace(request.Phone) && !PhoneRegex().IsMatch(request.Phone))
-                return "Phone number must be 10-15 digits and can start with '+'.";
-
-            if (!string.IsNullOrWhiteSpace(request.Address) && request.Address.Length < 6)
-                return "Address must be at least 6 characters long.";
-
             string role = request.Role.Trim().ToLower();
             if (role != "manager" && role != "worker" && role != "client")
                 return "Invalid role. Allowed roles: manager, worker, client.";
@@ -111,10 +99,5 @@ namespace AuthService.Controllers
         [GeneratedRegex("^[a-zA-Z0-9_-]{4,20}$")]
         private static partial Regex LoginRegex();
 
-        [GeneratedRegex("^[a-zA-Zа-яА-ЯёЁ]+$")]
-        private static partial Regex NameRegex();
-
-        [GeneratedRegex(@"^\+?\d{10,15}$")]
-        private static partial Regex PhoneRegex();
     }
 }

@@ -1,5 +1,5 @@
 networks:
-  app-network: # Создаем общую сеть
+  app-network:
     driver: bridge
 
 services:
@@ -43,12 +43,17 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - AUTH_SERVICE_URL=http://authservice:8080
+      - AuthService__BaseUrl=http://authservice:8080
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
     depends_on:
       - authservice
     restart: always
     networks:
       - app-network  
+    volumes:
+      - data_protection:/var/data-protection  
 
 volumes:
   postgre_data:
+  data_protection:

@@ -1,11 +1,21 @@
+using ManagerApp.Clients;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Настройка защиты данных (ключи храним в контейнере)
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(@"/var/data-protection"))
+    .SetApplicationName("ManagerApp");
+
+builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthorization();
+builder.Services.AddHttpClient<AuthServiceClient>();
 
 var app = builder.Build();
 
-// Обработка ошибок
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -13,15 +23,15 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseDeveloperExceptionPage(); // В dev-режиме показываем подробности ошибок
+    app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
+// Добавить работу с сертификатами и https
+
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
+app.UseAntiforgery();
 
 app.MapControllerRoute(
     name: "default",

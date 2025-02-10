@@ -17,7 +17,7 @@ body{
     height: 100vh;
 }
 
-.main-container{
+.main-container {
     background-color: #fff;
     border-radius: 30px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -25,7 +25,7 @@ body{
     overflow: hidden;
     width: 768px;
     max-width: 100%;
-    min-height: 480px;
+    min-height: 700px;
 }
 
 .main-container p{
@@ -33,10 +33,16 @@ body{
     line-height: 20px;
     letter-spacing: 0.3px;
     margin: 20px 0;
+    text-align: center;
 }
 
 .main-container span{
     font-size: 12px;
+    text-align: center;
+}
+
+.main-container h1{
+    text-align: center;
 }
 
 .main-container a{
@@ -44,6 +50,7 @@ body{
     font-size: 13px;
     text-decoration: none;
     margin: 15px 0 10px;
+    text-align: center;
 }
 
 .main-container button{
