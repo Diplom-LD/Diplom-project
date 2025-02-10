@@ -87,6 +87,18 @@ namespace AuthService.Controllers
             if (role != "manager" && role != "worker" && role != "client")
                 return "Invalid role. Allowed roles: manager, worker, client.";
 
+            if (role == "manager")
+            {
+                if (string.IsNullOrWhiteSpace(request.RegistrationCode))
+                    return "Manager registration requires a valid registration code.";
+
+                var codeExists = await _dbContext.ManagerRegistrationCodes
+                    .AnyAsync(c => c.Code == request.RegistrationCode);
+
+                if (!codeExists)
+                    return "Invalid registration code.";
+            }
+
             return null;
         }
 

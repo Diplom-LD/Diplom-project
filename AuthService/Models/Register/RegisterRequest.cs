@@ -34,5 +34,6 @@ namespace AuthService.Models.Register
 
         [StringLength(200, MinimumLength = 6, ErrorMessage = "Address must be between 6 and 200 characters.")]
         public string? Address { get; set; }
+        public string? RegistrationCode { get; set; }
     }
 }
