@@ -1,6 +1,24 @@
-Метод: register;
-Описание: метод register используется для регистрации нового пользователя в системе. В зависимости от переданной роли (client, manager, worker) создаётся соответствующий объект пользователя и сохраняется в базе данных (при регистрации не выдаются сразу токены, для возможной масштабируемости с подтверждением email. Пользователи с ролью manager обязаны передавать регистрационный код при регистрации;
-Путь запроса: POST /AuthService/register.
+Регистрация и аутентификация (auth)
+POST /auth/sign-up – регистрация нового пользователя
+POST /auth/sign-up/form – регистрация через форму
+POST /auth/sign-in – вход в систему
+POST /auth/refresh-token – обновление accessToken
+POST /auth/sign-out – выход из системы (удаление refreshToken)
+Управление аккаунтом (auth/account)
+GET /auth/account/my-profile – получение данных авторизованного пользователя
+GET /auth/account/get-profile/{loginOrEmail} – получение данных пользователя (только для manager)
+PUT /auth/account/update-profile – обновление профиля
+POST /auth/account/change-password – смена пароля
+DELETE /auth/account/delete-account – удаление аккаунта
+
+
+Дополнительное описание:
+
+Метод: sign-up;
+Описание: метод sign-up используется для регистрации нового пользователя в системе. В зависимости от переданной роли (client, manager, worker) создаётся соответствующий объект пользователя и сохраняется в базе данных (при регистрации не выдаются сразу токены, для возможной масштабируемости с подтверждением email). Пользователи с ролью manager обязаны передавать регистрационный код при регистрации;
+Путь запроса: 
+		POST /auth/sign-up - регистрация через JSON тело запроса
+		POST /auth/sign-up/form - регистрация через форму (multipart/form-data)
 Обязательные поля: Login, Email, Password, Role, firstName, lastName, phone, address.
 Пример запроса:
 {
@@ -14,11 +32,11 @@
     "Address": "123 Main St"
 }
 
-Метод: login
-Описание: метод login используется для входа пользователя в систему. При успешной аутентификации возвращает accessToken, а refreshToken передается по-разному в зависимости от платформы:
+Метод: sign-in
+Описание: метод sign-in используется для входа пользователя в систему. При успешной аутентификации возвращает accessToken, а refreshToken передается по-разному в зависимости от платформы:
 - Web: refreshToken передаётся в HttpOnly Cookie;
 - Android: refreshToken передаётся в заголовке X-Refresh-Token
-Путь запроса: POST /AuthService/auth/login;
+Путь запроса: POST /auth/sign-in
 Обязательные поля: Identifier (string) - Логин или email пользователя, Password (string) - Пароль;
 Пример запроса:
 {
@@ -28,12 +46,14 @@
 Headers (Web): Set-Cookie: refreshToken=aueIRUB0dWcgH5DFUAsX...; HttpOnly; Secure; SameSite=Strict;
 Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...;
 
-Метод: RefreshToken
-Описание: метод RefreshToken используется для обновления accessToken. 
+Метод: refresh-token
+Описание: метод refresh-token используется для обновления accessToken с использованием refreshToken. 
 - Web: refreshToken передаётся в HttpOnly Cookie;
 - Android: refreshToken передаётся в заголовке X-Refresh-Token
-Путь запроса: POST /AuthService/auth/refresh;
-Требования: refreshToken передаётся в HttpOnly Cookie;
+Путь запроса: POST /auth/refresh-token;
+Требования:
+- Web: refreshToken передаётся в HttpOnly Cookie;
+- Android: refreshToken передаётся в заголовке X-Refresh-Token;
 Пример успешного ответа (200 OK):
 {
     "accessToken": "eyJhbGciOiJIUz...",
@@ -41,21 +61,21 @@ Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...;
 - Headers (Web): Set-Cookie: refreshToken=aueIRUB0dWcgH5DFUAsX...; HttpOnly; Secure; SameSite=Strict;
 - Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...
 
-Метод: logout
-Описание: Метод logout удаляет refreshToken из базы данных и очищает куки у клиента:
+Метод: sign-out
+Описание: Метод sign-out удаляет refreshToken из базы данных и очищает куки у клиента:
 - Web: удаляется кук refreshToken;
 - Android: заголовок X-Refresh-Token не используется после выхода.
-Путь запроса: POST /AuthService/auth/logout;
+Путь запроса: POST /auth/sign-out;
 Headers (Web): Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Strict
 Пример ответа:
 {
     "message": "Logged out successfully"
 }
 
-Метод: myprofile
-Описание: Метод myprofile используется для получения профиля авторизованного пользователя.
+Метод: my-profile
+Описание: Метод my-profile используется для получения профиля авторизованного пользователя.
 Запрос требует валидного accessToken, передаваемого в заголовке Authorization: Bearer <token>.
-Путь запроса: GET /AuthService/auth/myprofile
+Путь запроса: GET /auth/account/my-profile
 Требования: 
  - Аутентификация обязательна ([Authorize]);
  - Клиент должен передавать accessToken в заголовке Authorization;
@@ -63,19 +83,37 @@ Headers (Web): Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=
 Пример запросов:
 
 Web-клиент (c accessToken в заголовке):
-GET /AuthService/auth/myprofile HTTP/1.1
-Host: localhost:5001
-Authorization: Bearer eyJhbGciOiJIUzI1...
+GET /auth/account/my-profile HTTP/1.1  
+Host: localhost:5001  
+Authorization: Bearer eyJhbGciOiJIUzI1...  
 
 Android-клиент (c accessToken в заголовке)
-GET /AuthService/auth/myprofile HTTP/1.1
-Host: localhost:5001
-Authorization: Bearer eyJhbGciOiJIUzI1...
-X-Platform: android
+GET /auth/account/my-profile HTTP/1.1  
+Host: localhost:5001  
+Authorization: Bearer eyJhbGciOiJIUzI1...  
+X-Platform: android  
+
+Метод: get-profile (manager)
+Описание: Метод get-profile позволяет менеджеру получать информацию о пользователях по логину или email. Доступен только для пользователей с ролью manager.
+Путь запроса: GET /auth/account/get-profile/{loginOrEmail}
+Пример запроса: 
+GET /auth/account/get-profile/client@example.com HTTP/1.1  
+Host: localhost:5001  
+Authorization: Bearer eyJhbGciOiJIUzI1...  
+
+Метод: update-profile
+Описание: Метод update-profile позволяет пользователю изменить данные своего профиля (имя, фамилия, телефон, адрес).
+Путь запроса: PUT /auth/account/update-profile
+Пример запроса:
+PUT /auth/account/update-profile HTTP/1.1  
+Host: localhost:5001  
+Authorization: Bearer eyJhbGciOiJIUzI1...  
+Content-Type: application/json
+
 
 Метод: change-password
 Описание: метод change-password позволяет пользователю изменить свой пароль. Для выполнения запроса необходимо передать старый пароль (currentPassword) и новый пароль (newPassword).
-Путь запроса: POST /AuthService/auth/change-password
+Путь запроса: POST /auth/account/change-password
 Headers (Web, Android):
 Authorization: Bearer {accessToken}
 Content-Type: application/json
@@ -87,7 +125,7 @@ Content-Type: application/json
 
 Метод: delete-account
 Описание: метод delete-account позволяет пользователю удалить свой аккаунт. Для выполнения запроса необходимо передать пароль (password) в body. Удаляются accessToken, refreshToken, обновляется SecurityStamp и аккаунт удаляется из базы.
-Путь запроса: DELETE /AuthService/auth/delete-account.
+Путь запроса: DELETE /auth/account/delete-account.
 Headers (Web, Android):
 Authorization: Bearer {accessToken}
 Content-Type: application/json

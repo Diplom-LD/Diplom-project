@@ -10,13 +10,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AuthService.Controllers
 {
-    [Route("AuthService/auth")]
+    [Route("auth")]
     [ApiController]
     public class AuthController(AuthDbContext _dbContext, TokenService _tokenService, ILogger<AuthController> _logger) : ControllerBase
     {
         private readonly PasswordHasher<User> _passwordHasher = new();
 
-        [HttpPost("login")]
+        [HttpPost("sign-in")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -53,7 +53,7 @@ namespace AuthService.Controllers
             return Ok(new { accessToken });
         }
 
-        [HttpPost("refresh")]
+        [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = _tokenService.GetRefreshToken(Request);
@@ -84,7 +84,7 @@ namespace AuthService.Controllers
             return Ok(new { accessToken = newAccessToken });
         }
 
-        [HttpPost("logout")]
+        [HttpPost("sign-out")]
         public async Task<IActionResult> Logout()
         {
             var refreshToken = _tokenService.GetRefreshToken(Request);

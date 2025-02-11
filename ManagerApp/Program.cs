@@ -1,4 +1,5 @@
 using ManagerApp.Clients;
+using ManagerApp.Services;
 using Microsoft.AspNetCore.DataProtection;
 using System.IO;
 
@@ -13,6 +14,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpClient<AuthServiceClient>();
+builder.Services.AddSingleton<JsonService>();
+
 
 var app = builder.Build();
 

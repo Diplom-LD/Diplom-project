@@ -18,7 +18,7 @@ services:
     networks:
       - app-network  
 
-  authservice:
+  auth-service:  
     build:
       context: .
       dockerfile: AuthService/Dockerfile
@@ -34,7 +34,7 @@ services:
     networks:
       - app-network  
 
-  managerapp:
+  manager-app:  
     build:
       context: .
       dockerfile: ManagerApp/Dockerfile
@@ -43,11 +43,11 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - AuthService__BaseUrl=http://authservice:8080
+      - AuthService__BaseUrl=http://auth-service:8080  
       - DOTNET_USE_POLLING_FILE_WATCHER=1
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
     depends_on:
-      - authservice
+      - auth-service
     restart: always
     networks:
       - app-network  

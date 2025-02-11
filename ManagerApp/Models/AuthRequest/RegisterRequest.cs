@@ -51,5 +51,10 @@ namespace ManagerApp.Models.AuthRequest
 
         [Display(Name = "Registration Code")]
         public string? RegistrationCode { get; set; }
+
+        // When scalable, role selection will occur in the start view
+        [Required(ErrorMessage = "Role is required")]
+        public string Role { get; set; } = "manager";
+
     }
 }

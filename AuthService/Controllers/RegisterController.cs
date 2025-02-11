@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace AuthService.Controllers
 {
-    [Route("AuthService/register")]
+    [Route("auth/sign-up")]
     [ApiController]
     public partial class RegisterController(AuthDbContext _dbContext) : ControllerBase
     {

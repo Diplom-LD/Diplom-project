@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace AuthService.Controllers
 {
-    [Route("AuthService/auth")]
+    [Route("auth/account")]
     [ApiController]
     [Authorize]
     public class AccountController(AuthDbContext _dbContext, ILogger<AccountController> _logger) : ControllerBase
     {
-        [HttpGet("myprofile")]
+        [HttpGet("my-profile")]
         public async Task<IActionResult> GetMyProfile()
         {
             if (!User.Identity?.IsAuthenticated ?? true)
@@ -54,7 +54,7 @@ namespace AuthService.Controllers
             return Ok(user);
         }
 
-        [HttpGet("getprofile/{loginOrEmail}")]
+        [HttpGet("get-profile/{loginOrEmail}")]
         [Authorize(Roles = "manager")]
         public async Task<IActionResult> GetProfile([FromRoute, Required] string loginOrEmail)
         {
@@ -87,7 +87,7 @@ namespace AuthService.Controllers
             return Ok(user);
         }
 
-        [HttpPut("updateprofile")]
+        [HttpPut("update-profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
             if (!ModelState.IsValid)

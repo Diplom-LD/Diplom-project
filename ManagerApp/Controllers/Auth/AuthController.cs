@@ -5,21 +5,12 @@ using ManagerApp.Models.AuthResponse;
 using ManagerApp.Clients;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using ManagerApp.Services;
 
 namespace ManagerApp.Controllers.Auth
 {
-    public class AuthController : Controller
+    public class AuthController(AuthServiceClient _authServiceClient, ILogger<AuthController> _logger, JsonService _jsonService) : Controller
     {
-        private readonly AuthServiceClient _authServiceClient;
-        private readonly ILogger<AuthController> _logger;
-
-        public AuthController(AuthServiceClient authServiceClient, ILogger<AuthController> logger)
-        {
-            _authServiceClient = authServiceClient;
-            _logger = logger;
-        }
-
         public IActionResult Auth()
         {
             return View(new AuthViewModel());
@@ -29,21 +20,31 @@ namespace ManagerApp.Controllers.Auth
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignIn(LoginRequest model)
         {
-
-            Console.WriteLine(" SignIn method called");
+            _logger.LogInformation("SignIn method called with Identifier: {Identifier}", model.Identifier);
 
             if (!ModelState.IsValid)
             {
+                LogModelErrors();
                 ViewData["LoginError"] = "Invalid input data";
                 return View("Auth", new AuthViewModel { LoginModel = model });
             }
 
-            Console.WriteLine(" Sending request to AuthService: /AuthService/auth/login");
+            _logger.LogInformation("Sending request to AuthService: /auth/sign-in");
 
-            var response = await _authServiceClient.PostAsync("/AuthService/auth/login", model);
+            HttpResponseMessage response;
+            try
+            {
+                response = await _authServiceClient.PostAsync("/auth/sign-in", model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SignIn failed: Exception when sending request to AuthService.");
+                ViewData["LoginError"] = "Authentication service is unavailable.";
+                return View("Auth", new AuthViewModel { LoginModel = model });
+            }
+
             var responseContent = await response.Content.ReadAsStringAsync();
-
-            Console.WriteLine($"Response status: {response.StatusCode}");
+            _logger.LogInformation("Response status: {StatusCode}, Response body: {ResponseContent}", response.StatusCode, responseContent);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -52,12 +53,25 @@ namespace ManagerApp.Controllers.Auth
                 return View("Auth", new AuthViewModel { LoginModel = model });
             }
 
-            var loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent);
-            if (loginResponse is null ||
-                string.IsNullOrEmpty(loginResponse.AccessToken) ||
-                string.IsNullOrEmpty(loginResponse.RefreshToken))
+            if (string.IsNullOrWhiteSpace(responseContent))
             {
                 _logger.LogWarning("SignIn failed: Empty response from AuthService.");
+                ViewData["LoginError"] = "Authentication failed.";
+                return View("Auth", new AuthViewModel { LoginModel = model });
+            }
+
+            var loginResponse = _jsonService.Deserialize<LoginResponse>(responseContent);
+            if (loginResponse == null || string.IsNullOrEmpty(loginResponse.AccessToken))
+            {
+                _logger.LogWarning("SignIn failed: Invalid response structure from AuthService.");
+                ViewData["LoginError"] = "Authentication failed.";
+                return View("Auth", new AuthViewModel { LoginModel = model });
+            }
+
+            string? refreshToken = ExtractRefreshToken(response);
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("SignIn failed: Refresh token not found in Set-Cookie headers.");
                 ViewData["LoginError"] = "Authentication failed.";
                 return View("Auth", new AuthViewModel { LoginModel = model });
             }
@@ -70,7 +84,7 @@ namespace ManagerApp.Controllers.Auth
                 Expires = DateTime.UtcNow.AddMinutes(15)
             });
 
-            Response.Cookies.Append("refreshToken", loginResponse.RefreshToken, new CookieOptions
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -81,17 +95,39 @@ namespace ManagerApp.Controllers.Auth
             return RedirectToAction("Home", "ManagerHome");
         }
 
+        private static string? ExtractRefreshToken(HttpResponseMessage response)
+        {
+            if (response.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders))
+            {
+                foreach (var cookieHeader in setCookieHeaders)
+                {
+                    if (cookieHeader.StartsWith("refreshToken=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = cookieHeader.Split(';')[0].Split('=');
+                        if (parts.Length == 2)
+                        {
+                            return parts[1];
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignUp(RegisterRequest model)
         {
+            _logger.LogInformation("SignUp method called for Email: {Email}", model.Email);
+
             if (!ModelState.IsValid)
             {
+                LogModelErrors();
                 ViewData["RegisterError"] = "Invalid input data";
                 return View("Auth", new AuthViewModel { RegisterModel = model });
             }
 
-            var registerResponse = await _authServiceClient.PostAsync("/AuthService/register", model);
+            var registerResponse = await _authServiceClient.PostAsync("/auth/sign-up", model);
             var registerContent = await registerResponse.Content.ReadAsStringAsync();
 
             if (!registerResponse.IsSuccessStatusCode)
@@ -101,50 +137,19 @@ namespace ManagerApp.Controllers.Auth
                 return View("Auth", new AuthViewModel { RegisterModel = model });
             }
 
-            var loginModel = new LoginRequest
-            {
-                Identifier = model.Email,  
-                Password = model.Password
-            };
-
-            var signInResponse = await _authServiceClient.PostAsync("/AuthService/auth/login", loginModel);
-            var signInContent = await signInResponse.Content.ReadAsStringAsync();
-
-            if (!signInResponse.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Auto SignIn after SignUp failed: {StatusCode} - {Response}", signInResponse.StatusCode, signInContent);
-                ViewData["RegisterError"] = "Registration succeeded, but login failed.";
-                return View("Auth", new AuthViewModel { RegisterModel = model });
-            }
-
-            var loginResponse = JsonSerializer.Deserialize<LoginResponse>(signInContent);
-            if (loginResponse is null || string.IsNullOrEmpty(loginResponse.AccessToken) || string.IsNullOrEmpty(loginResponse.RefreshToken))
-            {
-                _logger.LogWarning("Auto SignIn failed: Empty response from AuthService.");
-                ViewData["RegisterError"] = "Registration succeeded, but authentication failed.";
-                return View("Auth", new AuthViewModel { RegisterModel = model });
-            }
-
-            Response.Cookies.Append("accessToken", loginResponse.AccessToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            });
-
-            Response.Cookies.Append("refreshToken", loginResponse.RefreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            });
-
-            _logger.LogInformation("User {Email} successfully registered and logged in.", model.Email);
-
-            return RedirectToAction("Index", "ManagerHome");
+            return await SignIn(new LoginRequest { Identifier = model.Email, Password = model.Password });
         }
 
+        private void LogModelErrors()
+        {
+            foreach (var key in ModelState.Keys)
+            {
+                var value = ModelState[key];
+                if (value?.Errors.Count > 0)
+                {
+                    _logger.LogWarning("ModelState Error for {Key}: {Errors}", key, string.Join(", ", value.Errors.Select(e => e.ErrorMessage)));
+                }
+            }
+        }
     }
 }
