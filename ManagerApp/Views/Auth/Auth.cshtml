@@ -21,36 +21,21 @@
 
         <!-- Регистрация (Sign Up) -->
         <div class="form-container sign-up-container">
-            <form asp-action="SignUp" asp-controller="Auth" method="post" id="signUpForm">
+            <form id="signUpForm">
                 <h1>Create Account</h1>
                 <span>Use your verification code for registration</span>
 
-                <input asp-for="RegisterModel.Login" name="Login" placeholder="Login" required />
-                <span asp-validation-for="RegisterModel.Login" class="text-danger"></span>
+                <div id="register-error-message" class="error-message text-danger"></div>
 
-                <input asp-for="RegisterModel.Email" name="Email" placeholder="Email" required />
-                <span asp-validation-for="RegisterModel.Email" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.Password" name="Password" placeholder="Password" type="password" required />
-                <span asp-validation-for="RegisterModel.Password" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.ConfirmPassword" name="ConfirmPassword" placeholder="Confirm Password" type="password" required />
-                <span asp-validation-for="RegisterModel.ConfirmPassword" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.FirstName" name="FirstName" placeholder="First Name" required />
-                <span asp-validation-for="RegisterModel.FirstName" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.LastName" name="LastName" placeholder="Last Name" required />
-                <span asp-validation-for="RegisterModel.LastName" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.Phone" name="Phone" placeholder="Phone" required />
-                <span asp-validation-for="RegisterModel.Phone" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.Address" name="Address" placeholder="Address" required />
-                <span asp-validation-for="RegisterModel.Address" class="text-danger"></span>
-
-                <input asp-for="RegisterModel.RegistrationCode" name="RegistrationCode" placeholder="Verification Code" />
-                <span asp-validation-for="RegisterModel.RegistrationCode" class="text-danger"></span>
+                <input id="register-login" name="Login" placeholder="Login" required />
+                <input id="register-email" name="Email" placeholder="Email" required />
+                <input id="register-password" name="Password" placeholder="Password" type="password" required />
+                <input id="register-confirm-password" name="ConfirmPassword" placeholder="Confirm Password" type="password" required />
+                <input id="register-firstname" name="FirstName" placeholder="First Name" required />
+                <input id="register-lastname" name="LastName" placeholder="Last Name" required />
+                <input id="register-phone" name="Phone" placeholder="Phone" required />
+                <input id="register-address" name="Address" placeholder="Address" required />
+                <input id="register-code" name="RegistrationCode" placeholder="Verification Code" />
 
                 <button type="submit">Sign Up</button>
             </form>
@@ -58,15 +43,14 @@
 
         <!-- Вход (Sign In) -->
         <div class="form-container sign-in-container">
-            <form asp-action="SignIn" asp-controller="Auth" method="post" id="signInForm">
+            <form id="signInForm">
                 <h1>Sign In</h1>
                 <span>Use your login/email and password</span>
 
-                <input asp-for="LoginModel.Identifier" name="Identifier" placeholder="Login or Email" required />
-                <span asp-validation-for="LoginModel.Identifier" class="text-danger"></span>
+                <div id="login-error-message" class="error-message text-danger"></div>
 
-                <input asp-for="LoginModel.Password" name="Password" placeholder="Password" type="password" required />
-                <span asp-validation-for="LoginModel.Password" class="text-danger"></span>
+                <input id="login-identifier" name="Identifier" placeholder="Login or Email" required />
+                <input id="login-password" name="Password" placeholder="Password" type="password" required />
 
                 <a href="#">Forget Your Password?</a>
                 <button type="submit">Sign In</button>
