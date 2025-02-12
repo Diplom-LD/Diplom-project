@@ -25,7 +25,7 @@ body{
     overflow: hidden;
     width: 768px;
     max-width: 100%;
-    min-height: 700px;
+    min-height: 750px;
 }
 
 .main-container p{
@@ -203,7 +203,7 @@ body{
 
 .error-message {
     color: red;
-    font-size: 0.9em;
+    font-size: 0.7em;
     margin-bottom: 10px;
     text-align: center;
 }

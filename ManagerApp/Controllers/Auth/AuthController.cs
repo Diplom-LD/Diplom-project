@@ -26,7 +26,7 @@ namespace ManagerApp.Controllers.Auth
 
             if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "Invalid input data" });
+                return Json(new { success = false, message = "Invalid login, email or password" });
             }
 
             HttpResponseMessage response;
@@ -45,7 +45,7 @@ namespace ManagerApp.Controllers.Auth
 
             if (!response.IsSuccessStatusCode)
             {
-                return Json(new { success = false, message = "Invalid login or password" });
+                return Json(new { success = false, message = "Invalid login, email or password" });
             }
 
             var loginResponse = _jsonService.Deserialize<LoginResponse>(responseContent);
@@ -72,7 +72,13 @@ namespace ManagerApp.Controllers.Auth
 
             if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "Invalid input data" });
+                var validationErrors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                string validationMessage = string.Join("; ", validationErrors);
+                return Json(new { success = false, message = $"Invalid input data: {validationMessage}" });
             }
 
             HttpResponseMessage registerResponse;
@@ -87,17 +93,90 @@ namespace ManagerApp.Controllers.Auth
             }
 
             var responseContent = await registerResponse.Content.ReadAsStringAsync();
-            _logger.LogWarning("SignUp failed: {ErrorMessage}", responseContent);
 
             if (!registerResponse.IsSuccessStatusCode)
             {
-                var responseJson = JsonDocument.Parse(responseContent);
-                var errorMessage = responseJson.RootElement.GetProperty("message").GetString();
-                return Json(new { success = false, message = errorMessage ?? "Registration failed." });
+                string errorMessage = "Registration failed.";
+                try
+                {
+                    using var doc = JsonDocument.Parse(responseContent);
+
+                    if (doc.RootElement.TryGetProperty("message", out var messageProperty))
+                    {
+                        errorMessage = messageProperty.GetString() ?? errorMessage;
+                    }
+                    else if (doc.RootElement.TryGetProperty("errors", out var errorsProperty))
+                    {
+                        var errorMessages = new List<string>();
+
+                        foreach (var property in errorsProperty.EnumerateObject())
+                        {
+                            foreach (var value in property.Value.EnumerateArray())
+                            {
+                                errorMessages.Add($"{property.Name}: {value.GetString()}");
+                            }
+                        }
+
+                        if (errorMessages.Count > 0)
+                        {
+                            errorMessage = string.Join("; ", errorMessages);
+                        }
+                    }
+                }
+                catch (JsonException)
+                {
+                    _logger.LogWarning("Failed to parse JSON response from AuthService: {ResponseContent}", responseContent);
+                }
+
+                _logger.LogWarning("SignUp failed: {ErrorMessage}", errorMessage);
+                return Json(new { success = false, message = errorMessage });
             }
 
-            return Json(new { success = true, message = "Registration successful, please sign in." });
+            _logger.LogInformation("Registration successful, attempting to log in user...");
+
+            var loginRequest = new LoginRequest
+            {
+                Identifier = model.Email, 
+                Password = model.Password
+            };
+
+            HttpResponseMessage loginResponse;
+            try
+            {
+                loginResponse = await _authServiceClient.PostAsync("/auth/sign-in", loginRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Auto-login failed: Exception when sending request to AuthService.");
+                return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+            }
+
+            var loginContent = await loginResponse.Content.ReadAsStringAsync();
+
+            if (!loginResponse.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Auto-login failed: {ErrorMessage}", loginContent);
+                return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+            }
+
+            var loginResponseData = _jsonService.Deserialize<LoginResponse>(loginContent);
+            if (loginResponseData?.AccessToken == null)
+            {
+                return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+            }
+
+            string? refreshToken = ExtractRefreshToken(loginResponse);
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+            }
+
+            SetAuthCookies(loginResponseData.AccessToken, refreshToken);
+            _logger.LogInformation("User successfully authenticated after registration.");
+
+            return Json(new { success = true, redirectUrl = Url.Action("Home", "ManagerHome") });
         }
+
 
 
         private static string? ExtractRefreshToken(HttpResponseMessage response)
