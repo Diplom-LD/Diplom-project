@@ -751,6 +751,41 @@
 									]
 								}
 							]
+						},
+						{
+							"name": "Tokens",
+							"item": [
+								{
+									"name": "Проверка access token",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjAzY2MzYzZmLWZkMmUtNGYwZi1hZjhkLWUxY2Y4YjY2NGYzMyIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJ0ZXN0MSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InRlc3QxQGV4YW1wbGUuY29tIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoibWFuYWdlciIsImV4cCI6MTczOTQ0MzgwOSwiaXNzIjoiQXV0aFNlcnZpY2UiLCJhdWQiOiJBdXRoU2VydmljZVVzZXJzIn0.o8-9cJolHaJ5yBHWbAFEzSts2zOe2hKllF9Fwangl1s",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5001/auth/get-token",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5001",
+											"path": [
+												"auth",
+												"get-token"
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						}
 					]
 				}

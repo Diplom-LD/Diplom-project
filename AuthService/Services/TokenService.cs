@@ -75,9 +75,10 @@ namespace AuthService.Services
         /// Получаем refreshToken в зависимости от платформы (Web → Cookie, Android → заголовок)
         public string? GetRefreshToken(HttpRequest request)
         {
-            if (IsRequestFromAndroid(request))
+            var headerRefreshToken = request.Headers["X-Refresh-Token"].FirstOrDefault()?.Trim();
+            if (!string.IsNullOrEmpty(headerRefreshToken))
             {
-                return request.Headers["X-Refresh-Token"].ToString().Trim();
+                return headerRefreshToken;
             }
 
             return request.Cookies.TryGetValue("refreshToken", out var refreshToken) ? refreshToken : null;
@@ -91,5 +92,48 @@ namespace AuthService.Services
                 response.Cookies.Delete("refreshToken");
             }
         }
+
+        public ClaimsPrincipal? ValidateAccessToken(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return null;
+            }
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtKey = _configuration["Jwt:Key"];
+                if (string.IsNullOrEmpty(jwtKey))
+                {
+                    throw new InvalidOperationException("JWT ключ не найден в конфигурации.");
+                }
+
+                var key = Encoding.UTF8.GetBytes(jwtKey);
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["Jwt:Audience"],
+
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key)
+                };
+
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+                return principal;
+            }
+            catch (Exception ex) when (ex is SecurityTokenException or ArgumentException or FormatException)
+            {
+                return null;
+            }
+        }
+
     }
 }

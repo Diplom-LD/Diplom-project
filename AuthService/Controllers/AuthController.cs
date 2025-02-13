@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace AuthService.Controllers
 {
@@ -84,6 +85,58 @@ namespace AuthService.Controllers
             return Ok(new { accessToken = newAccessToken });
         }
 
+        [HttpGet("get-token")]
+        public async Task<IActionResult> ValidateToken()
+        {
+            if (string.IsNullOrEmpty(Request.Headers.Authorization))
+            {
+                _logger.LogWarning("Token validation failed: No token provided");
+                return Unauthorized(new { message = "No token provided" });
+            }
+
+            var authHeader = Request.Headers.Authorization.ToString();
+
+            if (!authHeader.StartsWith("Bearer "))
+            {
+                _logger.LogWarning("Token validation failed: No valid token provided");
+                return Unauthorized(new { message = "Invalid token format" });
+            }
+
+            var token = authHeader["Bearer ".Length..].Trim();
+            var principal = _tokenService.ValidateAccessToken(token);
+
+            if (principal == null)
+            {
+                _logger.LogWarning("Token validation failed: Invalid token");
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var userId = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Token validation failed: No user ID found in token");
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Token validation failed: User not found for ID {UserId}", userId);
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            _logger.LogInformation("Token validation successful for user {UserId}", userId);
+            return Ok(new
+            {
+                message = "Token is valid",
+                userId,
+                userName = user.UserName,
+                email = user.Email,
+                role = user.Role
+            });
+        }
+
+
         [HttpPost("sign-out")]
         public async Task<IActionResult> Logout()
         {
@@ -97,7 +150,7 @@ namespace AuthService.Controllers
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
             if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
             {
-                _logger.LogWarning("Logout failed: Invalid or expired refresh token");
+                _logger.LogWarning("Logout failed: Invalid or expired refresh token {RefreshToken}", refreshToken);
                 return BadRequest(new { message = "Invalid refresh token" });
             }
 
@@ -105,17 +158,11 @@ namespace AuthService.Controllers
             user.RefreshTokenExpiry = null;
             await _dbContext.SaveChangesAsync();
 
-            if (TokenService.IsRequestFromAndroid(Request))
-            {
-                Response.Headers.Remove("X-Refresh-Token");
-            }
-            else
-            {
-                _tokenService.RemoveRefreshToken(Response, Request);
-            }
+            _tokenService.RemoveRefreshToken(Response, Request);
 
             _logger.LogInformation("User {UserId} successfully logged out", user.Id);
             return Ok(new { message = "Logged out successfully" });
         }
+
     }
 }

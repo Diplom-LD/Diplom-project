@@ -23,7 +23,7 @@
                 </li>
 
                 <li>
-                    <a asp-controller="Home" asp-action="ManagerHome">
+                    <a asp-controller="ManagerHome" asp-action="Home">
                         <span class="icon">
                             <ion-icon name="home-outline"></ion-icon>
                         </span>
@@ -105,10 +105,11 @@
                         <span class="title">Sign Out</span>
                     </a>
 
-                    <form id="logoutForm" asp-controller="Register" asp-action="Logout" method="post" style="display:none;">
+                    <form id="logoutForm" asp-controller="ManagerHome" asp-action="Logout" method="post" style="display:none;">
                         @Html.AntiForgeryToken()
                     </form>
                 </li>
+
             </ul>
         </div>
 
@@ -127,7 +128,7 @@
                 </div>
 
                 <div class="user">
-                    <img src="~/imgs/customer01.jpg" alt="">
+                    <img src="~/imgs/Home/customer01.jpg" alt="">
                 </div>
             </div>
 
@@ -137,9 +138,9 @@
         </div>
     </div>
 
-    <script src="~/js/FindConditioners.js"></script>
-    <script src="~/js/BTUCalculatorElements.js"></script>
-    <script src="~/js/ManagerHomeScript.js"></script>
+    @* <script src="~/js/FindConditioners.js"></script> *@
+    @* <script src="~/js/BTUCalculatorElements.js"></script> *@
+    <script src="~/js/Home/ManagerHome.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>

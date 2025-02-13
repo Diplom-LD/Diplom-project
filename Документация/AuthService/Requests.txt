@@ -11,7 +11,6 @@ PUT /auth/account/update-profile – обновление профиля
 POST /auth/account/change-password – смена пароля
 DELETE /auth/account/delete-account – удаление аккаунта
 
-
 Дополнительное описание:
 
 Метод: sign-up;
@@ -46,6 +45,21 @@ DELETE /auth/account/delete-account – удаление аккаунта
 Headers (Web): Set-Cookie: refreshToken=aueIRUB0dWcgH5DFUAsX...; HttpOnly; Secure; SameSite=Strict;
 Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...;
 
+Метод: get-token
+Описание: Метод get-token используется для проверки валидности accessToken и получения информации о пользователе.
+- Web: accessToken передаётся в заголовке Authorization как Bearer <accessToken>;
+- Android: accessToken также передаётся в заголовке Authorization как Bearer <accessToken>.
+Путь запроса: GET /auth/get-token
+Требования: В заголовке запроса должен быть передан accessToken в формате: Authorization: Bearer <accessToken>
+Пример успешного ответа (200 OK):
+{
+    "message": "Token is valid",
+    "userId": "65d615e6d3d5b74f72a1c312",
+    "userName": "testuser",
+    "email": "testuser@example.com",
+    "role": "manager"
+}
+
 Метод: refresh-token
 Описание: метод refresh-token используется для обновления accessToken с использованием refreshToken. 
 - Web: refreshToken передаётся в HttpOnly Cookie;
@@ -62,9 +76,9 @@ Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...;
 - Headers (Android): X-Refresh-Token: aueIRUB0dWcgH5DFUAsX...
 
 Метод: sign-out
-Описание: Метод sign-out удаляет refreshToken из базы данных и очищает куки у клиента:
-- Web: удаляется кук refreshToken;
-- Android: заголовок X-Refresh-Token не используется после выхода.
+Описание: Метод sign-out удаляет refreshToken из базы данных и очищает токен у клиента:
+- Web: Удаляется cookie refreshToken (браузерный клиент);
+- Android: Клиент самостоятельно перестаёт использовать refreshToken (заголовок X-Refresh-Token после выхода никак не затрагивается сервером);
 Путь запроса: POST /auth/sign-out;
 Headers (Web): Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Strict
 Пример ответа:
@@ -109,7 +123,6 @@ PUT /auth/account/update-profile HTTP/1.1
 Host: localhost:5001  
 Authorization: Bearer eyJhbGciOiJIUzI1...  
 Content-Type: application/json
-
 
 Метод: change-password
 Описание: метод change-password позволяет пользователю изменить свой пароль. Для выполнения запроса необходимо передать старый пароль (currentPassword) и новый пароль (newPassword).
