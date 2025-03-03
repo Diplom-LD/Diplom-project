@@ -42,13 +42,23 @@
                 </li>
 
                 <li>
-                    <a asp-controller="CalculateBTU" asp-action="Index">
+                    <a asp-controller="BTU" asp-action="BTUCalculator">
                         <span class="icon">
                             <ion-icon name="calculator-outline"></ion-icon>
                         </span>
-                        <span class="title">Calculator</span>
+                        <span class="title">BTU Calculator</span>
                     </a>
                 </li>
+
+                <li>
+                    <a asp-controller="BTU" asp-action="SearchConditioners">
+                        <span class="icon">
+                            <ion-icon name="thermometer-outline"></ion-icon>
+                        </span>
+                        <span class="title">Conditioners</span>
+                    </a>
+                </li>
+
 
                 <li>
                     <a href="#">
@@ -85,16 +95,6 @@
                         <span class="title">Settings</span>
                     </a>
                 </li>
-
-                <li>
-                    <a asp-controller="FindConditionersBTU" asp-action="ConditionersHome">
-                        <span class="icon">
-                            <ion-icon name="thermometer-outline"></ion-icon>
-                        </span>
-                        <span class="title">Conditioners</span>
-                    </a>
-                </li>
-
 
                 <!-- Sign Out -->
                 <li>
@@ -138,8 +138,6 @@
         </div>
     </div>
 
-    @* <script src="~/js/FindConditioners.js"></script> *@
-    @* <script src="~/js/BTUCalculatorElements.js"></script> *@
     <script src="~/js/Home/ManagerHome.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>

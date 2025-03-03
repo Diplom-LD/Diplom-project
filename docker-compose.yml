@@ -54,6 +54,49 @@ services:
     volumes:
       - data_protection:/var/data-protection  
 
+  btu-calc-service:
+    build:
+      context: .
+      dockerfile: BTUCalcService/Dockerfile
+    container_name: btu-calc-service
+    ports:
+      - "8085:8000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+    depends_on:
+      - mongo
+    restart: always
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+    networks:
+      - app-network
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
 volumes:
   postgre_data:
   data_protection:
+  mongo_data:

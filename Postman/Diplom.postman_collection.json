@@ -790,6 +790,149 @@
 					]
 				}
 			]
+		},
+		{
+			"name": "BTUCalcService",
+			"item": [
+				{
+					"name": "Подсчёт BTU",
+					"item": [
+						{
+							"name": "Верно высчитываем BTU",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"room_size\": 20,\r\n    \"size_unit\": \"square meters\",\r\n    \"ceiling_height\": 2.75,\r\n    \"height_unit\": \"meters\",\r\n    \"sun_exposure\": \"medium\",\r\n    \"people_count\": 1,\r\n    \"number_of_computers\": 1,\r\n    \"number_of_tvs\": 0,\r\n    \"other_appliances_kwattage\": 0,\r\n    \"has_ventilation\": false,\r\n    \"air_exchange_rate\": 0,\r\n    \"guaranteed_20_degrees\": false,\r\n    \"is_top_floor\": false,\r\n    \"has_large_window\": false,\r\n    \"window_area\": 2.5\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/calculate_btu\n",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"calculate_btu\n"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Ошибка в данных BTU",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"room_size\": -20.0,\r\n  \"size_unit\": \"square meters\",\r\n  \"ceiling_height\": -2.5,\r\n  \"height_unit\": \"meters\",\r\n  \"sun_exposure\": \"medium\",\r\n  \"people_count\": 2,\r\n  \"number_of_computers\": 1,\r\n  \"number_of_tvs\": 1,\r\n  \"other_appliances_kwattage\": 0.5,\r\n  \"has_ventilation\": true,\r\n  \"air_exchange_rate\": 1.2,\r\n  \"guaranteed_20_degrees\": false,\r\n  \"is_top_floor\": false,\r\n  \"has_large_window\": true,\r\n  \"window_area\": 5.0\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/calculate_btu\n",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"calculate_btu\n"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Кондиционеры",
+					"item": [
+						{
+							"name": "Получение кондиционера по диапазону",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/products/range/?btu_min=9000&btu_max=18000",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"products",
+										"range",
+										""
+									],
+									"query": [
+										{
+											"key": "btu_min",
+											"value": "9000"
+										},
+										{
+											"key": "btu_max",
+											"value": "18000"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Получение кондиционера по конкретному BTU",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/products/btu/12000",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"products",
+										"btu",
+										"12000"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Получение кондиционеров из конкретного магазина",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Ошибка: btu_min > btu_max",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				}
+			]
 		}
 	]
 }

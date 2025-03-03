@@ -1,0 +1,183 @@
+﻿@{
+    ViewData["Title"] = "BTU Calculator";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/BTUCalculator.css" />
+}
+
+<div class="main-content">
+    <div class="btu-calculator-card">
+        <div class="btu-card-header">
+            <h2>BTU Calculator</h2>
+        </div>
+        <form id="btuCalculatorForm">
+            <!-- Основные поля -->
+            <div class="btu-form-group">
+                <label class="btu-label" for="roomSize">Room Size:</label>
+                <div class="btu-input-group">
+                    <input type="number" id="roomSize" class="btu-input" name="roomSize" placeholder="Enter size" required min="1" max="500" step="0.1">
+                    <select id="sizeUnit" class="btu-select" name="sizeUnit">
+                        <option value="square meters">square meters</option>
+                        <option value="square feet">square feet</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="ceilingHeight">Ceiling Height:</label>
+                <div class="btu-input-group">
+                    <input type="number" id="ceilingHeight" class="btu-input" name="ceilingHeight" placeholder="Enter height" required min="2" max="10" step="0.1">
+                    <select id="heightUnit" class="btu-select" name="heightUnit">
+                        <option value="meters">meters</option>
+                        <option value="feet">feet</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="peopleCount">Number of People:</label>
+                <input type="number" id="peopleCount" class="btu-input" name="peopleCount" placeholder="Enter number" required min="1" max="100">
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="numberOfComputers">Number of Computers:</label>
+                <input type="number" id="numberOfComputers" class="btu-input" name="numberOfComputers" placeholder="Enter number" required min="0" max="50">
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="numberOfTVs">Number of TVs:</label>
+                <input type="number" id="numberOfTVs" class="btu-input" name="numberOfTVs" placeholder="Enter number" required min="0" max="50">
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="otherAppliancesKWattage">Other Appliances Power (kW):</label>
+                <input type="number" id="otherAppliancesKWattage" class="btu-input" name="otherAppliancesKWattage" placeholder="Enter power in kW" required min="0" max="20" step="0.1">
+            </div>
+
+            <div class="btu-form-group">
+                <label class="btu-label" for="sunExposure">Sun Exposure:</label>
+                <select id="sunExposure" class="btu-select" name="sunExposure" required>
+                    <option value="low">low</option>
+                    <option value="medium" selected>medium</option>
+                    <option value="high">high</option>
+                </select>
+            </div>
+
+            <!-- Кнопка для отображения дополнительных параметров -->
+            <label class="switch">
+                <input type="checkbox" id="toggleParamsCheckbox" onchange="toggleParams()">
+                <span class="slider round"></span>
+                <span class="toggle-label">Show Additional Parameters</span>
+            </label>
+
+
+            <!-- Дополнительные параметры -->
+            <div class="additional-params" id="additionalParams">
+                <div class="btu-form-group">
+                    <label class="btu-label" for="hasVentilation">Has Ventilation:</label>
+                    <select id="hasVentilation" class="btu-select" name="hasVentilation" onchange="toggleVentilation()">
+                        <option value="false" selected>No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+
+                <div class="btu-form-group" id="airExchangeRateGroup" style="display: none;">
+                    <label class="btu-label" for="airExchangeRate">Air Exchange Rate:</label>
+                    <input type="number" step="0.1" id="airExchangeRate" class="btu-input" name="airExchangeRate" placeholder="Enter rate" min="0.5" max="3.0">
+                </div>
+
+                <div class="btu-form-group">
+                    <label class="btu-label" for="guaranteed20Degrees">Guaranteed 20 Degrees:</label>
+                    <select id="guaranteed20Degrees" class="btu-select" name="guaranteed20Degrees" required>
+                        <option value="false" selected>No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+
+                <div class="btu-form-group">
+                    <label class="btu-label" for="isTopFloor">Is Top Floor:</label>
+                    <select id="isTopFloor" class="btu-select" name="isTopFloor" required>
+                        <option value="false" selected>No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+
+                <div class="btu-form-group">
+                    <label class="btu-label" for="hasLargeWindow">Has Large Window:</label>
+                    <select id="hasLargeWindow" class="btu-select" name="hasLargeWindow" onchange="toggleWindowArea()">
+                        <option value="false" selected>No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+
+                <div class="btu-form-group" id="windowAreaGroup" style="display: none;">
+                    <label class="btu-label" for="windowArea">Window Area (m²):</label>
+                    <input type="number" id="windowArea" class="btu-input" name="windowArea" placeholder="Enter window area" min="0" max="100" step="0.1">
+                </div>
+            </div>
+
+            <div id="btuValidationErrors" class="btu-validation-errors"></div>
+            <div class="btu-form-buttons">
+                <div class="btu-main-buttons">
+                    <button type="submit" class="btu-calculate-btn">Calculate</button>
+                    <button type="reset" class="btu-clear-btn">Clear</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="btu-result-container">
+            <h3 class="btu-result-header">Calculation Results:</h3>
+            <p id="btuHint" class="btu-hint">Enter your room details and click "Calculate" to see the result.</p>
+
+            <div id="btuResults" class="btu-result-content" style="display: none;">
+                <div id="btuWarning" class="btu-warning"></div>
+                <p><strong>Calculated BTU:</strong> <span id="calculatedBTU">-</span></p>
+                <p><strong>Calculated Power (kW):</strong> <span id="calculatedPowerKW">-</span></p>
+
+                <h4>Recommended Range:</h4>
+                <p><strong>Lower BTU:</strong> <span id="recommendedBTULower">-</span></p>
+                <p><strong>Upper BTU:</strong> <span id="recommendedBTUUpper">-</span></p>
+
+                <p><strong>Lower Power (kW):</strong> <span id="recommendedKWLower">-</span></p>
+                <p><strong>Upper Power (kW):</strong> <span id="recommendedKWUpper">-</span></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Conditioners List Section -->
+    <div class="conditionersBTU">
+        <div class="cardHeader">
+            <h2>Conditioners</h2>
+            <button type="button" class="btu-find-btn">Find</button>
+        </div>
+
+        <div class="conditioner-form">
+            <div id="conditionersMessage" class="conditioners-message">
+                ⚠️ Сначала выполните расчет BTU!
+            </div>
+
+            <table id="conditionersTable" class="full-width-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <td>Name</td>
+                        <td>Price</td>
+                        <td>BTU</td>
+                        <td>Service Area</td>
+                        <td>Store</td>
+                    </tr>
+                </thead>
+                <tbody id="conditionersTableBody" style="font-size: 0.8rem;"></tbody>
+            </table>
+
+            <div id="rangeMessageContainer" class="range-message" >
+                ⚠️ Показаны кондиционеры с минимальными значениями BTU.
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+<script src="~/js/BTU/BTUCalculator.js"></script>

@@ -434,23 +434,9 @@ body {
 
 /* ====================== Responsive Design ========================== */
 @media (max-width: 991px) {
-    .navigation {
-        left: -300px;
-    }
-
-        .navigation.active {
-            width: 300px;
+    .navigation.active {
             left: 0;
-        }
-
-    .main {
-        width: 100%;
-        left: 0;
     }
-
-        .main.active {
-            left: 300px;
-        }
 
     .cardBox {
         grid-template-columns: repeat(2, 1fr);
@@ -458,6 +444,15 @@ body {
 }
 
 @media (max-width: 768px) {
+    .navigation {
+        left: -300px;
+    }
+
+    .main {
+        width: 100%;
+        left: 0;
+    }
+
     .details {
         grid-template-columns: 1fr;
     }
@@ -468,20 +463,6 @@ body {
 
     .status.inProgress {
         white-space: nowrap;
-    }
-}
-
-@media (max-width: 480px) {
-    .cardBox {
-        grid-template-columns: repeat(1, 1fr);
-    }
-
-    .cardHeader h2 {
-        font-size: 20px;
-    }
-
-    .user {
-        min-width: 40px;
     }
 
     .navigation {
@@ -507,363 +488,17 @@ body {
     }
 }
 
-/* ====================== Conditioners HTML Design  ========================== */
-.details.no-grid {
-    grid-template-columns: none;
-}
-
-.details .recentOrders .conditioner-form table tbody tr:hover {
-    background: none;
-    color: var(--black1);
-}
-
-.details .recentOrders .conditioner-form table tbody a:hover {
-    color: red;
-}
-
-.search-section {
-    display: flex;
-    justify-self: start;
-}
-
-/* Btu placeholder*/
-.details .conditionersBTU {
-    min-height: 200px;
-}
-
-/* Стили для блока поиска */
-.search-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.btuInput-placeholder {
-    box-sizing: border-box;
-    width: 300px;
-    padding: 12px 20px;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.3s ease;
-}
-
-    .btuInput-placeholder:focus {
-        border-color: #00bafa;
-        outline: none;
+@media (max-width: 480px) {
+    .cardBox {
+        grid-template-columns: repeat(1, 1fr);
     }
 
-/* Стили для label */
-label[placeholder] {
-    position: absolute;
-    opacity: 0;
-    visibility: hidden;
-    font-size: 0.9em;
-    color: #888;
-}
-
-/* Стили для кнопки */
-button {
-    padding: 12px 24px;
-    background-color: #2a2185; /* Темно-синий цвет */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-    button:hover {
-        background-color: #4530a5;
+    .cardHeader h2 {
+        font-size: 20px;
     }
 
-/* Чтобы placeholder исчезал при вводе текста */
-.btuInput-placeholder:valid + label[placeholder]::before {
-    transition-duration: 0.2s;
-    transform: translate(0, -2.5em) scale(0.9);
-    color: #00bafa;
-}
-
-button:active {
-    background-color: #1f186d;
-}
-
-/* BTU Calculator */
-.btu-calculator-card {
-    background-color: #f9f9f9;
-    border-radius: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 10px 20px;
-    max-width: 600px;
-    border: 1px solid #ddd;
-}
-
-.btu-card-header h2 {
-    margin: 0;
-    font-size: 24px;
-    text-align: center;
-    color: #2a2185;
-    margin-bottom: 10px;
-}
-
-.btu-form-group {
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.btu-label {
-    margin-right: 10px;
-    flex: 1;
-    font-size: 16px;
-    color: #333;
-}
-
-.btu-input,
-.btu-select {
-    width: 100%;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    outline: none;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    flex: 2;
-}
-
-    .btu-input:focus,
-    .btu-select:focus {
-        border-color: #4CAF50;
-        box-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
+    .user {
+        min-width: 40px;
     }
-
-.btu-input-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 2.1;
 }
 
-.btu-form-buttons {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    gap: 10px; 
-}
-
-.btu-main-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.btu-calculate-btn,
-.btu-clear-btn,
-.btu-find-btn {
-    padding: 10px 20px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease, transform 0.2s;
-}
-
-.btu-calculate-btn {
-    background-color: #4CAF50;
-    color: white;
-}
-
-    .btu-calculate-btn:hover {
-        background-color: #45a049;
-        transform: scale(1.02);
-    }
-
-.btu-clear-btn {
-    background-color: #bbb;
-    color: white;
-}
-
-    .btu-clear-btn:hover {
-        background-color: #a1a1a1;
-        transform: scale(1.02);
-    }
-
-.btu-find-btn {
-    background-color: #2196F3;
-    color: white;
-}
-
-    .btu-find-btn:hover {
-        background-color: #1976D2;
-        transform: scale(1.02);
-    }
-
-.btu-result {
-    margin-top: 20px;
-    background-color: #e6f7ff;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #b3e0ff;
-    text-align: center;
-    transition: background-color 0.3s;
-}
-
-.btu-result-header {
-    margin: 0 0 10px;
-    font-size: 18px;
-    color: #2a2185;
-    font-weight: 600;
-}
-
-.btu-result-text {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-}
-
-.main-content {
-    display: flex;
-}
-
-.btu-calculator-card,
-.conditionersBTU {
-    flex: 1;
-    background-color: #f9f9f9;
-    border-radius: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    border: 1px solid #ddd;
-    margin: 0px 0px 0px 20px;
-}
-
-.conditionersBTU {
-    margin: 0px 15px 0px 20px;
-}
-
-.cardHeader h2 {
-    margin: 0;
-    font-size: 24px;
-    text-align: center;
-    color: #2a2185;
-    margin-bottom: 10px;
-}
-
-.conditioner-form table th,
-.conditioner-form table td {
-    padding: 5px;
-}
-
-.full-width-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.full-width-table th,
-.full-width-table td {
-    padding: 5px;
-    border-bottom: 1px solid #ddd;
-    text-align: left;
-}
-
-.full-width-table a {
-    color: #2196F3;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.full-width-table a:hover {
-    color: #ec3c15;
-    text-decoration: underline;
-}
-
-/* Additional params */
-.additional-params {
-    display: none;
-    margin-top: 10px;
-}
-
-.btu-toggle-btn {
-    cursor: pointer;
-    background-color: #6c757d;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 12px;
-    margin-top: 10px;
-    transition: background-color 0.3s, transform 0.2s;
-}
-
-.btu-toggle-btn:hover {
-    background-color: #5a6268;
-    transform: scale(1.02);
-}
-
-/* Error in BTUCalculator */
-.validation-summary-errors {
-    background-color: #f8d7da;
-    color: #721c24; 
-    border: 1px solid #f5c6cb; 
-    border-radius: 4px; 
-    padding: 15px; 
-    margin-bottom: 20px; 
-}
-
-.validation-summary-errors h4 {
-    margin: 0 0 10px;
-    font-weight: bold; 
-}
-
-.validation-summary-errors ul {
-    list-style-type: none; 
-    padding: 0; 
-}
-
-.validation-summary-errors li {
-    text-align: center;
-    padding: 5px 0;
-}
-
-
-/* Result BTU Calculator */
-.btu-result {
-    background-color: #f9f9f9; 
-    border: 1px solid #ccc; 
-    border-radius: 5px;
-    padding: 20px; 
-    margin-top: 20px; 
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
-}
-
-.btu-result-header {
-    font-size: 1.5em; 
-    margin-bottom: 15px;
-    text-align: center; 
-}
-
-.btu-calculation-results {
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-}
-
-.btu-result-item-btu,
-.btu-result-item-kw {
-    display: flex;
-    justify-content: space-between; 
-    padding: 5px; 
-    border-bottom: 1px solid #ddd; 
-}
-
-.btu-label-btu,
-.btu-label-kw {
-    font-weight: bold; 
-}
-
-.btu-value-btu,
-.btu-value-kw {
-    color: #2e7d32; 
-    font-size: 1.2em; 
-}

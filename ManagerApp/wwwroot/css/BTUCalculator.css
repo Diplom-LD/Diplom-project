@@ -1,0 +1,802 @@
+/* ====================== BTU Calculator HTML Design  ========================== */
+.details.no-grid {
+    grid-template-columns: none;
+}
+
+.details .recentOrders .conditioner-form table tbody tr:hover {
+    background: none;
+    color: var(--black1);
+}
+
+.details .recentOrders .conditioner-form table tbody a:hover {
+    color: red;
+}
+
+.search-section {
+    display: flex;
+    justify-self: start;
+}
+
+/* btu placeholder*/
+.details .conditionersBTU {
+    min-height: 200px;
+}
+
+/* Стили для блока поиска */
+.search-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btuInput-placeholder {
+    box-sizing: border-box;
+    width: 300px;
+    padding: 12px 20px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+    .btuInput-placeholder:focus {
+        border-color: #00bafa;
+        outline: none;
+    }
+
+/* Стили для label */
+label[placeholder] {
+    position: absolute;
+    opacity: 0;
+    visibility: hidden;
+    font-size: 0.9em;
+    color: #888;
+}
+
+/* Стили для кнопки */
+button {
+    padding: 12px 24px;
+    background-color: #2a2185;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+    button:hover {
+        background-color: #4530a5;
+    }
+
+/* Чтобы placeholder исчезал при вводе текста */
+.btuInput-placeholder:valid + label[placeholder]::before {
+    transition-duration: 0.2s;
+    transform: translate(0, -2.5em) scale(0.9);
+    color: #00bafa;
+}
+
+button:active {
+    background-color: #1f186d;
+}
+
+/* BTU Calculator */
+.btu-card-header h2 {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    font-size: 24px;
+    text-align: center;
+    color: #2a2185;
+    min-height: 50px;
+}
+
+.btu-form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btu-label {
+    margin-right: 10px;
+    flex: 1;
+    font-size: 16px;
+    color: #333;
+}
+
+.btu-input,
+.btu-select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    flex: 2;
+}
+
+    .btu-input:focus,
+    .btu-select:focus {
+        border-color: #4CAF50;
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
+    }
+
+.btu-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 2.1;
+}
+
+.btu-form-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btu-btn {
+    width: 120px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+
+.btu-main-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.btu-calculate-btn,
+.btu-clear-btn,
+.btu-find-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.btu-calculate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+    .btu-calculate-btn:hover {
+        background: linear-gradient(135deg, #0056b3, #003d80);
+        transform: scale(1.05);
+    }
+
+.btu-clear-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    color: white;
+}
+
+    .btu-clear-btn:hover {
+        background: linear-gradient(135deg, #a71d2a, #7a101a);
+        transform: scale(1.05);
+    }
+
+.btu-find-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+    .btu-find-btn:hover {
+        background: linear-gradient(135deg, #3399ff, #0073e6);
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.8);
+        transform: scale(1.05);
+    }
+
+.btu-result {
+    margin-top: 20px;
+    background-color: #e6f7ff;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #b3e0ff;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.btu-result-header {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #2a2185;
+    font-weight: 600;
+}
+
+.btu-result-text {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.main-content {
+    display: flex;
+}
+
+.btu-calculator-card,
+.conditionersBTU {
+    flex: 1;
+    background-color: #f9f9f9;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 5px 20px;
+    border: 1px solid #ddd;
+    margin: 0px 10px 20px 20px;
+    overflow: hidden;
+}
+
+.conditionersBTU {
+    margin: 0px 10px 20px 10px;
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 10px;
+    min-height: 50px;
+}
+
+    .cardHeader h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+.conditioner-form table th,
+.conditioner-form table td {
+    padding: 5px;
+}
+
+.full-width-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+    .full-width-table thead {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, #0056b3, #003d80);
+        color: white;
+        font-size: 16px;
+        text-align: left;
+    }
+
+    .full-width-table th,
+    .full-width-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .full-width-table th {
+        font-weight: bold;
+    }
+
+    .full-width-table tbody tr {
+        transition: background 0.3s ease;
+    }
+
+        .full-width-table tbody tr:hover {
+            background: rgba(0, 123, 255, 0.1);
+        }
+
+        .full-width-table tbody tr:nth-child(odd) {
+            background: #f8f9fa;
+        }
+
+        .full-width-table tbody tr:nth-child(even) {
+            background: #ffffff;
+        }
+
+        .full-width-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+    .full-width-table a {
+        color: #007bff;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        font-weight: bold;
+    }
+
+        .full-width-table a:hover {
+            color: #ec3c15;
+            text-decoration: underline;
+        }
+
+/* Additional params */
+.additional-params {
+    display: none;
+    margin-top: 10px;
+}
+
+.btu-form-group input[type="checkbox"] {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+/* Error in BTUCalculator */
+.validation-summary-errors {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+    .validation-summary-errors h4 {
+        margin: 0 0 10px;
+        font-weight: bold;
+    }
+
+    .validation-summary-errors ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .validation-summary-errors li {
+        text-align: center;
+        padding: 5px 0;
+    }
+
+
+/* Result BTU Calculator */
+.btu-result-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 20px 0px 10px 0px;
+    text-align: left;
+    transition: all 0.3s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.btu-result-header {
+    font-size: 22px;
+    color: #fff;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btu-result-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.6;
+    padding: 10px;
+}
+
+    .btu-result-content p {
+        margin: 6px 0;
+        padding: 10px;
+        background: rgba(0, 123, 255, 0.1);
+        border-left: 4px solid #007bff;
+        border-radius: 6px;
+        font-weight: bold;
+        color: #004085;
+        display: flex;
+        justify-content: space-between;
+        transition: background 0.3s, transform 0.2s ease-in-out;
+    }
+
+        .btu-result-content p:hover {
+            background: rgba(0, 123, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+.btu-hint {
+    color: #004085;
+    font-style: italic;
+    font-size: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+    padding: 12px;
+    background: #cce5ff;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.15);
+    border-left: 5px solid #007bff;
+    border-right: 5px solid #007bff;
+}
+
+    .btu-hint.hidden {
+        display: none;
+    }
+
+    .btu-hint:hover {
+        background: #b8daff;
+    }
+
+#conditionersTable {
+    display: none;
+}
+
+.no-data-row {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 15px;
+}
+
+.btu-select {
+    text-align: center;
+    text-align-last: center;
+}
+
+.range-message {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: orange;
+    display: none;
+    margin-top: 10px;
+}
+
+.conditioners-message {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: red;
+}
+
+.btu-validation-errors {
+    color: red;
+    text-align: center;
+}
+
+.btu-warning {
+    color: orange;
+    text-align: center;
+}
+
+.full-width-table thead td {
+    white-space: nowrap;
+    padding: 10px;
+    position: relative;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+.sortable {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    gap: 5px;
+}
+
+.sort-icon {
+    font-size: 14px;
+    margin-left: 5px;
+    transition: color 0.3s ease, opacity 0.2s ease-in-out;
+}
+
+.sort-reset {
+    font-size: 16px;
+}
+
+#conditionersTable tbody td:nth-child(1) {
+    text-align: left;
+    padding-left: 10px; 
+}
+
+#conditionersTable tbody td:nth-child(2),
+#conditionersTable tbody td:nth-child(3),
+#conditionersTable tbody td:nth-child(4),
+#conditionersTable tbody td:nth-child(5) {
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.full-width-table th:nth-child(2),
+.full-width-table td:nth-child(2),
+.full-width-table th:nth-child(3),
+.full-width-table td:nth-child(3) {
+    width: 80px;
+    min-width: 80px;
+}
+
+
+/* =================== Responsive Design =================== */
+/* Для экранов меньше 1425px (планшеты) */
+@media screen and (max-width: 1425px) {
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btu-calculator-card,
+    .conditionersBTU {
+        width: 97%;
+        margin: 10px 0;
+    }
+
+    .btu-form-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btu-label {
+        margin-bottom: 5px;
+    }
+
+    .btu-input-group {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .btu-main-buttons {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .btu-calculate-btn,
+    .btu-clear-btn,
+    .btu-find-btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .full-width-table th,
+    .full-width-table td {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .cardHeader {
+        flex-direction: column;
+    }
+
+        .cardHeader h2 {
+            margin: 10px;
+        }
+
+    .btu-card-header h2 {
+        justify-content: center;
+    }
+
+    .btu-input, .btu-select {
+        text-align: center;
+        text-align-last: center;
+    }
+
+    .conditioner-form table th, .conditioner-form table td {
+        font-size: 10px;
+    }
+
+    .range-message {
+        font-size: 10px;
+    }
+
+    .conditioners-message {
+        font-size: 1rem;
+    }
+
+    #conditionersTable tbody td:nth-child(2),
+    #conditionersTable tbody td:nth-child(3),
+    #conditionersTable tbody td:nth-child(4),
+    #conditionersTable tbody td:nth-child(5) {
+        font-size: 0.7rem;
+        padding: 8px;
+    }
+
+    .full-width-table th:nth-child(2),
+    .full-width-table td:nth-child(2),
+    .full-width-table th:nth-child(3),
+    .full-width-table td:nth-child(3) {
+        width: 70px;
+        min-width: 70px;
+    }
+}
+
+/* Для экранов меньше 768px (мобильные устройства) */
+@media screen and (max-width: 768px) {
+    .btu-card-header h2 {
+        font-size: 20px;
+    }
+
+    .btu-form-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btu-label {
+        font-size: 14px;
+    }
+
+    .btu-input,
+    .btu-select {
+        font-size: 14px;
+        padding: 6px;
+    }
+
+    .btu-form-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btu-btn {
+        width: 100%;
+    }
+
+    .btu-calculate-btn,
+    .btu-clear-btn,
+    .btu-find-btn {
+        font-size: 14px;
+        padding: 8px 15px;
+        margin-bottom: 10px;
+    }
+
+    .btu-result-header {
+        font-size: 18px;
+    }
+
+    .btu-result-content p {
+        font-size: 14px;
+        padding: 8px;
+    }
+
+    .btu-hint {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .full-width-table {
+        font-size: 12px;
+    }
+
+        .full-width-table th,
+        .full-width-table td {
+            padding: 6px;
+        }
+
+    .cardHeader {
+        flex-direction: column;
+    }
+
+        .cardHeader h2 {
+            font-size: 18px;
+        }
+
+    #conditionersTable tbody td:nth-child(2),
+    #conditionersTable tbody td:nth-child(3),
+    #conditionersTable tbody td:nth-child(4),
+    #conditionersTable tbody td:nth-child(5) {
+        font-size: 0.65rem;
+        padding: 6px;
+    }
+
+    .full-width-table th:nth-child(2),
+    .full-width-table td:nth-child(2),
+    .full-width-table th:nth-child(3),
+    .full-width-table td:nth-child(3) {
+        width: 60px;
+        min-width: 60px;
+    }
+
+    .conditioners-message {
+        font-size: 0.9rem;
+    }
+
+    .btu-calculator-card,
+    .conditionersBTU {
+        width: 95%;
+        margin: 10px 20px;
+    }
+}
+
+/* Для экранов меньше 480px (маленькие мобильные устройства) */
+@media screen and (max-width: 480px) {
+    .btu-card-header h2 {
+        font-size: 18px;
+    }
+
+    .btu-form-group {
+        flex-direction: column;
+    }
+
+    .btu-label {
+        font-size: 12px;
+    }
+
+    .btu-input,
+    .btu-select {
+        font-size: 12px;
+        padding: 5px;
+    }
+
+    .btu-calculate-btn,
+    .btu-clear-btn,
+    .btu-find-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        margin-bottom: 10px;
+    }
+
+    .btu-result-header {
+        font-size: 16px;
+    }
+
+    .btu-result-content p {
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    .btu-hint {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .full-width-table {
+        font-size: 10px;
+    }
+
+        .full-width-table th,
+        .full-width-table td {
+            padding: 4px;
+        }
+
+    .cardHeader {
+        flex-direction: column;
+    }
+
+    .cardHeader h2 {
+        font-size: 16px;
+    }
+
+    #conditionersTable tbody td:nth-child(2),
+    #conditionersTable tbody td:nth-child(3),
+    #conditionersTable tbody td:nth-child(4),
+    #conditionersTable tbody td:nth-child(5) {
+        font-size: 0.6rem;
+        padding: 4px;
+    }
+
+    .full-width-table th:nth-child(2),
+    .full-width-table td:nth-child(2),
+    .full-width-table th:nth-child(3),
+    .full-width-table td:nth-child(3) {
+        width: 50px;
+        min-width: 80px;
+    }
+
+    .btu-calculator-card,
+    .conditionersBTU {
+        width: 100%;
+        margin: 10px 20px;
+    }
+}

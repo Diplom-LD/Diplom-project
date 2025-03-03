@@ -1,0 +1,38 @@
+Поля заявки (Order):
+- IDOrder – идентификатор заявки (генерируется сервером)
+- Order Type – тип заявки (установка, починка и т.д.)
+- WorkDuration – длительность установки
+- WorkCost – стоимость работы
+- WorkCostCurrency – валюта стоимости работы (USD, EUR, MDL)
+- Notes – заметки клиента/менеджера
+- FulfillmentStatus – статус выполнения (New, InProgress, Completed, Cancelled)
+- PaymentStatus – статус оплаты (Unpaid, Paid)
+- PaymentMethod – тип оплаты (MasterCard, Visa, Cash)
+- CreationOrderDate – дата создания заявки (назначается сервером)
+- InstallationDate – дата установки
+- AddressInstallation – адрес установки
+- ToolsAndMaterialsRequired – список инструментов и материалов, необходимых для установки
+- EquipmentCost – стоимость оборудования
+- EquipmentCostCurrency – валюта стоимости оборудования
+- TotalCost – общая стоимость
+- TotalCostCurrency – валюта общей стоимости
+
+Назначение и связи (генерация сервером):
+- AssignedTechniciansId – список идентификаторов техников, назначенных на заявку (назначается сервером по алгоритму ближайших)
+- ManagerID – идентификатор менеджера, создавшего/обрабатывающего заявку (назначается сервером)
+
+Поля об оборудовании:
+- ModelName – название устанавливаемой модели
+- ModelPrice – стоимость модели
+- Model URL - ссылка на модель на торговой площадке
+- ModelBTU – значение BTU
+- ServiceArea – площадь обслуживания (м²)
+
+
+Информация клиента (Client Info):
+- ClientID - уникальный идентификатор пользователя
+- ClientUserName - имя пользователя (login)
+- ClientFullName – полное имя клиента (ClientFirstName + ClientLastName)
+- ClientEmail – электронная почта клиента
+- ClientPhone – телефон клиента
+- ClientAddress – адрес клиента (может отличаться от AddressInstallation)

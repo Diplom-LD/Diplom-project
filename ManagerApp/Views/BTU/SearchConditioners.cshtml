@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Search Conditioners";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/SearchConditioners.css" />
+}
+
+<div class="search-container">
+    <div class="search-header">
+        <h2>Search Conditioners</h2>
+    </div>
+
+    <form id="searchConditionersForm" class="search-form">
+        <div class="form-group">
+            <select id="searchType" class="search-dropdown">
+                <option value="btu">BTU</option>
+                <option value="price">Price</option>
+                <option value="service_area">Service Area</option>
+                <option value="store">Store</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input type="number" id="searchValue" class="search-input" name="searchValue" placeholder="Enter value" required>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="search-button">Search</button>
+        </div>
+    </form>
+
+    <div class="result-container">
+        <div class="result-header">
+            <h2>Conditioners</h2>
+        </div>
+
+        <div class="result-content">
+            <div id="conditionersMessage" class="conditioners-message">
+                <strong>🔍 Search Instructions:</strong>
+                <p>⚠️ Select a search type from the dropdown menu, enter a corresponding value, and click the "Search" button to retrieve results.</p>
+                <ul>
+                    <li>❄️ <strong>BTU</strong>Enter a numeric value representing the air conditioner's cooling capacity.</li>
+                    <li>💰 <strong>Price</strong>Specify a price to find air conditioners within the selected budget.</li>
+                    <li>📏 <strong>Service Area</strong>Enter the room size to find an air conditioner suitable for that space.</li>
+                    <li>🏪 <strong>Store</strong>Choose a store to view air conditioners available at the selected retailer.</li>
+                </ul>
+            </div>
+
+            <table id="conditionersTable" class="full-width-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <td>Name</td>
+                        <td>Price</td>
+                        <td>BTU</td>
+                        <td>Service Area</td>
+                        <td>Store</td>
+                    </tr>
+                </thead>
+                <tbody id="conditionersTableBody" style="font-size: 0.8rem;"></tbody>
+            </table>
+
+            <div id="rangeMessageContainer" class="range-message">
+                ⚠️ Displaying conditioners with the closest matching values.
+            </div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/BTU/SearchConditioners.js"></script>

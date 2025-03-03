@@ -1,4 +1,4 @@
-using ManagerApp.Clients;
+п»їusing ManagerApp.Clients;
 using ManagerApp.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -6,12 +6,12 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройка защиты данных (ключи храним в контейнере)
+// РќР°СЃС‚СЂРѕР№РєР° Р·Р°С‰РёС‚С‹ РґР°РЅРЅС‹С… (РєР»СЋС‡Рё С…СЂР°РЅРёРј РІ РєРѕРЅС‚РµР№РЅРµСЂРµ)
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(@"/var/data-protection"))
     .SetApplicationName("ManagerApp");
 
-// Добавляем аутентификацию с Cookie
+// Р”РѕР±Р°РІР»СЏРµРј Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёСЋ СЃ Cookie
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -25,6 +25,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient<AuthServiceClient>();
+builder.Services.AddScoped<BTUCalcServiceClient>();
 builder.Services.AddSingleton<JsonService>();
 
 var app = builder.Build();
@@ -39,11 +40,11 @@ else
     app.UseDeveloperExceptionPage();
 }
 
-// Добавить работу с сертификатами и https
+// Р”РѕР±Р°РІРёС‚СЊ СЂР°Р±РѕС‚Сѓ СЃ СЃРµСЂС‚РёС„РёРєР°С‚Р°РјРё Рё https
 app.UseStaticFiles();
 app.UseRouting();
 
-// Добавляем аутентификацию перед авторизацией
+// Р”РѕР±Р°РІР»СЏРµРј Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёСЋ РїРµСЂРµРґ Р°РІС‚РѕСЂРёР·Р°С†РёРµР№
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

@@ -1,0 +1,302 @@
+/* ====================== Search Conditioners Page Styles ====================== */
+.search-container {
+    background-color: #f9f9f9;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border: 1px solid #ddd;
+    margin: 10px auto;
+    max-width: 98%;
+}
+
+.search-header h2 {
+    font-size: 1.5rem;
+    color: #2a2185;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.search-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.search-dropdown, .search-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: border-color 0.3s ease;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.search-dropdown {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+    .search-input:focus, .search-dropdown:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+.search-button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
+    width: 100%;
+}
+
+    .search-button:hover {
+        background: linear-gradient(135deg, #0056b3, #003d80);
+        transform: scale(1.02);
+    }
+
+.validation-errors {
+    color: red;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-top: 5px;
+}
+
+.form-group, .form-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ====================== Text Styles ====================== */
+.conditioners-message strong {
+    font-size: 1.1rem;
+    color: #5a3e08; 
+    display: block;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #d6b45d;
+    padding-bottom: 5px;
+}
+
+.conditioners-message p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.conditioners-message ul {
+    list-style: none;
+    padding-left: 0;
+    font-size: 1rem;
+}
+
+.conditioners-message li {
+    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    background-color: #fffbeb;
+    border-left: 5px solid #d6b45d;
+    font-weight: 600;
+    position: relative;
+    transition: background 0.3s ease-in-out;
+    font-size: 0.8rem;
+}
+
+    .conditioners-message li strong {
+        font-size: 1.05rem;
+        color: #432e07;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .conditioners-message li:hover {
+        background-color: #fce9a6; 
+        cursor: pointer;
+    }
+
+.conditioners-message p:last-child {
+    font-weight: bold;
+    color: #a35d00;
+    font-size: 1rem;
+    text-align: center;
+    padding-top: 8px;
+}
+
+
+/* ====================== Messages Styles ====================== */
+.range-message,
+.conditioners-message {
+    margin-top: 10px;
+    padding: 10px 15px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.conditioners-message {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+}
+
+    .conditioners-message ul {
+        list-style: none; 
+        padding-left: 0;
+    }
+
+.range-message {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.range-message.show {
+    display: block;
+}
+
+/* ====================== Result Table Styles ====================== */
+.result-container {
+    width: 100%;
+    margin-top: 15px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.result-header h2 {
+    font-size: 1.375rem;
+    color: #2a2185;
+    margin-bottom: 10px;
+}
+
+.full-width-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+}
+
+    .full-width-table thead {
+        background: linear-gradient(135deg, #0056b3, #003d80);
+        color: white;
+        font-size: 1rem;
+        text-align: left;
+    }
+
+    .full-width-table th, .full-width-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .full-width-table tbody tr:hover {
+        background: rgba(0, 123, 255, 0.1);
+    }
+
+    .full-width-table tbody tr:nth-child(odd) {
+        background: #f8f9fa;
+    }
+
+.success-message {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.error-message {
+    color: #d9534f;
+}
+
+/* ====================== Tablet Styles (max-width: 1024px) ====================== */
+@media (max-width: 1024px) {
+    .search-form {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-input, .search-button, .search-dropdown {
+        font-size: 0.9375rem;
+        padding: 10px;
+    }
+
+    .full-width-table th, .full-width-table td {
+        font-size: 0.8rem;
+        padding: 10px;
+    }
+}
+
+/* ====================== Mobile Styles (max-width: 768px) ====================== */
+@media (max-width: 768px) {
+    .search-container {
+        padding: 15px;
+        min-height: auto;
+    }
+
+    .search-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .search-input, .search-button, .search-dropdown {
+        font-size: 0.875rem;
+        padding: 8px;
+    }
+
+        .full-width-table th, .full-width-table td {
+            font-size: 0.7rem;
+            padding: 8px;
+        }
+}
+
+/* ====================== Small Mobile Styles (max-width: 480px) ====================== */
+@media (max-width: 480px) {
+    .search-container {
+        padding: 10px;
+        min-height: auto;
+    }
+
+    .search-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .search-input, .search-button, .search-dropdown {
+        font-size: 0.8125rem;
+        padding: 7px;
+    }
+
+    .full-width-table th, .full-width-table td {
+        font-size: 0.6rem;
+        padding: 6px;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+}
