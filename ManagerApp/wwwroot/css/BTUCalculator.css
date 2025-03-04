@@ -516,7 +516,7 @@ button:active {
 #conditionersTable tbody td:nth-child(3),
 #conditionersTable tbody td:nth-child(4),
 #conditionersTable tbody td:nth-child(5) {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
     text-align: center;
 }
@@ -696,7 +696,7 @@ button:active {
     #conditionersTable tbody td:nth-child(3),
     #conditionersTable tbody td:nth-child(4),
     #conditionersTable tbody td:nth-child(5) {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         padding: 6px;
     }
 

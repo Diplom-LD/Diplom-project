@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OrderService.Config;
+using OrderService.Data.Warehouses;
+using OrderService.Repositories.Warehouses;
+using OrderService.Services.Warehouses;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Подключаем PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
 
 // JWT настройки
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -22,22 +21,40 @@ if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.Is
 }
 
 // Настраиваем аутентификацию с JWT
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-        };
-    });
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(options =>
+//    {
+//        options.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuer = true,
+//            ValidateAudience = true,
+//            ValidateLifetime = true,
+//            ValidateIssuerSigningKey = true,
+//            ValidIssuer = jwtIssuer,
+//            ValidAudience = jwtAudience,
+//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+//        };
+//    });
+//builder.Services.AddAuthorization();
 
-builder.Services.AddAuthorization();
+
+// MongoDBContext
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoDB"));
+builder.Services.AddSingleton<WarehouseMongoContext>();
+
+// WarehouseRepo
+builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IEquipmentStockRepository, EquipmentStockRepository>();
+builder.Services.AddScoped<IMaterialsStockRepository, MaterialsStockRepository>();
+builder.Services.AddScoped<IToolsStockRepository, ToolsStockRepository>();
+
+// WarehouseService
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IEquipmentStockService, EquipmentStockService>();
+builder.Services.AddScoped<IMaterialsStockService, MaterialsStockService>();
+builder.Services.AddScoped<IToolsStockService, ToolsStockService>();
+
+
 
 // Добавляем контроллеры и Swagger
 builder.Services.AddControllers();
@@ -83,8 +100,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Подключаем JWT-аутентификацию и авторизацию
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
 app.MapControllers();
 

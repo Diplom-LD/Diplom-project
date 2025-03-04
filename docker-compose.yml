@@ -34,6 +34,24 @@ services:
     networks:
       - app-network  
 
+  order-service:  
+    build:
+      context: .
+      dockerfile: OrderService/Dockerfile
+    container_name: order-service
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
+      - AuthService__BaseUrl=http://auth-service:8080  
+    depends_on:
+      - postgre
+      - auth-service
+    restart: always
+    networks:
+      - app-network  
+
   manager-app:  
     build:
       context: .
@@ -44,10 +62,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - AuthService__BaseUrl=http://auth-service:8080  
+      - OrderService__BaseUrl=http://order-service:8080  
       - DOTNET_USE_POLLING_FILE_WATCHER=1
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
     depends_on:
       - auth-service
+      - order-service
     restart: always
     networks:
       - app-network  
