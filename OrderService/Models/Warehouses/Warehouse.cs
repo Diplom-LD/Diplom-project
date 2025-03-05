@@ -9,8 +9,8 @@ namespace OrderService.Models.Warehouses
     public partial class Warehouse
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string ID { get; set; } = ObjectId.GenerateNewId().ToString();
+        [BsonRepresentation(BsonType.String)]
+        public string ID { get; set; } = Guid.NewGuid().ToString(); 
 
         [BsonElement("name")]
         [Required(ErrorMessage = "Название склада обязательно.")]

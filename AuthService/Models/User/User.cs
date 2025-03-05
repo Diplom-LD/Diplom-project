@@ -5,30 +5,22 @@ namespace AuthService.Models.User
     public class User : IdentityUser
     {
         // Custom fields
-        public string Role { get; set; } = null!; // Role of the user (Client, Manager, Worker)
-        public string? FirstName { get; set; } // First name of the user
-        public string? LastName { get; set; } // Last name of the user
-        public string? Phone { get; set; } // Phone number (inherited from IdentityUser)
-        public string? Address { get; set; } // Address of the user
+        public string Role { get; set; } = null!; // Client, Manager, Worker
+        public string? FirstName { get; set; } // First name
+        public string? LastName { get; set; } // Last name
+        public string? Phone { get; set; } // Phone number
+        public string? Address { get; set; } // Address (converted to coordinates)
 
-        // Если разные устройства добавлять флаг "isRevoked" для разлогиневания с любых устройств
+        // Geo
+        public double? Latitude { get; set; } // Latitude
+        public double? Longitude { get; set; } // Longitude
+
+        // To exit from all devices
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiry { get; set; }
     }
 
-    // IdentityUser already includes:
-    // - Id (GUID) -> Unique user identifier
-    // - UserName -> Login name
-    // - Email -> User's email
-    // - PhoneNumber -> User's phone number
-    // - PasswordHash -> Hashed password
-    // - SecurityStamp -> Security token for authentication
-    // - ConcurrencyStamp -> Used for optimistic concurrency checks
-    // - LockoutEnabled, AccessFailedCount, LockoutEnd -> Account lockout settings
-
     public class Client : User { }
-
     public class Manager : User { }
-
     public class Worker : User { }
 }

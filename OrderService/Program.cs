@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using OrderService.Config;
 using OrderService.Data.Warehouses;
 using OrderService.Repositories.Warehouses;
+using OrderService.SeedData.Warehouses;
 using OrderService.Services.Warehouses;
 using System.Text;
 
@@ -55,6 +56,9 @@ builder.Services.AddScoped<IMaterialsStockService, MaterialsStockService>();
 builder.Services.AddScoped<IToolsStockService, ToolsStockService>();
 
 
+// TestData
+builder.Services.AddSingleton<WarehouseSeeder>();
+
 
 // Добавляем контроллеры и Swagger
 builder.Services.AddControllers();
@@ -89,6 +93,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// TestData seed
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<WarehouseSeeder>();
+    await seeder.SeedAsync();
+}
 
 // Если в режиме разработки, то Swagger включён
 if (app.Environment.IsDevelopment())

@@ -4,15 +4,14 @@ using AuthService.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
+using AuthService.Services;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AuthService.Controllers
 {
     [Route("auth/sign-up")]
     [ApiController]
-    public partial class RegisterController(AuthDbContext _dbContext) : ControllerBase
+    public partial class RegisterController(AuthDbContext _dbContext, GeoCodingService _geoCodingService) : ControllerBase
     {
         private readonly PasswordHasher<User> _passwordHasher = new();
 
@@ -57,10 +56,22 @@ namespace AuthService.Controllers
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
+            if (!string.IsNullOrWhiteSpace(request.Address))
+            {
+                var coordinates = await _geoCodingService.GetCoordinatesAsync(request.Address);
+
+                if (coordinates.HasValue) 
+                {
+                    user.Latitude = coordinates.Value.Latitude;
+                    user.Longitude = coordinates.Value.Longitude;
+                }
+            }
+
+
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            return Ok(new { Message = $"{user.Role} registered successfully" });
+            return Ok(new { Message = $"{user.Role} registered successfully", user.Latitude, user.Longitude });
         }
 
         private async Task<string?> ValidateRegistrationRequest(RegisterRequest request)
@@ -72,23 +83,28 @@ namespace AuthService.Controllers
                 return "User with this email, login, or phone number already exists.";
 
             string role = request.Role.Trim().ToLower();
-            if (role != "manager" && role != "worker" && role != "client")
+            if (role is not ("manager" or "worker" or "client"))
                 return "Invalid role. Allowed roles: manager, worker, client.";
 
-            if (role == "manager")
+            if (role == "manager" || role == "worker")
             {
                 if (string.IsNullOrWhiteSpace(request.RegistrationCode))
-                    return "Manager registration requires a valid registration code.";
+                    return $"{role[0].ToString().ToUpper() + role[1..]} registration requires a valid registration code.";
 
-                var codeExists = await _dbContext.ManagerRegistrationCodes
-                    .AnyAsync(c => c.Code == request.RegistrationCode);
+                bool codeExists = role switch
+                {
+                    "manager" => await _dbContext.ManagerRegistrationCodes.AnyAsync(c => c.Code == request.RegistrationCode),
+                    "worker" => await _dbContext.WorkerRegistrationCodes.AnyAsync(c => c.Code == request.RegistrationCode),
+                    _ => false
+                };
 
                 if (!codeExists)
-                    return "Invalid registration code.";
+                    return $"Invalid {role} registration code.";
             }
 
             return null;
         }
+
 
         private async Task<User?> FindUserAsync(string email, string login, string? phone)
         {
@@ -98,6 +114,5 @@ namespace AuthService.Controllers
 
         [GeneratedRegex("^[a-zA-Z0-9_-]{4,20}$")]
         private static partial Regex LoginRegex();
-
     }
 }

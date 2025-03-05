@@ -1,5 +1,6 @@
 ﻿using AuthService.Data;
 using AuthService.Models.User;
+using AuthService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ namespace AuthService.Controllers
     [Route("auth/account")]
     [ApiController]
     [Authorize]
-    public class AccountController(AuthDbContext _dbContext, ILogger<AccountController> _logger) : ControllerBase
+    public class AccountController(AuthDbContext _dbContext, ILogger<AccountController> _logger, GeoCodingService _geoCodingService) : ControllerBase
     {
         [HttpGet("my-profile")]
         public async Task<IActionResult> GetMyProfile()
@@ -41,7 +42,9 @@ namespace AuthService.Controllers
                     u.FirstName,
                     u.LastName,
                     u.Phone,
-                    u.Address
+                    u.Address,
+                    u.Latitude,  
+                    u.Longitude  
                 })
                 .FirstOrDefaultAsync();
 
@@ -74,7 +77,9 @@ namespace AuthService.Controllers
                     u.FirstName,
                     u.LastName,
                     u.Phone,
-                    u.Address
+                    u.Address,
+                    u.Latitude,  
+                    u.Longitude 
                 })
                 .FirstOrDefaultAsync();
 
@@ -110,13 +115,52 @@ namespace AuthService.Controllers
 
             _logger.LogInformation("User {UserId} is updating their profile", userId);
 
-            if (request.FirstName != null) user.FirstName = request.FirstName.Trim();
-            if (request.LastName != null) user.LastName = request.LastName.Trim();
-            if (request.Phone != null) user.Phone = request.Phone.Trim();
-            if (request.Address != null) user.Address = request.Address.Trim();
+            bool isUpdated = false; 
+            bool isAddressUpdated = !string.IsNullOrWhiteSpace(request.Address) && request.Address.Trim() != user.Address;
+
+            if (!string.IsNullOrWhiteSpace(request.FirstName) && request.FirstName.Trim() != user.FirstName)
+            {
+                user.FirstName = request.FirstName.Trim();
+                isUpdated = true;
+            }
+            if (!string.IsNullOrWhiteSpace(request.LastName) && request.LastName.Trim() != user.LastName)
+            {
+                user.LastName = request.LastName.Trim();
+                isUpdated = true;
+            }
+            if (!string.IsNullOrWhiteSpace(request.Phone) && request.Phone.Trim() != user.Phone)
+            {
+                user.Phone = request.Phone.Trim();
+                isUpdated = true;
+            }
+            if (!string.IsNullOrWhiteSpace(request.Address) && request.Address.Trim() != user.Address)
+            {
+                user.Address = request.Address.Trim();
+                isUpdated = true;
+            }
+
+            if (isAddressUpdated && !string.IsNullOrWhiteSpace(user.Address))
+            {
+                var coordinates = await _geoCodingService.GetBestCoordinateAsync(user.Address);
+                if (coordinates.HasValue)
+                {
+                    user.Latitude = coordinates.Value.Latitude;
+                    user.Longitude = coordinates.Value.Longitude;
+                    _logger.LogInformation("Updated location for User {UserId}: {Latitude}, {Longitude}", userId, user.Latitude, user.Longitude);
+                    isUpdated = true;
+                }
+                else
+                {
+                    _logger.LogWarning("GeoCodingService: Unable to retrieve coordinates for User {UserId} with Address {Address}", userId, user.Address);
+                }
+            }
+
+            if (!isUpdated)
+            {
+                return Ok(new { message = "No changes detected" });
+            }
 
             await _dbContext.SaveChangesAsync();
-
             return Ok(new { message = "Profile updated successfully" });
         }
 

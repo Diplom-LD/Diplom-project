@@ -8,11 +8,11 @@ namespace OrderService.Models.Warehouses
     public class EquipmentStock
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string ID { get; set; } = ObjectId.GenerateNewId().ToString();
+        [BsonRepresentation(BsonType.String)] 
+        public string ID { get; set; } = Guid.NewGuid().ToString();
 
         [BsonElement("warehouseId")]
-        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonRepresentation(BsonType.String)] 
         [Required(ErrorMessage = "ID склада обязателен.")]
         public string WarehouseId { get; set; } = null!;
 
@@ -41,8 +41,8 @@ namespace OrderService.Models.Warehouses
 
         public EquipmentStock(string warehouseId, string modelName, int btu, int serviceArea, decimal price, int quantity)
         {
-            if (string.IsNullOrWhiteSpace(warehouseId) || !ObjectId.TryParse(warehouseId, out _))
-                throw new ArgumentException("Некорректный ID склада.", nameof(warehouseId));
+            if (string.IsNullOrWhiteSpace(warehouseId))
+                throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouseId));
 
             if (string.IsNullOrWhiteSpace(modelName) || modelName.Length > 100)
                 throw new ArgumentException("Название модели не может быть пустым или длиннее 100 символов.", nameof(modelName));

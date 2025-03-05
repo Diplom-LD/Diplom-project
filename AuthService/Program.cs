@@ -7,22 +7,20 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AuthService.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using AuthService.SeedData;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Получаем строку подключения из appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 
 // Подключаем PostgreSQL
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Добавляем Identity
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AuthDbContext>()
     .AddDefaultTokenProviders();
 
-// Настраиваем аутентификацию через JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
 {
@@ -65,16 +63,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddHttpClient<GeoCodingService>();
+builder.Services.AddScoped<AuthSeeder>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Добавляем CORS (если API вызывается с других доменов)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -88,30 +85,35 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Применяем миграции (если есть)
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
-
     try
     {
         var dbContext = services.GetRequiredService<AuthDbContext>();
+
         dbContext.Database.Migrate();
+
+        if (dbContext.Database.CanConnect() && !app.Environment.IsDevelopment())
+        {
+            var seeder = services.GetRequiredService<AuthSeeder>();
+            await seeder.SeedAsync();
+        }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Ошибка при применении миграций.");
+        logger.LogError(ex, "Ошибка при сидировании данных.");
     }
 }
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Подключаем CORS
 app.UseCors("AllowAll");
 
-// Добавляем Middleware для аутентификации и авторизации
 app.UseAuthentication();
 app.UseAuthorization();
 

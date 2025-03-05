@@ -13,6 +13,7 @@ namespace AuthService.Data
         public DbSet<Worker> Workers { get; set; } = null!;
 
         public DbSet<ManagerRegistrationCodes> ManagerRegistrationCodes { get; set; } = null!;
+        public DbSet<WorkerRegistrationCodes> WorkerRegistrationCodes { get; set; } = null!; 
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -37,6 +38,14 @@ namespace AuthService.Data
                 new ManagerRegistrationCodes { Code = "mng303" },
                 new ManagerRegistrationCodes { Code = "mng304" },
                 new ManagerRegistrationCodes { Code = "mng305" }
+            );
+
+            builder.Entity<WorkerRegistrationCodes>().HasData( 
+                new WorkerRegistrationCodes { Code = "wrk101" },
+                new WorkerRegistrationCodes { Code = "wrk102" },
+                new WorkerRegistrationCodes { Code = "wrk103" },
+                new WorkerRegistrationCodes { Code = "wrk104" },
+                new WorkerRegistrationCodes { Code = "wrk105" }
             );
         }
     }

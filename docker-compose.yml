@@ -34,7 +34,7 @@ services:
     networks:
       - app-network  
 
-  order-service:  
+  order-service:
     build:
       context: .
       dockerfile: OrderService/Dockerfile
@@ -45,9 +45,12 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
       - AuthService__BaseUrl=http://auth-service:8080  
+      - MongoDB__ConnectionString=mongodb://mongo:27017
+      - MongoDB__DatabaseName=warehouse_db
     depends_on:
       - postgre
       - auth-service
+      - mongo
     restart: always
     networks:
       - app-network  
