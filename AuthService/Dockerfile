@@ -12,7 +12,14 @@ COPY . .
 WORKDIR "/src/AuthService"
 RUN dotnet publish -c Release -o /app/publish
 
+FROM build AS migrations
+WORKDIR /src/AuthService
+RUN dotnet tool install --global dotnet-ef \
+    && export PATH="$PATH:/root/.dotnet/tools" \
+    && dotnet ef database update
+
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+
 ENTRYPOINT ["dotnet", "AuthService.dll"]

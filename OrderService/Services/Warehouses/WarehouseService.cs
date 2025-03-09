@@ -1,81 +1,123 @@
 ﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using OrderService.Models.Warehouses;
 using OrderService.Repositories.Warehouses;
+using OrderService.Services.GeoLocation;
 
 namespace OrderService.Services.Warehouses
 {
-    public partial class WarehouseService(IWarehouseRepository _repository) : IWarehouseService
+    public partial class WarehouseService(IStockRepository<Warehouse> repository, IGeoCodingService geoCodingService, ILogger<WarehouseService> logger)
+        : BaseStockService<Warehouse>(repository, logger)
     {
         [GeneratedRegex(@"^\+?[1-9]\d{7,14}$")]
         private static partial Regex PhoneRegex();
 
-        public async Task<List<Warehouse>> GetAllAsync() => await _repository.GetAllAsync();
+        private readonly IGeoCodingService _geoCodingService = geoCodingService;
 
-        public async Task<Warehouse?> GetByIdAsync(string id) => await _repository.GetByIdAsync(id);
-
-        public async Task CreateAsync(Warehouse warehouse)
-        {
-            ValidateWarehouse(warehouse);
-
-            if (await _repository.GetByNameAsync(warehouse.Name) is not null)
-                throw new ArgumentException($"Склад с названием '{warehouse.Name}' уже существует.");
-
-            await _repository.CreateAsync(warehouse);
-        }
-
-        public async Task<bool> UpdateAsync(Warehouse warehouse)
-        {
-            ValidateWarehouse(warehouse);
-
-            if (string.IsNullOrWhiteSpace(warehouse.ID))
-                throw new ArgumentException("ID склада не может быть пустым.");
-
-            if (await _repository.GetByIdAsync(warehouse.ID) is null)
-                throw new ArgumentException($"Склад с ID {warehouse.ID} не найден.");
-
-            var duplicate = await _repository.GetByNameAsync(warehouse.Name);
-            if (duplicate is not null && duplicate.ID != warehouse.ID)
-                throw new ArgumentException($"Склад с названием '{warehouse.Name}' уже существует.");
-
-            return await _repository.UpdateAsync(warehouse);
-        }
-
-        public async Task<bool> DeleteAsync(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("ID склада не может быть пустым.");
-
-            if (await _repository.GetByIdAsync(id) is null)
-                return false;
-
-            return await _repository.DeleteAsync(id);
-        }
-
-        private static void ValidateWarehouse(Warehouse warehouse)
+        /// <summary>
+        /// Валидация склада перед сохранением.
+        /// </summary>
+        protected override void ValidateStockItem(Warehouse warehouse)
         {
             if (string.IsNullOrWhiteSpace(warehouse.Name))
-                throw new ArgumentException("Название склада не может быть пустым.");
+                throw new ArgumentException("Название склада не может быть пустым.", nameof(warehouse));
 
             if (warehouse.Name.Length > 100)
-                throw new ArgumentException("Название склада не может превышать 100 символов.");
+                throw new ArgumentException("Название склада не может превышать 100 символов.", nameof(warehouse));
 
-            if (string.IsNullOrWhiteSpace(warehouse.Address))
-                throw new ArgumentException("Адрес склада не может быть пустым.");
+            if (string.IsNullOrWhiteSpace(warehouse.Address) || warehouse.Address.Length > 200)
+                throw new ArgumentException("Адрес склада не может быть пустым и не должен превышать 200 символов.", nameof(warehouse));
 
-            if (warehouse.Address.Length > 200)
-                throw new ArgumentException("Адрес склада не может превышать 200 символов.");
+            if (string.IsNullOrWhiteSpace(warehouse.ContactPerson) || warehouse.ContactPerson.Length > 50)
+                throw new ArgumentException("Контактное лицо не может быть пустым и должно быть не длиннее 50 символов.", nameof(warehouse));
 
-            if (string.IsNullOrWhiteSpace(warehouse.ContactPerson))
-                throw new ArgumentException("Контактное лицо не может быть пустым.");
+            if (string.IsNullOrWhiteSpace(warehouse.PhoneNumber) || !PhoneRegex().IsMatch(warehouse.PhoneNumber))
+                throw new ArgumentException("Некорректный формат номера телефона.", nameof(warehouse));
+        }
 
-            if (warehouse.ContactPerson.Length > 50)
-                throw new ArgumentException("Имя контактного лица не может превышать 50 символов.");
+        /// <summary>
+        /// Добавление нового склада с геокодингом.
+        /// </summary>
+        public override async Task<string> AddAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
+        {
+            ValidateStockItem(warehouse);
 
-            if (string.IsNullOrWhiteSpace(warehouse.PhoneNumber))
-                throw new ArgumentException("Телефон склада не может быть пустым.");
+            if (await _repository.GetByNameAsync(warehouse.Name, cancellationToken) is not null)
+                throw new ArgumentException($"Склад с названием '{warehouse.Name}' уже существует.", nameof(warehouse));
 
-            if (!PhoneRegex().IsMatch(warehouse.PhoneNumber))
-                throw new ArgumentException("Некорректный формат номера телефона.");
+            var coordinates = await _geoCodingService.GetBestCoordinateAsync(warehouse.Address);
+
+            if (coordinates is not null)
+            {
+                var (latitude, longitude, _) = coordinates.Value;
+                warehouse.Latitude = latitude;
+                warehouse.Longitude = longitude;
+            }
+            else
+            {
+                throw new ArgumentException($"Не удалось получить координаты для адреса: {warehouse.Address}", nameof(warehouse));
+            }
+
+            var id = await _repository.AddAsync(warehouse, cancellationToken);
+            LogAction("Добавлен новый склад", warehouse, id);
+
+            return id;
+        }
+
+        /// <summary>
+        /// Обновление склада с учетом возможного изменения адреса.
+        /// </summary>
+        public override async Task<bool> UpdateAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
+        {
+            ValidateStockItem(warehouse);
+
+            if (string.IsNullOrWhiteSpace(warehouse.ID))
+                throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouse));
+
+            var existingWarehouse = await _repository.GetByIdAsync(warehouse.ID, cancellationToken)
+                ?? throw new ArgumentException($"Склад с ID {warehouse.ID} не найден.", nameof(warehouse));
+
+            if (warehouse.Name != existingWarehouse.Name &&
+                await _repository.GetByNameAsync(warehouse.Name, cancellationToken) is not null)
+            {
+                throw new ArgumentException($"Склад с названием '{warehouse.Name}' уже существует.", nameof(warehouse));
+            }
+
+            if (!string.Equals(warehouse.Address, existingWarehouse.Address, StringComparison.OrdinalIgnoreCase))
+            {
+                var coordinates = await _geoCodingService.GetBestCoordinateAsync(warehouse.Address);
+
+                if (coordinates is not null)
+                {
+                    var (latitude, longitude, _) = coordinates.Value;
+                    warehouse.Latitude = latitude;
+                    warehouse.Longitude = longitude;
+                }
+                else
+                {
+                    throw new ArgumentException($"Не удалось получить координаты для адреса: {warehouse.Address}", nameof(warehouse));
+                }
+            }
+            else
+            {
+                warehouse.Latitude = existingWarehouse.Latitude;
+                warehouse.Longitude = existingWarehouse.Longitude;
+            }
+
+            var updated = await _repository.UpdateAsync(warehouse, cancellationToken);
+            if (updated)
+                LogAction("Обновлен склад", warehouse, warehouse.ID);
+
+            return updated;
+        }
+
+        /// <summary>
+        /// Логирование действий с складами.
+        /// </summary>
+        protected override void LogAction(string action, Warehouse? item, string id)
+        {
+            _logger.LogInformation("{Action}: {WarehouseName} (ID: {Id})", action,
+                item?.Name ?? "Неизвестный склад", id);
         }
     }
 }

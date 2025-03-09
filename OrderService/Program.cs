@@ -1,16 +1,22 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using OrderService.Config;
 using OrderService.Data.Warehouses;
+using OrderService.Repositories.Technicians;
 using OrderService.Repositories.Warehouses;
 using OrderService.SeedData.Warehouses;
+using OrderService.Services.GeoLocation;
+using OrderService.Services.RabbitMq;
 using OrderService.Services.Warehouses;
+using StackExchange.Redis;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using MongoDB.Driver;
+using OrderService.Models.Warehouses;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// JWT настройки
+// Настройки JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"];
 var jwtIssuer = jwtSettings["Issuer"];
@@ -22,68 +28,87 @@ if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.Is
 }
 
 // Настраиваем аутентификацию с JWT
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//    .AddJwtBearer(options =>
-//    {
-//        options.TokenValidationParameters = new TokenValidationParameters
-//        {
-//            ValidateIssuer = true,
-//            ValidateAudience = true,
-//            ValidateLifetime = true,
-//            ValidateIssuerSigningKey = true,
-//            ValidIssuer = jwtIssuer,
-//            ValidAudience = jwtAudience,
-//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-//        };
-//    });
-//builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+builder.Services.AddAuthorization();
 
-
-// MongoDBContext
+// Настройка MongoDB
 builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoDB"));
+builder.Services.AddSingleton(sp =>
+{
+    var settings = builder.Configuration.GetSection("MongoDB").Get<MongoSettings>();
+    if (settings == null || string.IsNullOrEmpty(settings.ConnectionString) || string.IsNullOrEmpty(settings.DatabaseName))
+    {
+        throw new InvalidOperationException("MongoDB параметры не заданы в конфигурации.");
+    }
+    var client = new MongoClient(settings.ConnectionString);
+    return client.GetDatabase(settings.DatabaseName);
+});
 builder.Services.AddSingleton<WarehouseMongoContext>();
 
-// WarehouseRepo
-builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
-builder.Services.AddScoped<IEquipmentStockRepository, EquipmentStockRepository>();
-builder.Services.AddScoped<IMaterialsStockRepository, MaterialsStockRepository>();
-builder.Services.AddScoped<IToolsStockRepository, ToolsStockRepository>();
+// Настройка Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect("redis:6379"));
+builder.Services.AddSingleton<TechnicianRedisRepository>();
 
-// WarehouseService
-builder.Services.AddScoped<IWarehouseService, WarehouseService>();
-builder.Services.AddScoped<IEquipmentStockService, EquipmentStockService>();
-builder.Services.AddScoped<IMaterialsStockService, MaterialsStockService>();
-builder.Services.AddScoped<IToolsStockService, ToolsStockService>();
+// Подключаем RabbitMQ Consumer
+builder.Services.AddHostedService<RabbitMqConsumerService>();
 
+// Регистрация конкретных репозиториев вместо абстрактного BaseMongoRepository<T>
+builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
+builder.Services.AddScoped<IStockRepository<EquipmentStock>, EquipmentStockRepository>();
+builder.Services.AddScoped<IStockRepository<MaterialsStock>, MaterialsStockRepository>();
+builder.Services.AddScoped<IStockRepository<ToolsStock>, ToolsStockRepository>();
 
-// TestData
+// Сервисы складов
+builder.Services.AddScoped<WarehouseService>();
+builder.Services.AddScoped<EquipmentStockService>();
+builder.Services.AddScoped<MaterialsStockService>();
+builder.Services.AddScoped<ToolsStockService>();
+
+// Геолокация и поиск ближайших объектов
+builder.Services.AddHttpClient<IGeoCodingService, GeoCodingService>();
+builder.Services.AddScoped<NearestLocationFinderService>();
+
+// Инициализация тестовых данных
 builder.Services.AddSingleton<WarehouseSeeder>();
-
 
 // Добавляем контроллеры и Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Настроим Swagger, чтобы можно было вводить JWT-токен
+// Настройка Swagger для JWT-аутентификации
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Введите JWT токен в формате: Bearer {токен}",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
@@ -94,14 +119,15 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// TestData seed
+// Инициализация тестовых данных
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<WarehouseSeeder>();
-    await seeder.SeedAsync();
+    var serviceProvider = scope.ServiceProvider;
+    var seeder = serviceProvider.GetRequiredService<WarehouseSeeder>();
+    await seeder.SeedAsync(serviceProvider);
 }
 
-// Если в режиме разработки, то Swagger включён
+// Включаем Swagger в режиме разработки
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -111,8 +137,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Подключаем JWT-аутентификацию и авторизацию
-//app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

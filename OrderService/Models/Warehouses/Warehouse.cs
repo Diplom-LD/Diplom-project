@@ -10,7 +10,7 @@ namespace OrderService.Models.Warehouses
     {
         [BsonId]
         [BsonRepresentation(BsonType.String)]
-        public string ID { get; set; } = Guid.NewGuid().ToString(); 
+        public string ID { get; set; } = Guid.NewGuid().ToString();
 
         [BsonElement("name")]
         [Required(ErrorMessage = "Название склада обязательно.")]
@@ -35,9 +35,15 @@ namespace OrderService.Models.Warehouses
         [BsonElement("lastInventoryCheck")]
         public DateTime LastInventoryCheck { get; set; } = DateTime.UtcNow;
 
+        [BsonElement("latitude")]
+        public double Latitude { get; set; }
+
+        [BsonElement("longitude")]
+        public double Longitude { get; set; }
+
         public Warehouse() { }
 
-        public Warehouse(string name, string address, string contactPerson, string phoneNumber)
+        public Warehouse(string name, string address, string contactPerson, string phoneNumber, double latitude, double longitude)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Length > 100)
                 throw new ArgumentException("Название склада не может быть пустым или длиннее 100 символов.", nameof(name));
@@ -55,6 +61,8 @@ namespace OrderService.Models.Warehouses
             Address = address;
             ContactPerson = contactPerson;
             PhoneNumber = phoneNumber;
+            Latitude = latitude;
+            Longitude = longitude;
             LastInventoryCheck = DateTime.UtcNow;
         }
 

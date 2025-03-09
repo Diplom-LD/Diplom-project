@@ -11,25 +11,17 @@ namespace AuthService.Controllers
 {
     [Route("auth/sign-up")]
     [ApiController]
-    public partial class RegisterController(AuthDbContext _dbContext, GeoCodingService _geoCodingService) : ControllerBase
+    public partial class RegisterController(AuthDbContext _dbContext, GeoCodingService _geoCodingService, RabbitMqProducerService _rabbitMqProducer) : ControllerBase
     {
         private readonly PasswordHasher<User> _passwordHasher = new();
 
         [HttpPost]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var validationError = await ValidateRegistrationRequest(request);
-            if (validationError != null)
-                return BadRequest(new { message = validationError });
-
-            return await ProcessRegistration(request);
-        }
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request) => await HandleRegistration(request);
 
         [HttpPost("form")]
-        public async Task<IActionResult> RegisterForm([FromForm] RegisterRequest request)
+        public async Task<IActionResult> RegisterForm([FromForm] RegisterRequest request) => await HandleRegistration(request);
+
+        private async Task<IActionResult> HandleRegistration(RegisterRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -43,14 +35,14 @@ namespace AuthService.Controllers
 
         private async Task<IActionResult> ProcessRegistration(RegisterRequest request)
         {
-            User user = new()
+            var user = new User
             {
                 UserName = request.Login.Trim(),
                 Email = request.Email.Trim(),
-                Role = request.Role.Trim().ToLower(),
+                Role = request.Role?.Trim().ToLowerInvariant() ?? string.Empty,
                 FirstName = request.FirstName?.Trim(),
                 LastName = request.LastName?.Trim(),
-                Phone = request.Phone?.Trim(),
+                PhoneNumber = request.Phone?.Trim(),
                 Address = request.Address?.Trim()
             };
 
@@ -59,17 +51,21 @@ namespace AuthService.Controllers
             if (!string.IsNullOrWhiteSpace(request.Address))
             {
                 var coordinates = await _geoCodingService.GetCoordinatesAsync(request.Address);
-
-                if (coordinates.HasValue) 
+                if (coordinates.HasValue)
                 {
                     user.Latitude = coordinates.Value.Latitude;
                     user.Longitude = coordinates.Value.Longitude;
                 }
             }
 
-
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
+
+            if (user.Role == "worker")
+            {
+                _rabbitMqProducer.PublishTechnicianUpdate([user]);
+                Console.WriteLine($"📤 [RabbitMQ] Новый рабочий отправлен: {user.Id} ({user.FirstName} {user.LastName})");
+            }
 
             return Ok(new { Message = $"{user.Role} registered successfully", user.Latitude, user.Longitude });
         }
@@ -82,34 +78,37 @@ namespace AuthService.Controllers
             if (await FindUserAsync(request.Email, request.Login, request.Phone) != null)
                 return "User with this email, login, or phone number already exists.";
 
-            string role = request.Role.Trim().ToLower();
+            string role = request.Role?.Trim().ToLowerInvariant() ?? string.Empty;
             if (role is not ("manager" or "worker" or "client"))
                 return "Invalid role. Allowed roles: manager, worker, client.";
 
-            if (role == "manager" || role == "worker")
-            {
-                if (string.IsNullOrWhiteSpace(request.RegistrationCode))
-                    return $"{role[0].ToString().ToUpper() + role[1..]} registration requires a valid registration code.";
+            if (role is "manager" or "worker" && string.IsNullOrWhiteSpace(request.RegistrationCode))
+                return $"{char.ToUpper(role[0]) + role[1..]} registration requires a valid registration code.";
 
-                bool codeExists = role switch
-                {
-                    "manager" => await _dbContext.ManagerRegistrationCodes.AnyAsync(c => c.Code == request.RegistrationCode),
-                    "worker" => await _dbContext.WorkerRegistrationCodes.AnyAsync(c => c.Code == request.RegistrationCode),
-                    _ => false
-                };
+            if (role == "manager")
+            {
+                bool codeExists = await _dbContext.ManagerRegistrationCodes
+                    .AnyAsync(c => c.Code == request.RegistrationCode);
 
                 if (!codeExists)
-                    return $"Invalid {role} registration code.";
+                    return "Invalid manager registration code.";
+            }
+            else if (role == "worker")
+            {
+                bool codeExists = await _dbContext.WorkerRegistrationCodes
+                    .AnyAsync(c => c.Code == request.RegistrationCode);
+
+                if (!codeExists)
+                    return "Invalid worker registration code.";
             }
 
             return null;
         }
 
-
         private async Task<User?> FindUserAsync(string email, string login, string? phone)
         {
             return await _dbContext.Users
-                .FirstOrDefaultAsync(u => u.Email == email || u.UserName == login || (phone != null && u.Phone == phone));
+                .FirstOrDefaultAsync(u => u.Email == email || u.UserName == login || (phone != null && u.PhoneNumber == phone));
         }
 
         [GeneratedRegex("^[a-zA-Z0-9_-]{4,20}$")]

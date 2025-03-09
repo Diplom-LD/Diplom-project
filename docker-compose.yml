@@ -16,7 +16,25 @@ services:
       - postgre_data:/var/lib/postgresql/data
     restart: always
     networks:
-      - app-network  
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
 
   auth-service:  
     build:
@@ -28,8 +46,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__User=guest
+      - RabbitMQ__Password=guest
     depends_on:
       - postgre
+      - rabbitmq
     restart: always
     networks:
       - app-network  
@@ -47,10 +70,17 @@ services:
       - AuthService__BaseUrl=http://auth-service:8080  
       - MongoDB__ConnectionString=mongodb://mongo:27017
       - MongoDB__DatabaseName=warehouse_db
+      - Redis__ConnectionString=redis:6379  
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__User=guest
+      - RabbitMQ__Password=guest
     depends_on:
       - postgre
       - auth-service
       - mongo
+      - redis
+      - rabbitmq
     restart: always
     networks:
       - app-network  
@@ -119,7 +149,20 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    command: redis-server --appendonly yes --save 60 100
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
 volumes:
   postgre_data:
   data_protection:
   mongo_data:
+  redis_data:

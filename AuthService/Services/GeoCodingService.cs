@@ -30,18 +30,6 @@ namespace AuthService.Services
             }
             return null;
         }
-
-        //public async Task<List<(double Latitude, double Longitude, string DisplayName)>> GetAllCoordinatesAsync(string address)
-        //{
-        //    var allResults = new List<(double Latitude, double Longitude, string DisplayName)>();
-        //    foreach (var lang in Languages)
-        //    {
-        //        var results = await FetchAllCoordinatesAsync(address, lang);
-        //        if (results.Count > 0) allResults.AddRange(results);
-        //    }
-        //    return allResults;
-        //}
-
         public async Task<(double Latitude, double Longitude, string DisplayName)?> GetBestCoordinateAsync(string address)
         {
             foreach (var lang in Languages)

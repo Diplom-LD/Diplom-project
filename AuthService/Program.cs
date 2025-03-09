@@ -63,6 +63,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddSingleton<RabbitMqProducerService>();
+
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddHttpClient<GeoCodingService>();
 builder.Services.AddScoped<AuthSeeder>();
@@ -85,7 +87,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -107,7 +108,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Ошибка при сидировании данных.");
     }
 }
-
 
 app.UseSwagger();
 app.UseSwaggerUI();

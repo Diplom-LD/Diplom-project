@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.SeedData
 {
-    public class AuthSeeder(AuthDbContext dbContext, GeoCodingService geoCodingService)
+    public class AuthSeeder(AuthDbContext dbContext, GeoCodingService geoCodingService, RabbitMqProducerService rabbitMqProducerService)
     {
         private readonly PasswordHasher<User> _passwordHasher = new();
 
@@ -67,15 +67,17 @@ namespace AuthService.SeedData
                     Role = "manager",
                     FirstName = $"Алексей{i + 1}",
                     LastName = $"Иванов{i + 1}",
-                    PhoneNumber = $"+37369999{10 + i}",  
+                    PhoneNumber = $"+37369999{10 + i}",
                     Address = addresses[i]
                 });
             }
 
+            var workers = new List<User>(); 
+
             // Добавляем 10 рабочих (workers)
             for (int i = 10; i < 20; i++)
             {
-                users.Add(new User
+                var worker = new User
                 {
                     UserName = $"worker{i - 9}",
                     Email = $"worker{i - 9}@test.com",
@@ -84,7 +86,9 @@ namespace AuthService.SeedData
                     LastName = $"Сидоров{i - 9}",
                     PhoneNumber = $"+37368888{10 + (i - 10)}",
                     Address = addresses[i]
-                });
+                };
+                users.Add(worker);
+                workers.Add(worker); 
             }
 
             // Добавляем 10 клиентов (clients)
@@ -121,6 +125,12 @@ namespace AuthService.SeedData
 
             await dbContext.SaveChangesAsync();
             Console.WriteLine("✅ SeedData: 10 Managers, 10 Workers, 10 Clients добавлены успешно.");
+
+            if (workers.Count > 0)
+            {
+                rabbitMqProducerService.PublishTechnicianUpdate(workers);
+                Console.WriteLine($"📤 [RabbitMQ] Отправлено {workers.Count} рабочих в OrderService.");
+            }
         }
     }
 }

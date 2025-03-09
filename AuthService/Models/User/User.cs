@@ -8,7 +8,6 @@ namespace AuthService.Models.User
         public string Role { get; set; } = null!; // Client, Manager, Worker
         public string? FirstName { get; set; } // First name
         public string? LastName { get; set; } // Last name
-        public string? Phone { get; set; } // Phone number
         public string? Address { get; set; } // Address (converted to coordinates)
 
         // Geo

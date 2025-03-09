@@ -5,17 +5,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace AuthService.Controllers
 {
     [Route("auth/account")]
     [ApiController]
     [Authorize]
-    public class AccountController(AuthDbContext _dbContext, ILogger<AccountController> _logger, GeoCodingService _geoCodingService) : ControllerBase
+    public class AccountController(AuthDbContext _dbContext, ILogger<AccountController> _logger, GeoCodingService _geoCodingService, RabbitMqProducerService _rabbitMqProducerService) : ControllerBase
     {
         [HttpGet("my-profile")]
         public async Task<IActionResult> GetMyProfile()
@@ -41,7 +39,7 @@ namespace AuthService.Controllers
                     u.Role,
                     u.FirstName,
                     u.LastName,
-                    u.Phone,
+                    u.PhoneNumber,
                     u.Address,
                     u.Latitude,  
                     u.Longitude  
@@ -76,7 +74,7 @@ namespace AuthService.Controllers
                     u.Role,
                     u.FirstName,
                     u.LastName,
-                    u.Phone,
+                    u.PhoneNumber,
                     u.Address,
                     u.Latitude,  
                     u.Longitude 
@@ -115,7 +113,7 @@ namespace AuthService.Controllers
 
             _logger.LogInformation("User {UserId} is updating their profile", userId);
 
-            bool isUpdated = false; 
+            bool isUpdated = false;
             bool isAddressUpdated = !string.IsNullOrWhiteSpace(request.Address) && request.Address.Trim() != user.Address;
 
             if (!string.IsNullOrWhiteSpace(request.FirstName) && request.FirstName.Trim() != user.FirstName)
@@ -128,9 +126,9 @@ namespace AuthService.Controllers
                 user.LastName = request.LastName.Trim();
                 isUpdated = true;
             }
-            if (!string.IsNullOrWhiteSpace(request.Phone) && request.Phone.Trim() != user.Phone)
+            if (!string.IsNullOrWhiteSpace(request.Phone) && request.Phone.Trim() != user.PhoneNumber)
             {
-                user.Phone = request.Phone.Trim();
+                user.PhoneNumber = request.Phone.Trim();
                 isUpdated = true;
             }
             if (!string.IsNullOrWhiteSpace(request.Address) && request.Address.Trim() != user.Address)
@@ -161,6 +159,13 @@ namespace AuthService.Controllers
             }
 
             await _dbContext.SaveChangesAsync();
+
+            if (user.Role == "worker")
+            {
+                _rabbitMqProducerService.PublishTechnicianUpdate([user]);
+                _logger.LogInformation("📤 Sent updated worker profile to RabbitMQ: {UserId}, {Name}", user.Id, $"{user.FirstName} {user.LastName}");
+            }
+
             return Ok(new { message = "Profile updated successfully" });
         }
 

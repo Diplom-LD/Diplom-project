@@ -1,113 +1,201 @@
 ﻿using MongoDB.Driver;
 using OrderService.Data.Warehouses;
 using OrderService.Models.Warehouses;
+using OrderService.Services.GeoLocation;
 
 namespace OrderService.SeedData.Warehouses
 {
-    public class WarehouseSeeder(WarehouseMongoContext context)
+    public class WarehouseSeeder(WarehouseMongoContext context, ILogger<WarehouseSeeder> logger)
     {
         private readonly IMongoCollection<Warehouse> _warehouseCollection = context.Warehouses;
         private readonly IMongoCollection<EquipmentStock> _equipmentCollection = context.EquipmentStock;
         private readonly IMongoCollection<MaterialsStock> _materialsCollection = context.MaterialsStock;
         private readonly IMongoCollection<ToolsStock> _toolsCollection = context.ToolsStock;
+        private readonly ILogger<WarehouseSeeder> _logger = logger;
 
-        public async Task SeedAsync()
+        public async Task SeedAsync(IServiceProvider services)
         {
-            Console.WriteLine("🔹 Seeding started...");
-            await SeedWarehouses();
-            var warehouseIds = await GetWarehouseIds();
-            await SeedEquipmentStock(warehouseIds);
-            await SeedMaterialsStock(warehouseIds);
-            await SeedToolsStock(warehouseIds);
-            Console.WriteLine("✅ Seeding completed!");
-        }
+            _logger.LogInformation("🔹 Начинаем сеединг данных...");
 
-        private async Task SeedWarehouses()
-        {
-            if (await _warehouseCollection.CountDocumentsAsync(FilterDefinition<Warehouse>.Empty) == 0)
+            if (!await IsDataSeeded())
             {
-                var warehouses = new List<Warehouse>();
-                for (int i = 1; i <= 10; i++)
-                {
-                    warehouses.Add(new()
-                    {
-                        ID = Guid.NewGuid().ToString(),
-                        Name = $"Склад {i}",
-                        Address = $"Город {i}, ул. Центральная, {i * 10}",
-                        ContactPerson = $"Контакт {i}",
-                        PhoneNumber = $"+7903123456{i}",
-                        LastInventoryCheck = DateTime.UtcNow
-                    });
-                }
-                await _warehouseCollection.InsertManyAsync(warehouses);
+                _logger.LogInformation("📦 Seeding складов...");
+                await SeedWarehouses(services);
+
+                var warehouseIds = await GetWarehouseIds();
+                _logger.LogInformation("📦 Получены {Count} складов для наполнения данными.", warehouseIds.Count);
+
+                _logger.LogInformation("📦 Заполняем оборудование...");
+                await SeedEquipmentStock(warehouseIds);
+
+                _logger.LogInformation("📦 Заполняем материалы...");
+                await SeedMaterialsStock(warehouseIds);
+
+                _logger.LogInformation("📦 Заполняем инструменты...");
+                await SeedToolsStock(warehouseIds);
+
+                _logger.LogInformation("✅ Seeding завершён!");
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ Данные уже существуют. Пропускаем сеединг.");
             }
         }
 
+
+        private async Task<bool> IsDataSeeded()
+        {
+            var warehouseCount = await _warehouseCollection.CountDocumentsAsync(FilterDefinition<Warehouse>.Empty);
+            return warehouseCount > 0;
+        }
+
+        private async Task SeedWarehouses(IServiceProvider services)
+        {
+            if (await _warehouseCollection.CountDocumentsAsync(FilterDefinition<Warehouse>.Empty) > 0)
+                return;
+
+            var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+            var geoCodingService = new GeoCodingService(new HttpClient(), loggerFactory.CreateLogger<GeoCodingService>());
+
+            var warehouses = new List<Warehouse>
+            {
+                await CreateWarehouseAsync("Склад 1", "10, улица Кантонулуй", geoCodingService),
+                await CreateWarehouseAsync("Склад 2", "17, Заводская улица, Отоваска", geoCodingService),
+                await CreateWarehouseAsync("Склад 3", "ул. Унирий, 20/2, Ставчены, Кишинёв", geoCodingService),
+                await CreateWarehouseAsync("Склад 4", "25/9, проспект Куза Водэ", geoCodingService),
+                await CreateWarehouseAsync("Склад 5", "1A, 2-й переулок Вовинцень, Dumbrava", geoCodingService),
+                await CreateWarehouseAsync("Склад 6", "переулок Кэлэторилор, Кишинёв, Сектор Чеканы", geoCodingService),
+                await CreateWarehouseAsync("Склад 7", "22, улица Тома Чорбэ, Кишинёв", geoCodingService),
+                await CreateWarehouseAsync("Склад 8", "82, проспект Дечебал, Ботаника", geoCodingService),
+                await CreateWarehouseAsync("Склад 9", "162, улица Колумна, Вистерничены, Кишинёв", geoCodingService),
+                await CreateWarehouseAsync("Склад 10", "улица Матея Басараба, Верхняя Рышкановка, Кишинёв", geoCodingService)
+            };
+
+            await _warehouseCollection.InsertManyAsync(warehouses);
+        }
+
+        private async Task<Warehouse> CreateWarehouseAsync(string name, string address, GeoCodingService geoCodingService)
+        {
+            _logger.LogInformation("📍 Запрос геокодинга для адреса: {Address}", address);
+
+            try
+            {
+                var (Latitude, Longitude, DisplayName) = await geoCodingService.GetBestCoordinateAsync(address) ?? (Latitude: 0.0, Longitude: 0.0, DisplayName: "Unknown");
+
+                _logger.LogInformation("✅ Координаты найдены: {Latitude}, {Longitude} для {Address}", Latitude, Longitude, address);
+
+                return new Warehouse
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Address = DisplayName == "Unknown" ? "Неизвестный адрес" : address,
+                    Latitude = Latitude,
+                    Longitude = Longitude
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Ошибка при геокодировании адреса {Address}", address);
+                return new Warehouse
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Address = "Ошибка геолокации",
+                    Latitude = 0,
+                    Longitude = 0
+                };
+            }
+        }
+
+
+
         private async Task<List<string>> GetWarehouseIds()
         {
-            return await _warehouseCollection
-                .Find(FilterDefinition<Warehouse>.Empty)
-                .Project(w => w.ID)
-                .ToListAsync();
+            return await _warehouseCollection.Find(FilterDefinition<Warehouse>.Empty)
+                                             .Project(w => w.ID)
+                                             .ToListAsync();
         }
 
         private async Task SeedEquipmentStock(List<string> warehouseIds)
         {
-            if (warehouseIds.Count == 0) return;
+            if (warehouseIds.Count == 0 || await _equipmentCollection.EstimatedDocumentCountAsync() > 0)
+                return;
 
-            if (await _equipmentCollection.CountDocumentsAsync(FilterDefinition<EquipmentStock>.Empty) == 0)
+            var models = new List<string>
             {
-                var equipmentStock = new List<EquipmentStock>
+                "LG Standard Plus", "Samsung AR9500", "Daikin FTXB25C",
+                "Mitsubishi MSZ-HJ25VA", "Haier HSU-12H", "Gree GWH12KF",
+                "Electrolux EACS-12H", "Toshiba RAS-10N3KVR", "Panasonic CS-E12",
+                "Hitachi RAS-S10"
+            };
+
+            var random = new Random();
+            var equipmentStock = warehouseIds.SelectMany(warehouseId =>
+                models.Select(model => new EquipmentStock
                 {
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[0], ModelName = "LG Standard Plus", BTU = 9000, ServiceArea = 25, Price = 45000, Quantity = 10 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[1], ModelName = "Samsung AR9500", BTU = 12000, ServiceArea = 35, Price = 55000, Quantity = 9 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[2], ModelName = "Daikin FTXB25C", BTU = 18000, ServiceArea = 50, Price = 75000, Quantity = 8 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[3], ModelName = "Mitsubishi Electric MSZ-HJ25VA", BTU = 24000, ServiceArea = 70, Price = 95000, Quantity = 7 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[4], ModelName = "Haier HSU-12H", BTU = 12000, ServiceArea = 30, Price = 49000, Quantity = 10 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[5], ModelName = "Gree GWH12KF", BTU = 18000, ServiceArea = 50, Price = 67000, Quantity = 6 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[6], ModelName = "Electrolux EACS-12H", BTU = 12000, ServiceArea = 32, Price = 51000, Quantity = 5 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[7], ModelName = "Toshiba RAS-10N3KVR", BTU = 9000, ServiceArea = 22, Price = 43000, Quantity = 4 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[8], ModelName = "Panasonic CS-E12", BTU = 12000, ServiceArea = 30, Price = 52000, Quantity = 3 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[9], ModelName = "Hitachi RAS-S10", BTU = 9000, ServiceArea = 25, Price = 48000, Quantity = 2 }
-                };
-                await _equipmentCollection.InsertManyAsync(equipmentStock);
-            }
+                    ID = Guid.NewGuid().ToString(),
+                    WarehouseId = warehouseId,
+                    ModelName = model,
+                    BTU = random.Next(9000, 30000),
+                    ServiceArea = random.Next(20, 100),
+                    Price = random.Next(45000, 95000),
+                    Quantity = random.Next(5, 15)
+                })).ToList();
+
+            await _equipmentCollection.InsertManyAsync(equipmentStock);
         }
+
 
         private async Task SeedMaterialsStock(List<string> warehouseIds)
         {
-            if (warehouseIds.Count == 0) return;
+            if (warehouseIds.Count == 0 || await _materialsCollection.CountDocumentsAsync(FilterDefinition<MaterialsStock>.Empty) > 0)
+                return;
 
-            if (await _materialsCollection.CountDocumentsAsync(FilterDefinition<MaterialsStock>.Empty) == 0)
+            var materials = new List<string>
             {
-                var materialsStock = new List<MaterialsStock>
+                "Медная трубка 1/4 дюйма", "Фреон R410A", "Крепежные анкера",
+                "Теплоизоляция для труб", "Дренажный шланг", "Гофрированная труба",
+                "Монтажный профиль", "Фильтр для кондиционера", "Кабель для подключения",
+                "Антикоррозийное покрытие"
+            };
+
+            var random = new Random();
+            var materialsStock = warehouseIds.SelectMany(warehouseId =>
+                materials.Select(material => new MaterialsStock
                 {
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[0], MaterialName = "Медная трубка 1/4 дюйма", Quantity = 50, Price = 500 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[1], MaterialName = "Фреон R410A", Quantity = 20, Price = 3500 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[2], MaterialName = "Крепежные анкера", Quantity = 100, Price = 50 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[3], MaterialName = "Теплоизоляция для труб", Quantity = 30, Price = 800 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[4], MaterialName = "Дренажный шланг", Quantity = 40, Price = 600 }
-                };
-                await _materialsCollection.InsertManyAsync(materialsStock);
-            }
+                    ID = Guid.NewGuid().ToString(),
+                    WarehouseId = warehouseId,
+                    MaterialName = material,
+                    Quantity = random.Next(10, 200),
+                    Price = random.Next(100, 5000)
+                })).ToList();
+
+            await _materialsCollection.InsertManyAsync(materialsStock);
         }
 
         private async Task SeedToolsStock(List<string> warehouseIds)
         {
-            if (warehouseIds.Count == 0) return;
+            if (warehouseIds.Count == 0 || await _toolsCollection.CountDocumentsAsync(FilterDefinition<ToolsStock>.Empty) > 0)
+                return;
 
-            if (await _toolsCollection.CountDocumentsAsync(FilterDefinition<ToolsStock>.Empty) == 0)
+            var tools = new List<string>
             {
-                var toolsStock = new List<ToolsStock>
+                "Вакуумный насос", "Манометрический коллектор", "Электродрель",
+                "Трубогиб", "Перфоратор", "Фрезер", "Газовый паяльник",
+                "Клещи для развальцовки", "Набор отверток", "Рулетка"
+            };
+
+            var random = new Random();
+            var toolsStock = warehouseIds.SelectMany(warehouseId =>
+                tools.Select(tool => new ToolsStock
                 {
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[0], ToolName = "Вакуумный насос", Quantity = 3 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[1], ToolName = "Манометрический коллектор", Quantity = 5 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[2], ToolName = "Электродрель", Quantity = 4 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[3], ToolName = "Трубогиб", Quantity = 6 },
-                    new() { ID = Guid.NewGuid().ToString(), WarehouseId = warehouseIds[4], ToolName = "Перфоратор", Quantity = 3 }
-                };
-                await _toolsCollection.InsertManyAsync(toolsStock);
-            }
+                    ID = Guid.NewGuid().ToString(),
+                    WarehouseId = warehouseId,
+                    ToolName = tool,
+                    Quantity = random.Next(1, 10)
+                })).ToList();
+
+            await _toolsCollection.InsertManyAsync(toolsStock);
         }
     }
 }
