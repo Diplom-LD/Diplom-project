@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OrderService.Services.GeoLocation;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace OrderService.Controllers.GeoLocation;
 
@@ -24,7 +21,7 @@ public class LocationController(
     public async Task<IActionResult> GetCoordinates([FromQuery] string address)
     {
         if (string.IsNullOrWhiteSpace(address))
-            return BadRequest("Адрес обязателен.");
+            return BadRequest(new { message = "Адрес обязателен." });
 
         _logger.LogInformation("📍 Запрос координат для адреса: {Address}", address);
 
@@ -33,21 +30,16 @@ public class LocationController(
         if (coordinates == null)
         {
             _logger.LogWarning("⚠️ Координаты не найдены для адреса: {Address}", address);
-            return NotFound("Координаты не найдены.");
+            return NotFound(new { message = "Координаты не найдены." });
         }
-
-        // 🔹 Логирование результата перед возвратом ответа
-        _logger.LogInformation("📍 Координаты для {Address}: {Latitude}, {Longitude}, {DisplayName}",
-            address, coordinates.Value.Latitude, coordinates.Value.Longitude, coordinates.Value.DisplayName);
 
         return Ok(new
         {
-            coordinates.Value.Latitude,
-            coordinates.Value.Longitude,
-            coordinates.Value.DisplayName
+            latitude = coordinates.Value.Latitude,
+            longitude = coordinates.Value.Longitude,
+            displayName = coordinates.Value.DisplayName
         });
     }
-
 
     /// <summary>
     /// 📍 Получение наиболее точных координат по адресу.
@@ -56,19 +48,36 @@ public class LocationController(
     public async Task<IActionResult> GetBestCoordinates([FromQuery] string address)
     {
         if (string.IsNullOrWhiteSpace(address))
-            return BadRequest("Адрес обязателен.");
+            return BadRequest(new { message = "Адрес обязателен." });
 
         _logger.LogInformation("📍 Запрос лучших координат для адреса: {Address}", address);
 
         var coordinates = await _geoCodingService.GetBestCoordinateAsync(address);
-        if (coordinates == null)
+
+        if (!coordinates.HasValue)
         {
             _logger.LogWarning("⚠️ Лучшие координаты не найдены для адреса: {Address}", address);
-            return NotFound("Координаты не найдены.");
+            return NotFound(new { message = "Лучшие координаты не найдены." });
         }
 
-        return Ok(coordinates);
+        // Распаковываем кортеж
+        var (latitude, longitude, displayName) = coordinates.Value;
+
+        if (latitude == 0 && longitude == 0)
+        {
+            _logger.LogWarning("⚠️ Получены нулевые координаты для адреса: {Address}", address);
+            return NotFound(new { message = "Лучшие координаты не найдены." });
+        }
+
+        return Ok(new
+        {
+            latitude,
+            longitude,
+            displayName = string.IsNullOrWhiteSpace(displayName) ? "Неизвестный адрес" : displayName
+        });
     }
+
+
 
     /// <summary>
     /// 📦 Получение ближайшего склада по координатам.
@@ -77,7 +86,7 @@ public class LocationController(
     public async Task<IActionResult> GetNearestWarehouse([FromQuery] double latitude, [FromQuery] double longitude)
     {
         if (latitude == 0 || longitude == 0)
-            return BadRequest("Необходимо указать корректные координаты.");
+            return BadRequest(new { message = "Необходимо указать корректные координаты." });
 
         _logger.LogInformation("📦 Поиск ближайшего склада для координат: {Latitude}, {Longitude}", latitude, longitude);
 
@@ -85,7 +94,7 @@ public class LocationController(
         if (nearestWarehouse == null)
         {
             _logger.LogWarning("⚠️ Ближайший склад не найден для координат: {Latitude}, {Longitude}", latitude, longitude);
-            return NotFound("Ближайший склад не найден.");
+            return NotFound(new { message = "Ближайший склад не найден." });
         }
 
         return Ok(nearestWarehouse);
@@ -102,7 +111,7 @@ public class LocationController(
         [FromQuery] int count = 2)
     {
         if (latitude == 0 || longitude == 0)
-            return BadRequest("Необходимо указать корректные координаты.");
+            return BadRequest(new { message = "Необходимо указать корректные координаты." });
 
         _logger.LogInformation("👷 Поиск ближайших {Count} техников для координат: {Latitude}, {Longitude}", count, latitude, longitude);
 
@@ -110,7 +119,7 @@ public class LocationController(
         if (technicians.Count == 0)
         {
             _logger.LogWarning("⚠️ Ближайшие техники не найдены для координат: {Latitude}, {Longitude}", latitude, longitude);
-            return NotFound("Ближайшие техники не найдены.");
+            return NotFound(new { message = "Ближайшие техники не найдены." });
         }
 
         return Ok(technicians);
@@ -127,7 +136,7 @@ public class LocationController(
         [FromQuery] int count = 2)
     {
         if (latitude == 0 || longitude == 0)
-            return BadRequest("Необходимо указать корректные координаты.");
+            return BadRequest(new { message = "Необходимо указать корректные координаты." });
 
         _logger.LogInformation("🔍 Поиск ближайшего склада и {Count} техников для координат: {Latitude}, {Longitude}", count, latitude, longitude);
 
@@ -136,13 +145,13 @@ public class LocationController(
         if (nearestWarehouse == null && technicians.Count == 0)
         {
             _logger.LogWarning("⚠️ Не найдено ни складов, ни техников для координат: {Latitude}, {Longitude}", latitude, longitude);
-            return NotFound("Не найдено ни складов, ни техников.");
+            return NotFound(new { message = "Не найдено ни складов, ни техников." });
         }
 
         return Ok(new
         {
-            NearestWarehouse = nearestWarehouse,
-            Technicians = technicians
+            nearestWarehouse,
+            technicians
         });
     }
 }

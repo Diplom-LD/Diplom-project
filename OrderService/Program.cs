@@ -27,7 +27,6 @@ if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.Is
     throw new InvalidOperationException("JWT параметры не заданы в конфигурации.");
 }
 
-// Настраиваем аутентификацию с JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -63,10 +62,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect("redis:6379"));
 builder.Services.AddSingleton<TechnicianRedisRepository>();
 
-// Подключаем RabbitMQ Consumer
+// Подключение RabbitMQ Consumer
 builder.Services.AddHostedService<RabbitMqConsumerService>();
 
-// Регистрация конкретных репозиториев вместо абстрактного BaseMongoRepository<T>
+// Репозитории складов
 builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
 builder.Services.AddScoped<IStockRepository<EquipmentStock>, EquipmentStockRepository>();
 builder.Services.AddScoped<IStockRepository<MaterialsStock>, MaterialsStockRepository>();
@@ -78,14 +77,14 @@ builder.Services.AddScoped<EquipmentStockService>();
 builder.Services.AddScoped<MaterialsStockService>();
 builder.Services.AddScoped<ToolsStockService>();
 
-// Геолокация и поиск ближайших объектов
+// Геолокация
 builder.Services.AddHttpClient<IGeoCodingService, GeoCodingService>();
 builder.Services.AddScoped<NearestLocationFinderService>();
 
 // Инициализация тестовых данных
 builder.Services.AddSingleton<WarehouseSeeder>();
 
-// Добавляем контроллеры и Swagger
+// Добавление контроллеров
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -127,19 +126,14 @@ using (var scope = app.Services.CreateScope())
     await seeder.SeedAsync(serviceProvider);
 }
 
-// Включаем Swagger в режиме разработки
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Включение Swagger
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// Настройки Middleware
 app.UseHttpsRedirection();
-
-// Подключаем JWT-аутентификацию и авторизацию
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
