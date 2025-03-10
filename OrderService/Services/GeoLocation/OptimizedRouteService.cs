@@ -27,7 +27,7 @@ namespace OrderService.Services.GeoLocation
             {
                 _logger.LogInformation("📍 Ближайший техник к складу: {TechnicianName}", nearestTechnician.FullName);
 
-                // 🚀 Строим маршрут техника до склада, а затем на заявку
+                // Строим маршрут техника до склада, а затем на заявку
                 var routeToWarehouse = await GetRouteAsync(nearestTechnician.Latitude, nearestTechnician.Longitude, warehouseLatitude, warehouseLongitude);
                 if (routeToWarehouse != null)
                 {
