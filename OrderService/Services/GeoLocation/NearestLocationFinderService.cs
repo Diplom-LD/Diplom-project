@@ -5,46 +5,80 @@ using Microsoft.Extensions.Logging;
 using OrderService.DTO.GeoLocation;
 using OrderService.DTO.Technicians;
 using OrderService.Models.Technicians;
-using OrderService.Models.Warehouses;
 using OrderService.Repositories.Technicians;
 using OrderService.Services.Warehouses;
 
 namespace OrderService.Services.GeoLocation
 {
     public class NearestLocationFinderService(
-        WarehouseService warehouseService, 
+        WarehouseService warehouseService,
         TechnicianRedisRepository technicianRedisRepository,
+        OptimizedRouteService optimizedRouteService,
         ILogger<NearestLocationFinderService> logger)
     {
         private readonly WarehouseService _warehouseService = warehouseService;
         private readonly TechnicianRedisRepository _technicianRedisRepository = technicianRedisRepository;
+        private readonly OptimizedRouteService _optimizedRouteService = optimizedRouteService;
         private readonly ILogger<NearestLocationFinderService> _logger = logger;
 
         /// <summary>
-        /// Определяет ближайший склад и список техников (по ID или ближайших).
+        /// Определяет ближайший склад, ближайших техников и строит маршруты.
         /// </summary>
-        public async Task<(WarehouseDTO? NearestWarehouse, List<TechnicianDTO> SelectedTechnicians)>
-            FindNearestLocationAsync(double latitude, double longitude, List<string>? requestedTechnicianIds = null, int technicianCount = 2)
+        public async Task<NearestLocationResultDTO> FindNearestLocationWithRoutesAsync( double latitude, double longitude, List<string>? requestedTechnicianIds = null, int technicianCount = 2)
         {
-            _logger.LogInformation("Поиск ближайшего склада и {TechnicianCount} техников...", technicianCount);
+            _logger.LogInformation("🔍 Поиск ближайшего склада, {TechnicianCount} техников и маршрутов...", technicianCount);
 
             var warehouse = await FindNearestWarehouseAsync(latitude, longitude);
-            var technicians = await FindTechniciansAsync(latitude, longitude, requestedTechnicianIds, technicianCount);
+            if (warehouse == null)
+            {
+                _logger.LogWarning("⚠️ Не удалось найти ближайший склад!");
+                return new NearestLocationResultDTO
+                {
+                    NearestWarehouse = null,
+                    SelectedTechnicians = [],
+                    Routes = []
+                };
+            }
 
-            return (warehouse, technicians);
+            var technicians = await FindTechniciansAsync(latitude, longitude, requestedTechnicianIds, technicianCount);
+            if (technicians == null || technicians.Count == 0)
+            {
+                _logger.LogWarning("⚠️ Нет доступных техников, маршруты не строятся!");
+                return new NearestLocationResultDTO
+                {
+                    NearestWarehouse = warehouse,
+                    SelectedTechnicians = [],
+                    Routes = []
+                };
+            }
+
+            // 🛣️ Строим маршруты
+            var routes = await _optimizedRouteService.BuildOptimizedRouteAsync(latitude, longitude, warehouse.Latitude, warehouse.Longitude, technicians);
+
+            if (routes.Count == 0)
+            {
+                _logger.LogWarning("⚠️ Не удалось построить маршруты для техников!");
+            }
+
+            return new NearestLocationResultDTO
+            {
+                NearestWarehouse = warehouse,
+                SelectedTechnicians = technicians,
+                Routes = routes
+            };
         }
+
 
         /// <summary>
         /// Поиск ближайшего склада.
         /// </summary>
         public async Task<WarehouseDTO?> FindNearestWarehouseAsync(double latitude, double longitude)
         {
-            _logger.LogInformation("Ищем ближайший склад для координат: {Latitude}, {Longitude}", latitude, longitude);
-
+            _logger.LogInformation("📦 Поиск ближайшего склада для координат: {Latitude}, {Longitude}", latitude, longitude);
             var warehouses = await _warehouseService.GetAllAsync();
             if (warehouses == null || warehouses.Count == 0)
             {
-                _logger.LogWarning("В системе нет складов!");
+                _logger.LogWarning("⚠️ В системе нет складов!");
                 return null;
             }
 
@@ -59,11 +93,11 @@ namespace OrderService.Services.GeoLocation
 
             if (nearestWarehouse == null)
             {
-                _logger.LogWarning("Ближайший склад не найден!");
+                _logger.LogWarning("⚠️ Ближайший склад не найден!");
                 return null;
             }
 
-            _logger.LogInformation("Ближайший склад: {WarehouseName} (расстояние: {Distance} км)",
+            _logger.LogInformation("✅ Ближайший склад: {WarehouseName} (расстояние: {Distance} км)",
                 nearestWarehouse.Warehouse.Name, nearestWarehouse.Distance);
 
             return new WarehouseDTO
@@ -78,21 +112,22 @@ namespace OrderService.Services.GeoLocation
         /// <summary>
         /// Поиск ближайших доступных техников.
         /// </summary>
-        public async Task<List<TechnicianDTO>> FindTechniciansAsync(double latitude, double longitude, List<string>? requestedTechnicianIds, int technicianCount)
+        public async Task<List<TechnicianDTO>> FindTechniciansAsync(
+            double latitude, double longitude, List<string>? requestedTechnicianIds, int technicianCount)
         {
-            _logger.LogInformation("Поиск ближайших техников (или по ID)");
+            _logger.LogInformation("👷 Поиск ближайших техников (или по ID)");
 
             var technicians = await _technicianRedisRepository.GetAllAsync();
             if (technicians == null || technicians.Count == 0)
             {
-                _logger.LogWarning("Нет доступных техников в системе!");
+                _logger.LogWarning("⚠️ Нет доступных техников в системе!");
                 return [];
             }
 
             var availableTechnicians = technicians.Where(t => t.IsAvailable).ToList();
             if (availableTechnicians.Count == 0)
             {
-                _logger.LogWarning("Нет доступных техников!");
+                _logger.LogWarning("⚠️ Нет доступных техников!");
                 return [];
             }
 
@@ -101,7 +136,8 @@ namespace OrderService.Services.GeoLocation
             if (requestedTechnicianIds != null && requestedTechnicianIds.Count > 0)
             {
                 selectedTechnicians = [.. availableTechnicians.Where(t => requestedTechnicianIds.Contains(t.Id))];
-                _logger.LogInformation("Выбраны конкретные техники по ID: {Technicians}",
+
+                _logger.LogInformation("✅ Выбраны конкретные техники по ID: {Technicians}",
                     string.Join(", ", selectedTechnicians.Select(t => t.Id)));
             }
             else
@@ -116,7 +152,13 @@ namespace OrderService.Services.GeoLocation
                     .Take(technicianCount)
                     .Select(t => t.Technician)];
 
-                _logger.LogInformation("Выбраны {TechnicianCount} ближайших доступных техников", selectedTechnicians.Count);
+                _logger.LogInformation("✅ Выбраны {TechnicianCount} ближайших доступных техников", selectedTechnicians.Count);
+            }
+
+            if (selectedTechnicians.Count == 0)
+            {
+                _logger.LogWarning("⚠️ Не найдено ни одного техника по заданным критериям!");
+                return [];
             }
 
             return [.. selectedTechnicians.Select(t => new TechnicianDTO

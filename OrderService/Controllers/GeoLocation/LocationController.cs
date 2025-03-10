@@ -60,7 +60,6 @@ public class LocationController(
             return NotFound(new { message = "Лучшие координаты не найдены." });
         }
 
-        // Распаковываем кортеж
         var (latitude, longitude, displayName) = coordinates.Value;
 
         if (latitude == 0 && longitude == 0)
@@ -76,8 +75,6 @@ public class LocationController(
             displayName = string.IsNullOrWhiteSpace(displayName) ? "Неизвестный адрес" : displayName
         });
     }
-
-
 
     /// <summary>
     /// 📦 Получение ближайшего склада по координатам.
@@ -126,32 +123,30 @@ public class LocationController(
     }
 
     /// <summary>
-    /// 🔍 Получение ближайшего склада и техников в одном запросе.
+    /// 🔍 Получение ближайшего склада, техников и маршрутов в одном запросе.
     /// </summary>
-    [HttpGet("nearest-location")]
-    public async Task<IActionResult> GetNearestLocation(
+    [HttpGet("nearest-location-with-routes")]
+    public async Task<IActionResult> GetNearestLocationWithRoutes(
         [FromQuery] double latitude,
         [FromQuery] double longitude,
         [FromQuery] List<string>? technicianIds = null,
-        [FromQuery] int count = 2)
+        [FromQuery] int count = 2,
+        [FromQuery] bool useTraffic = true)
     {
         if (latitude == 0 || longitude == 0)
             return BadRequest(new { message = "Необходимо указать корректные координаты." });
 
-        _logger.LogInformation("🔍 Поиск ближайшего склада и {Count} техников для координат: {Latitude}, {Longitude}", count, latitude, longitude);
+        _logger.LogInformation("🔍 Поиск ближайшего склада, {Count} техников и маршрутов для координат: {Latitude}, {Longitude}, с учетом пробок: {UseTraffic}",
+            count, latitude, longitude, useTraffic);
 
-        var (nearestWarehouse, technicians) = await _nearestLocationFinderService.FindNearestLocationAsync(latitude, longitude, technicianIds, count);
+        var result = await _nearestLocationFinderService.FindNearestLocationWithRoutesAsync(latitude, longitude, technicianIds, count);
 
-        if (nearestWarehouse == null && technicians.Count == 0)
+        if (result.Routes.Count == 0)
         {
-            _logger.LogWarning("⚠️ Не найдено ни складов, ни техников для координат: {Latitude}, {Longitude}", latitude, longitude);
-            return NotFound(new { message = "Не найдено ни складов, ни техников." });
+            _logger.LogWarning("⚠️ Не удалось построить маршруты до заявки.");
+            return NotFound(new { message = "Не удалось построить маршруты до заявки." });
         }
 
-        return Ok(new
-        {
-            nearestWarehouse,
-            technicians
-        });
+        return Ok(result);
     }
 }

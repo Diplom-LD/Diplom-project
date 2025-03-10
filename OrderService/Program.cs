@@ -62,6 +62,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect("redis:6379"));
 builder.Services.AddSingleton<TechnicianRedisRepository>();
 
+
 // Подключение RabbitMQ Consumer
 builder.Services.AddHostedService<RabbitMqConsumerService>();
 
@@ -78,6 +79,8 @@ builder.Services.AddScoped<MaterialsStockService>();
 builder.Services.AddScoped<ToolsStockService>();
 
 // Геолокация
+builder.Services.AddHttpClient<OptimizedRouteService>();
+builder.Services.AddSingleton<OptimizedRouteService>();
 builder.Services.AddHttpClient<IGeoCodingService, GeoCodingService>();
 builder.Services.AddScoped<NearestLocationFinderService>();
 
