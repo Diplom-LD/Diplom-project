@@ -1,7 +1,6 @@
 ﻿using MongoDB.Driver;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 
 namespace OrderService.Repositories.Warehouses
 {
@@ -54,6 +53,17 @@ namespace OrderService.Repositories.Warehouses
             var filter = Builders<T>.Filter.Eq(_nameProperty.Name, name);
             return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
         }
+
+        public async Task<List<T>> GetByWarehouseIdAsync(string warehouseId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(warehouseId))
+                throw new ArgumentException("WarehouseId не может быть пустым.", nameof(warehouseId));
+
+            var filter = Builders<T>.Filter.Eq("WarehouseId", warehouseId);
+            return await _collection.Find(filter).ToListAsync(cancellationToken);
+        }
+
+
 
         public async Task<string> AddAsync(T entity, CancellationToken cancellationToken = default)
         {

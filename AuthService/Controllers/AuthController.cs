@@ -118,7 +118,7 @@ namespace AuthService.Controllers
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var user = await _dbContext.Users.FindAsync(userId);
+            var user = await _dbContext.Users.FindAsync(Guid.Parse(userId));
             if (user == null)
             {
                 _logger.LogWarning("Token validation failed: User not found for ID {UserId}", userId);

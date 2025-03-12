@@ -2,7 +2,7 @@
 
 namespace AuthService.Models.User
 {
-    public class User : IdentityUser
+    public class User : IdentityUser<Guid>
     {
         // Custom fields
         public string Role { get; set; } = null!; // Client, Manager, Worker

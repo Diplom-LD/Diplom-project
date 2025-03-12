@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using OrderService.Models.Warehouses;
+﻿using OrderService.Models.Warehouses;
 using OrderService.Repositories.Warehouses;
 
 namespace OrderService.Services.Warehouses

@@ -9,17 +9,17 @@ namespace OrderService.Models.Warehouses
     {
         [BsonId]
         [BsonRepresentation(BsonType.String)]
-        public string ID { get; set; } = Guid.NewGuid().ToString();
+        public Guid ID { get; set; } = Guid.NewGuid(); 
 
         [BsonElement("warehouseId")]
         [BsonRepresentation(BsonType.String)]
         [Required(ErrorMessage = "ID склада обязателен.")]
-        public string WarehouseId { get; set; } = null!;
+        public Guid WarehouseId { get; set; } 
 
         [BsonElement("materialName")]
         [Required(ErrorMessage = "Название материала обязательно.")]
         [StringLength(100, ErrorMessage = "Название материала не может превышать 100 символов.")]
-        public string MaterialName { get; set; } = null!;
+        public string MaterialName { get; set; } = string.Empty;
 
         [BsonElement("quantity")]
         [Range(0, int.MaxValue, ErrorMessage = "Количество материала не может быть отрицательным.")]
@@ -31,20 +31,9 @@ namespace OrderService.Models.Warehouses
 
         public MaterialsStock() { }
 
-        public MaterialsStock(string warehouseId, string materialName, int quantity, decimal price)
+        public MaterialsStock(Guid warehouseId, string materialName, int quantity, decimal price)
         {
-            if (string.IsNullOrWhiteSpace(warehouseId))
-                throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouseId));
-
-            if (string.IsNullOrWhiteSpace(materialName) || materialName.Length > 100)
-                throw new ArgumentException("Название материала не может быть пустым или длиннее 100 символов.", nameof(materialName));
-
-            if (quantity < 0)
-                throw new ArgumentException("Количество материала не может быть отрицательным.", nameof(quantity));
-
-            if (price <= 0)
-                throw new ArgumentException("Цена материала должна быть больше 0.", nameof(price));
-
+            ID = Guid.NewGuid(); 
             WarehouseId = warehouseId;
             MaterialName = materialName;
             Quantity = quantity;

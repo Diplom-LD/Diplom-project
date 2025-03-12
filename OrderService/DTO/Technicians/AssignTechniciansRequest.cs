@@ -2,7 +2,7 @@
 {
     public class AssignTechniciansRequest
     {
-        public List<string>? TechnicianIds { get; set; }
-        public string OrderAddress { get; set; } = string.Empty; 
+        public List<Guid>? TechnicianIds { get; set; } 
+        public string OrderAddress { get; set; } = string.Empty;
     }
 }

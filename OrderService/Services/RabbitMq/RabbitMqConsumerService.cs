@@ -1,156 +1,152 @@
 ﻿using System.Text;
 using System.Text.Json;
+using OrderService.DTO.Users;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using OrderService.Models.Technicians;
-using OrderService.Repositories.Technicians;
 
 namespace OrderService.Services.RabbitMq
 {
-    public class RabbitMqConsumerService : BackgroundService
+    public class RabbitMqConsumerService(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration, ILogger<RabbitMqConsumerService> logger) : BackgroundService
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<RabbitMqConsumerService> _logger;
+        private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly ILogger<RabbitMqConsumerService> _logger = logger;
         private IConnection? _connection;
-        private IModel? _channel;
+        private IChannel? _channel;
+        private AsyncEventingBasicConsumer? _consumer;
 
-        public RabbitMqConsumerService(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration, ILogger<RabbitMqConsumerService> logger)
+        private async Task InitRabbitMQ()
         {
-            _serviceScopeFactory = serviceScopeFactory;
-            _configuration = configuration;
-            _logger = logger;
-            InitRabbitMQ();
-        }
-
-        private void InitRabbitMQ()
-        {
-            var host = _configuration["RabbitMQ:Host"];
-            var portString = _configuration["RabbitMQ:Port"];
-            var user = _configuration["RabbitMQ:User"];
-            var password = _configuration["RabbitMQ:Password"];
-
-            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(portString) || string.IsNullOrEmpty(user) || string.IsNullOrEmpty(password))
+            var factory = new ConnectionFactory
             {
-                throw new ArgumentNullException("RabbitMQ settings are not properly configured.");
-            }
-
-            var port = int.Parse(portString);
-
-            var factory = new ConnectionFactory()
-            {
-                HostName = host,
-                Port = port,
-                UserName = user,
-                Password = password,
-                DispatchConsumersAsync = true
+                HostName = _configuration["RabbitMQ:Host"] ?? throw new ArgumentNullException("RabbitMQ:Host"),
+                Port = int.Parse(_configuration["RabbitMQ:Port"] ?? "5672"),
+                UserName = _configuration["RabbitMQ:User"] ?? throw new ArgumentNullException("RabbitMQ:User"),
+                Password = _configuration["RabbitMQ:Password"] ?? throw new ArgumentNullException("RabbitMQ:Password"),
             };
 
-            int retryCount = 5;
+            _logger.LogInformation("⏳ Connecting to RabbitMQ...");
 
-            _logger.LogInformation("⏳ Waiting 5 seconds before attempting RabbitMQ connection...");
-            Task.Delay(5000).Wait();
+            _connection = await factory.CreateConnectionAsync();
+            _channel = await _connection.CreateChannelAsync();
 
-            while (retryCount > 0)
-            {
-                try
-                {
-                    _connection = factory.CreateConnection();
-                    _channel = _connection.CreateModel();
+            await _channel.QueueDeclareAsync(
+                queue: "users_updated",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
 
-                    _channel.QueueDeclare(queue: "technicians_update",
-                                          durable: true,
-                                          exclusive: false,
-                                          autoDelete: false,
-                                          arguments: null);
-
-                    _logger.LogInformation("✅ RabbitMQ connection established successfully.");
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "❌ RabbitMQ connection error. Retrying...");
-                    retryCount--;
-                    if (retryCount == 0)
-                    {
-                        throw;
-                    }
-                    _logger.LogInformation("🔄 Retrying in 5 seconds... Attempts left: {RetryCount}", retryCount);
-                    Thread.Sleep(5000);
-                }
-            }
-
-            if (_connection == null || _channel == null)
-            {
-                throw new InvalidOperationException("❌ Failed to create RabbitMQ connection or channel.");
-            }
+            _logger.LogInformation("✅ RabbitMQ connection established.");
         }
 
-
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await InitRabbitMQ();
+
             if (_channel == null)
             {
-                _logger.LogError("RabbitMQ channel is not initialized, subscription is not possible!");
-                return Task.CompletedTask;
+                _logger.LogError("❌ RabbitMQ channel is not initialized!");
+                return;
             }
 
-            var consumer = new AsyncEventingBasicConsumer(_channel);
-            consumer.Received += async (model, ea) =>
+            _consumer = new AsyncEventingBasicConsumer(_channel);
+            _consumer.ReceivedAsync += async (model, ea) =>
             {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var redisRepo = scope.ServiceProvider.GetRequiredService<TechnicianRedisRepository>();
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                _logger.LogInformation("📩 Received message: {Message}", message);
 
                 try
                 {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    var workers = JsonSerializer.Deserialize<List<Technician>>(message);
-
-                    if (workers != null)
+                    var userData = JsonSerializer.Deserialize<UserDTO>(message);
+                    if (userData == null)
                     {
-                        await redisRepo.SaveAsync(workers);
-                        _logger.LogInformation("Received {Count} workers and saved to Redis.", workers.Count);
+                        _logger.LogWarning("⚠️ Received invalid user data.");
+                        return;
                     }
+
+                    using var scope = _serviceScopeFactory.CreateScope();
+
+                    switch (userData.Role.ToLower())
+                    {
+                        case "worker":
+                        case "technician":
+                            var technicianConsumer = scope.ServiceProvider.GetRequiredService<TechnicianConsumer>();
+                            var technicianData = new TechnicianDTO
+                            {
+                                Id = userData.Id,
+                                FullName = userData.FullName,
+                                Address = userData.Address,
+                                Latitude = userData.Latitude,
+                                Longitude = userData.Longitude,
+                                PhoneNumber = userData.PhoneNumber,
+                                Role = userData.Role,
+                                IsAvailable = true,
+                                CurrentOrderId = null
+                            };
+
+                            await technicianConsumer.ProcessAsync(technicianData);
+                            break;
+
+                        case "manager":
+                            var managerConsumer = scope.ServiceProvider.GetRequiredService<ManagerConsumer>();
+                            await managerConsumer.ProcessAsync(userData);
+                            break;
+
+                        case "client":
+                            var clientConsumer = scope.ServiceProvider.GetRequiredService<ClientConsumer>();
+                            await clientConsumer.ProcessAsync(userData);
+                            break;
+
+                        default:
+                            _logger.LogWarning("⚠️ Unknown user role: {Role}", userData.Role);
+                            break;
+                    }
+
+
+                    if (_channel != null)
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing RabbitMQ message");
+                    _logger.LogError(ex, "❌ Error processing user update");
+                    if (_channel != null)
+                        await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
                 }
             };
 
-            _channel.BasicConsume(queue: "technicians_update",
-                                  autoAck: true,
-                                  consumer: consumer);
-
-            return Task.CompletedTask;
+            await _channel.BasicConsumeAsync("users_updated", autoAck: false, consumer: _consumer, cancellationToken: stoppingToken);
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
-        public override void Dispose()
+        public override async Task StopAsync(CancellationToken stoppingToken)
+        {
+            await DisposeAsync();
+            await base.StopAsync(stoppingToken);
+        }
+
+        public async ValueTask DisposeAsync()
         {
             try
             {
-                if (_channel?.IsOpen == true)
+                if (_channel != null)
                 {
-                    _channel.Close();
-                    _logger.LogInformation("RabbitMQ channel closed.");
+                    await _channel.DisposeAsync();
+                    _logger.LogInformation("⚠️ [RabbitMQ] Канал закрыт.");
                 }
 
-                if (_connection?.IsOpen == true)
+                if (_connection != null)
                 {
-                    _connection.Close();
-                    _logger.LogInformation("RabbitMQ connection closed.");
+                    await _connection.DisposeAsync();
+                    _logger.LogInformation("⚠️ [RabbitMQ] Соединение закрыто.");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error closing RabbitMQ connection");
-            }
-            finally
-            {
-                base.Dispose();
-                GC.SuppressFinalize(this);
+                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка при закрытии соединения.");
             }
         }
+
     }
 }

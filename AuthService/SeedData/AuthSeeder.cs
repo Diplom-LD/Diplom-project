@@ -126,11 +126,15 @@ namespace AuthService.SeedData
             await dbContext.SaveChangesAsync();
             Console.WriteLine("✅ SeedData: 10 Managers, 10 Workers, 10 Clients добавлены успешно.");
 
-            if (workers.Count > 0)
+            if (users.Count > 0)
             {
-                rabbitMqProducerService.PublishTechnicianUpdate(workers);
-                Console.WriteLine($"📤 [RabbitMQ] Отправлено {workers.Count} рабочих в OrderService.");
+                foreach (var user in users)
+                {
+                    await rabbitMqProducerService.PublishUserUpdatedAsync(user);
+                }
+                Console.WriteLine($"📤 [RabbitMQ] Отправлено {users.Count} обновленных пользователей в OrderService.");
             }
+
         }
     }
 }

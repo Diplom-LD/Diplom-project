@@ -11,8 +11,11 @@ namespace AuthService.Controllers
 {
     [Route("auth/sign-up")]
     [ApiController]
-    public partial class RegisterController(AuthDbContext _dbContext, GeoCodingService _geoCodingService, RabbitMqProducerService _rabbitMqProducer) : ControllerBase
+    public partial class RegisterController(AuthDbContext dbContext, GeoCodingService geoCodingService, RabbitMqProducerService rabbitMqProducer) : ControllerBase
     {
+        private readonly AuthDbContext _dbContext = dbContext;
+        private readonly GeoCodingService _geoCodingService = geoCodingService;
+        private readonly RabbitMqProducerService _rabbitMqProducer = rabbitMqProducer;
         private readonly PasswordHasher<User> _passwordHasher = new();
 
         [HttpPost]
@@ -30,7 +33,13 @@ namespace AuthService.Controllers
             if (validationError != null)
                 return BadRequest(new { message = validationError });
 
-            return await ProcessRegistration(request);
+            var processedResult = await ProcessRegistration(request);
+            if (processedResult is BadRequestObjectResult badRequest)
+            {
+                return BadRequest(new { message = "Address validation failed.", recommendedAddress = badRequest.Value });
+            }
+
+            return processedResult;
         }
 
         private async Task<IActionResult> ProcessRegistration(RegisterRequest request)
@@ -50,24 +59,32 @@ namespace AuthService.Controllers
 
             if (!string.IsNullOrWhiteSpace(request.Address))
             {
-                var coordinates = await _geoCodingService.GetCoordinatesAsync(request.Address);
-                if (coordinates.HasValue)
+                var recommendedAddress = await _geoCodingService.GetRecommendedAddressAsync(request.Address);
+                if (recommendedAddress != null)
                 {
-                    user.Latitude = coordinates.Value.Latitude;
-                    user.Longitude = coordinates.Value.Longitude;
+                    user.Address = recommendedAddress;
+                }
+                else
+                {
+                    return BadRequest(new { recommendedAddress });
                 }
             }
 
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            if (user.Role == "worker")
+            // ✅ Отправка информации о новом пользователе в RabbitMQ
+            try
             {
-                _rabbitMqProducer.PublishTechnicianUpdate([user]);
-                Console.WriteLine($"📤 [RabbitMQ] Новый рабочий отправлен: {user.Id} ({user.FirstName} {user.LastName})");
+                await _rabbitMqProducer.PublishUserRegisteredAsync(user);
+                Console.WriteLine($"📤 [RabbitMQ] Новый пользователь отправлен: {user.Id} ({user.FirstName} {user.LastName})");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ [RabbitMQ] Ошибка при отправке пользователя: {ex.Message}");
             }
 
-            return Ok(new { Message = $"{user.Role} registered successfully", user.Latitude, user.Longitude });
+            return Ok(new { Message = $"{user.Role} registered successfully", user.Address });
         }
 
         private async Task<string?> ValidateRegistrationRequest(RegisterRequest request)

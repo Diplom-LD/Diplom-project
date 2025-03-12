@@ -4,8 +4,9 @@ namespace OrderService.DTO.GeoLocation
 {
     public class RouteDTO
     {
-        public string TechnicianId { get; set; } = string.Empty;
+        public Guid TechnicianId { get; set; } 
         public string TechnicianName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
         public double Distance { get; set; }
         public double Duration { get; set; }
 

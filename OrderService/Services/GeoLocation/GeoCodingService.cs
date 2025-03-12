@@ -1,5 +1,4 @@
 ﻿using OrderService.DTO.GeoLocation;
-using System.Globalization;
 using System.Text.Json;
 
 namespace OrderService.Services.GeoLocation
@@ -29,7 +28,7 @@ namespace OrderService.Services.GeoLocation
             {
                 var coordinates = await FetchCoordinatesAsync(address, lang);
                 if (coordinates != null) return coordinates;
-                await Task.Delay(1000); // Уменьшенная задержка между запросами
+                await Task.Delay(1000);
             }
             return null;
         }

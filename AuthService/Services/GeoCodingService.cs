@@ -6,7 +6,7 @@ namespace AuthService.Services
     public class GeoCodingService
     {
         private const string ApiUrl = "https://nominatim.openstreetmap.org/search";
-        private static readonly List<string> Languages = ["ro", "ru", "en"]; 
+        private static readonly List<string> Languages = ["ro", "ru", "en"];
 
         private readonly HttpClient httpClient;
         private const int MaxRequestsPerSecond = 1;
@@ -30,12 +30,23 @@ namespace AuthService.Services
             }
             return null;
         }
+
         public async Task<(double Latitude, double Longitude, string DisplayName)?> GetBestCoordinateAsync(string address)
         {
             foreach (var lang in Languages)
             {
                 var results = await FetchAllCoordinatesAsync(address, lang);
                 if (results.Count > 0) return results.First();
+            }
+            return null;
+        }
+
+        public async Task<string?> GetRecommendedAddressAsync(string address)
+        {
+            foreach (var lang in Languages)
+            {
+                var results = await FetchAllCoordinatesAsync(address, lang);
+                if (results.Count > 0) return results.First().DisplayName;
             }
             return null;
         }
@@ -50,7 +61,7 @@ namespace AuthService.Services
                 var response = await httpClient.GetStringAsync(url);
                 var data = JsonSerializer.Deserialize<List<GeoLocationResponse>>(response);
 
-                if (data == null || data.Count == 0) 
+                if (data == null || data.Count == 0)
                 {
                     Console.WriteLine($"⚠️ Нет данных от GeoCoding API ({language}) для адреса: {address}");
                     return null;
@@ -70,7 +81,7 @@ namespace AuthService.Services
             }
             finally
             {
-                await Task.Delay(1100); 
+                await Task.Delay(1100);
                 Semaphore.Release();
             }
         }
@@ -88,7 +99,7 @@ namespace AuthService.Services
                 if (data == null || data.Count == 0)
                 {
                     Console.WriteLine($"⚠️ Нет данных от GeoCoding API ({language}) для адреса: {address}");
-                    return []; 
+                    return [];
                 }
 
                 return [.. data.Select(d => (d.Latitude, d.Longitude, d.DisplayName))];
@@ -101,7 +112,7 @@ namespace AuthService.Services
             catch (JsonException ex)
             {
                 Console.WriteLine($"❌ Ошибка обработки JSON от GeoCoding API ({language}): {ex.Message}");
-                return []; 
+                return [];
             }
             finally
             {
@@ -109,7 +120,5 @@ namespace AuthService.Services
                 Semaphore.Release();
             }
         }
-
-
     }
 }

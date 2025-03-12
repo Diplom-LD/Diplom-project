@@ -1,31 +1,33 @@
-using OrderService.Config;
+п»їusing OrderService.Config;
+using OrderService.Data.Orders;
 using OrderService.Data.Warehouses;
-using OrderService.Repositories.Technicians;
 using OrderService.Repositories.Warehouses;
+using OrderService.Repositories.Orders;
+using OrderService.Repositories.Users;
 using OrderService.SeedData.Warehouses;
 using OrderService.Services.GeoLocation;
-using OrderService.Services.RabbitMq;
+using OrderService.Services.GeoLocation.HTTPClient;
+using OrderService.Services.Orders;
+using OrderService.Services.Technicians;
 using OrderService.Services.Warehouses;
+using OrderService.Services.RabbitMq;
 using StackExchange.Redis;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using OrderService.Models.Warehouses;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройки JWT
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var jwtKey = jwtSettings["Key"];
-var jwtIssuer = jwtSettings["Issuer"];
-var jwtAudience = jwtSettings["Audience"];
-
-if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
-{
-    throw new InvalidOperationException("JWT параметры не заданы в конфигурации.");
-}
+// вњ… РќР°СЃС‚СЂРѕР№РєРё JWT
+var jwtSettings = builder.Configuration.GetRequiredSection("Jwt");
+var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key not found.");
+var jwtIssuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found.");
+var jwtAudience = jwtSettings["Audience"] ?? throw new InvalidOperationException("JWT Audience not found.");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -43,60 +45,90 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-// Настройка MongoDB
-builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoDB"));
+// вњ… РќР°СЃС‚СЂРѕР№РєР° PostgreSQL (OrderDbContext)
+builder.Services.AddDbContext<OrderDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
+
+// вњ… РќР°СЃС‚СЂРѕР№РєР° MongoDB
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetRequiredSection("MongoDB"));
 builder.Services.AddSingleton(sp =>
 {
-    var settings = builder.Configuration.GetSection("MongoDB").Get<MongoSettings>();
-    if (settings == null || string.IsNullOrEmpty(settings.ConnectionString) || string.IsNullOrEmpty(settings.DatabaseName))
-    {
-        throw new InvalidOperationException("MongoDB параметры не заданы в конфигурации.");
-    }
+    var settings = builder.Configuration.GetRequiredSection("MongoDB").Get<MongoSettings>()
+                   ?? throw new InvalidOperationException("MongoDB settings not found.");
     var client = new MongoClient(settings.ConnectionString);
     return client.GetDatabase(settings.DatabaseName);
 });
 builder.Services.AddSingleton<WarehouseMongoContext>();
 
-// Настройка Redis
+// вњ… РќР°СЃС‚СЂРѕР№РєР° Redis
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect("redis:6379"));
-builder.Services.AddSingleton<TechnicianRedisRepository>();
 
+// вњ… Р РµРіРёСЃС‚СЂР°С†РёСЏ RabbitMQ Connection
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var factory = new ConnectionFactory
+    {
+        HostName = "rabbitmq",
+        Port = 5672,
+        UserName = "guest",
+        Password = "guest",
+    };
 
-// Подключение RabbitMQ Consumer
+    return Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult(); 
+});
+
+// вњ… РџРѕРґРєР»СЋС‡РµРЅРёРµ RabbitMQ Consumer (РњРµРЅРµРґР¶РµСЂС‹, РљР»РёРµРЅС‚С‹, РўРµС…РЅРёРєРё)
+builder.Services.AddSingleton<TechnicianConsumer>();
+builder.Services.AddSingleton<ManagerConsumer>();
+builder.Services.AddSingleton<ClientConsumer>();
 builder.Services.AddHostedService<RabbitMqConsumerService>();
 
-// Репозитории складов
-builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
+// вњ… Р РµРїРѕР·РёС‚РѕСЂРёРё
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<UserPostgreRepository>();
+builder.Services.AddScoped<UserRedisRepository>();
 builder.Services.AddScoped<IStockRepository<EquipmentStock>, EquipmentStockRepository>();
 builder.Services.AddScoped<IStockRepository<MaterialsStock>, MaterialsStockRepository>();
 builder.Services.AddScoped<IStockRepository<ToolsStock>, ToolsStockRepository>();
+builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
 
-// Сервисы складов
-builder.Services.AddScoped<WarehouseService>();
+// вњ… РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚РµСЃС‚РѕРІС‹С… РґР°РЅРЅС‹С…
+builder.Services.AddSingleton<WarehouseSeeder>();
+
+// вњ… РЎРµСЂРІРёСЃС‹
+// Р“РµРѕР»РѕРєР°С†РёСЏ
+builder.Services.AddHttpClient<IHttpClient, HttpClientWrapper>();
+builder.Services.AddHttpClient<IGeoCodingService, GeoCodingService>();
+builder.Services.AddScoped<GeoCodingService>();
+builder.Services.AddScoped<NearestLocationFinderService>();
+builder.Services.AddScoped<IOptimizedRouteService, OptimizedRouteService>();
+builder.Services.AddScoped<OptimizedRouteService>();
+
+// Р—Р°СЏРІРєРё
+builder.Services.AddScoped<EquipmentService>();
+builder.Services.AddScoped<OrderService.Services.Orders.OrderService>();
+
+// РўРµС…РЅРёРєРё
+builder.Services.AddScoped<TechnicianAvailabilityService>();
+builder.Services.AddScoped<TechnicianRouteSaveService>();
+
+// РЎРµСЂРІРёСЃС‹ СЃРєР»Р°РґРѕРІ
 builder.Services.AddScoped<EquipmentStockService>();
 builder.Services.AddScoped<MaterialsStockService>();
 builder.Services.AddScoped<ToolsStockService>();
+builder.Services.AddScoped<WarehouseService>();
 
-// Геолокация
-builder.Services.AddHttpClient<OptimizedRouteService>();
-builder.Services.AddSingleton<OptimizedRouteService>();
-builder.Services.AddHttpClient<IGeoCodingService, GeoCodingService>();
-builder.Services.AddScoped<NearestLocationFinderService>();
-
-// Инициализация тестовых данных
-builder.Services.AddSingleton<WarehouseSeeder>();
-
-// Добавление контроллеров
+// вњ… Р”РѕР±Р°РІР»РµРЅРёРµ РєРѕРЅС‚СЂРѕР»Р»РµСЂРѕРІ
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Настройка Swagger для JWT-аутентификации
+// вњ… РќР°СЃС‚СЂРѕР№РєР° Swagger РґР»СЏ JWT-Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Введите JWT токен в формате: Bearer {токен}",
+        Description = "Р’РІРµРґРёС‚Рµ JWT С‚РѕРєРµРЅ РІ С„РѕСЂРјР°С‚Рµ: Bearer {С‚РѕРєРµРЅ}",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
@@ -121,7 +153,24 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Инициализация тестовых данных
+// вњ… РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРёРµ РјРёРіСЂР°С†РёРё PostgreSQL
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var orderDbContext = services.GetRequiredService<OrderDbContext>();
+        orderDbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "РћС€РёР±РєР° РїСЂРё РјРёРіСЂР°С†РёРё Р±Р°Р·С‹ РґР°РЅРЅС‹С….");
+    }
+}
+
+// вњ… РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚РµСЃС‚РѕРІС‹С… РґР°РЅРЅС‹С…
 using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
@@ -129,11 +178,11 @@ using (var scope = app.Services.CreateScope())
     await seeder.SeedAsync(serviceProvider);
 }
 
-// Включение Swagger
+// вњ… Р’РєР»СЋС‡РµРЅРёРµ Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Настройки Middleware
+// вњ… РќР°СЃС‚СЂРѕР№РєРё Middleware
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

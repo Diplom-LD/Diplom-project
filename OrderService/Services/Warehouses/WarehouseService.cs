@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
 using OrderService.Models.Warehouses;
 using OrderService.Repositories.Warehouses;
 using OrderService.Services.GeoLocation;
@@ -71,10 +70,10 @@ namespace OrderService.Services.Warehouses
         {
             ValidateStockItem(warehouse);
 
-            if (string.IsNullOrWhiteSpace(warehouse.ID))
+            if (string.IsNullOrWhiteSpace(warehouse.ID.ToString()))
                 throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouse));
 
-            var existingWarehouse = await _repository.GetByIdAsync(warehouse.ID, cancellationToken)
+            var existingWarehouse = await _repository.GetByIdAsync(warehouse.ID.ToString(), cancellationToken)
                 ?? throw new ArgumentException($"Склад с ID {warehouse.ID} не найден.", nameof(warehouse));
 
             if (warehouse.Name != existingWarehouse.Name &&
@@ -106,7 +105,7 @@ namespace OrderService.Services.Warehouses
 
             var updated = await _repository.UpdateAsync(warehouse, cancellationToken);
             if (updated)
-                LogAction("Обновлен склад", warehouse, warehouse.ID);
+                LogAction("Обновлен склад", warehouse, warehouse.ID.ToString());
 
             return updated;
         }

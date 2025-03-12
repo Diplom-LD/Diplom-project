@@ -1,12 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace AuthService.Models.Register
+﻿namespace AuthService.Models.Register
 {
     public class ManagerRegistrationCodes
     {
-        [Key]
-        [Required]
+        public Guid Id { get; set; }
         public string Code { get; set; } = null!;
-
     }
 }

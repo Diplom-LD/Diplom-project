@@ -9,17 +9,17 @@ namespace OrderService.Models.Warehouses
     {
         [BsonId]
         [BsonRepresentation(BsonType.String)]
-        public string ID { get; set; } = Guid.NewGuid().ToString();
+        public Guid ID { get; set; } = Guid.NewGuid(); 
 
         [BsonElement("warehouseId")]
         [BsonRepresentation(BsonType.String)]
         [Required(ErrorMessage = "ID склада обязателен.")]
-        public string WarehouseId { get; set; } = null!;
+        public Guid WarehouseId { get; set; } 
 
         [BsonElement("toolName")]
         [Required(ErrorMessage = "Название инструмента обязательно.")]
         [StringLength(100, ErrorMessage = "Название инструмента не может превышать 100 символов.")]
-        public string ToolName { get; set; } = null!;
+        public string ToolName { get; set; } = string.Empty; 
 
         [BsonElement("quantity")]
         [Range(0, int.MaxValue, ErrorMessage = "Количество инструмента не может быть отрицательным.")]
@@ -27,17 +27,9 @@ namespace OrderService.Models.Warehouses
 
         public ToolsStock() { }
 
-        public ToolsStock(string warehouseId, string toolName, int quantity)
+        public ToolsStock(Guid warehouseId, string toolName, int quantity)
         {
-            if (string.IsNullOrWhiteSpace(warehouseId))
-                throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouseId));
-
-            if (string.IsNullOrWhiteSpace(toolName) || toolName.Length > 100)
-                throw new ArgumentException("Название инструмента не может быть пустым или длиннее 100 символов.", nameof(toolName));
-
-            if (quantity < 0)
-                throw new ArgumentException("Количество инструмента не может быть отрицательным.", nameof(quantity));
-
+            ID = Guid.NewGuid(); 
             WarehouseId = warehouseId;
             ToolName = toolName;
             Quantity = quantity;

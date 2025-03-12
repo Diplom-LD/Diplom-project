@@ -2,123 +2,150 @@
 using System.Text.Json;
 using RabbitMQ.Client;
 using AuthService.Models.User;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace AuthService.Services
 {
-    public class RabbitMqProducerService : IDisposable
+    public class RabbitMqProducerService : IAsyncDisposable
     {
         private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private readonly IChannel _channel;
         private readonly ILogger<RabbitMqProducerService> _logger;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public RabbitMqProducerService(IServiceScopeFactory serviceScopeFactory, ILogger<RabbitMqProducerService> logger)
+        public RabbitMqProducerService(ILogger<RabbitMqProducerService> logger)
         {
-            _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
 
-            var factory = new ConnectionFactory()
+            var factory = new ConnectionFactory
             {
                 HostName = "rabbitmq",
                 Port = 5672,
-                UserName = "guest",  
-                Password = "guest",  
-                DispatchConsumersAsync = true
+                UserName = "guest",
+                Password = "guest"
             };
 
-            int retryCount = 5;
-            while (retryCount > 0)
-            {
-                try
-                {
-                    _connection = factory.CreateConnection();
-                    _channel = _connection.CreateModel();
-
-                    _channel.QueueDeclare(queue: "technicians_update",
-                                          durable: true,
-                                          exclusive: false,
-                                          autoDelete: false,
-                                          arguments: null);
-
-                    _logger.LogInformation("✅ [RabbitMQ] Подключение успешно установлено");
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "❌ [RabbitMQ] Ошибка подключения. Retrying...");
-                    retryCount--;
-                    if (retryCount == 0)
-                    {
-                        throw;
-                    }
-                    Thread.Sleep(5000);
-                }
-            }
-
-            if (_connection == null || _channel == null)
-            {
-                throw new InvalidOperationException("Failed to create RabbitMQ connection or channel.");
-            }
-        }
-
-        public void PublishTechnicianUpdate(List<User> workers)
-        {
-            if (workers == null || workers.Count == 0) return;
+            _logger.LogInformation("⏳ Подключение к RabbitMQ...");
 
             try
             {
-                foreach (var user in workers)
-                {
-                    _logger.LogInformation("🔍 Пользователь: Id={Id}, FirstName='{FirstName}', LastName='{LastName}'",
-                                           user.Id, user.FirstName, user.LastName);
-                }
+                _connection = Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult();
+                _channel = Task.Run(() => _connection.CreateChannelAsync()).GetAwaiter().GetResult();
 
-                var message = JsonSerializer.Serialize(workers.Select(user => new
-                {
-                    user.Id,
-                    FullName = $"{user.FirstName} {user.LastName}",
-                    user.PhoneNumber,
-                    user.Address,
-                    user.Latitude,
-                    user.Longitude
-                }).ToList());
+                _channel.QueueDeclareAsync(queue: "users_registered",
+                                           durable: true,
+                                           exclusive: false,
+                                           autoDelete: false,
+                                           arguments: null).GetAwaiter().GetResult();
 
-                var body = Encoding.UTF8.GetBytes(message);
+                _channel.QueueDeclareAsync(queue: "users_updated",
+                                           durable: true,
+                                           exclusive: false,
+                                           autoDelete: false,
+                                           arguments: null).GetAwaiter().GetResult();
 
-                _channel.BasicPublish(exchange: "", routingKey: "technicians_update",
-                                      basicProperties: null, body: body);
-
-                _logger.LogInformation("📤 [RabbitMQ] Отправлен обновленный список рабочих ({Count} человек)", workers.Count);
+                _logger.LogInformation("✅ [RabbitMQ] Подключение успешно установлено.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ [RabbitMQ] Ошибка при отправке сообщения");
+                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка подключения.");
+                throw;
             }
         }
 
+        public async Task PublishUserRegisteredAsync(User user, CancellationToken cancellationToken = default)
+        {
+            if (user == null)
+            {
+                _logger.LogWarning("⚠️ [RabbitMQ] Попытка отправки null-пользователя.");
+                return;
+            }
 
-        public void Dispose()
+            try
+            {
+                var message = JsonSerializer.Serialize(new
+                {
+                    user.Id,
+                    user.Role,
+                    FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                    user.Address,
+                    user.Latitude,
+                    user.Longitude
+                });
+
+                await PublishMessageAsync("users_registered", message, cancellationToken);
+                _logger.LogInformation("📤 [RabbitMQ] Отправлен новый пользователь: {Id}", user.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка при отправке нового пользователя.");
+            }
+        }
+
+        public async Task PublishUserUpdatedAsync(User user, CancellationToken cancellationToken = default)
+        {
+            if (user == null)
+            {
+                _logger.LogWarning("⚠️ [RabbitMQ] Попытка отправки null-пользователя на обновление.");
+                return;
+            }
+
+            try
+            {
+                var message = JsonSerializer.Serialize(new
+                {
+                    user.Id,
+                    user.Role,
+                    FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                    user.Address,
+                    user.Latitude,
+                    user.Longitude
+                });
+
+                await PublishMessageAsync("users_updated", message, cancellationToken);
+                _logger.LogInformation("📤 [RabbitMQ] Обновлены данные пользователя: {Id}", user.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка при отправке обновления пользователя.");
+            }
+        }
+
+        private async Task PublishMessageAsync(string queue, string message, CancellationToken cancellationToken)
+        {
+            var body = Encoding.UTF8.GetBytes(message);
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel.BasicPublishAsync(exchange: "",
+                                             routingKey: queue,
+                                             mandatory: false,
+                                             basicProperties: properties,
+                                             body: body,
+                                             cancellationToken: cancellationToken);
+        }
+
+        public async ValueTask DisposeAsync()
         {
             try
             {
                 if (_channel.IsOpen)
                 {
-                    _channel.Close();
-                    _logger.LogInformation("⚠️ [RabbitMQ] Канал закрыт");
+                    await _channel.CloseAsync(200, "Closing channel", false, CancellationToken.None);
+                    _logger.LogInformation("⚠️ [RabbitMQ] Канал закрыт.");
                 }
 
                 if (_connection.IsOpen)
                 {
-                    _connection.Close();
-                    _logger.LogInformation("⚠️ [RabbitMQ] Соединение закрыто");
+                    await _connection.CloseAsync(200, "Closing connection", TimeSpan.FromSeconds(5), false, CancellationToken.None);
+                    _logger.LogInformation("⚠️ [RabbitMQ] Соединение закрыто.");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ [RabbitMQ] Ошибка при закрытии соединения");
+                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка при закрытии соединения.");
             }
             finally
             {

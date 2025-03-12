@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
-using System.Threading.Tasks;
 using ManagerApp.Models.AuthRequest;
 using ManagerApp.Models.AuthResponse;
 using ManagerApp.Clients;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using ManagerApp.Services;
-using System;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
@@ -15,8 +10,12 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace ManagerApp.Controllers.Auth
 {
-    public class AuthController(AuthServiceClient _authServiceClient, ILogger<AuthController> _logger, JsonService _jsonService) : Controller
+    public class AuthController(AuthServiceClient authServiceClient, ILogger<AuthController> logger, JsonService jsonService) : Controller
     {
+        private readonly AuthServiceClient _authServiceClient = authServiceClient;
+        private readonly ILogger<AuthController> _logger = logger;
+        private readonly JsonService _jsonService = jsonService;
+
         public async Task<IActionResult> Auth()
         {
             var accessToken = Request.Cookies["accessToken"];
@@ -108,17 +107,19 @@ namespace ManagerApp.Controllers.Auth
 
             if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "Invalid registration data" });
+                return BadRequest(new { success = false, message = "Invalid registration data" });
             }
 
             try
             {
                 var registerResponse = await _authServiceClient.PostAsync("/auth/sign-up", model);
+
                 if (!registerResponse.IsSuccessStatusCode)
                 {
                     var errorMessage = await ExtractErrorMessageAsync(registerResponse);
                     _logger.LogWarning("Registration failed: {ErrorMessage}", errorMessage);
-                    return Json(new { success = false, message = errorMessage });
+
+                    return StatusCode((int)registerResponse.StatusCode, new { success = false, message = errorMessage });
                 }
 
                 _logger.LogInformation("Registration successful, attempting auto-login...");
@@ -133,7 +134,7 @@ namespace ManagerApp.Controllers.Auth
                 if (!loginResponse.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("Auto-login failed after registration. Status code: {StatusCode}", loginResponse.StatusCode);
-                    return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+                    return BadRequest(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
                 }
 
                 var loginResponseData = _jsonService.Deserialize<LoginResponse>(await loginResponse.Content.ReadAsStringAsync());
@@ -142,35 +143,77 @@ namespace ManagerApp.Controllers.Auth
                 if (loginResponseData?.AccessToken == null || string.IsNullOrEmpty(refreshToken))
                 {
                     _logger.LogWarning("Auto-login token extraction failed after registration.");
-                    return Json(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
+                    return BadRequest(new { success = false, message = "Registration successful, but login failed. Please sign in manually." });
                 }
 
                 var userDataResponse = await _authServiceClient.GetAsync("/auth/get-token", loginResponseData.AccessToken);
                 if (!userDataResponse.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("Failed to retrieve user data after registration. Status code: {StatusCode}", userDataResponse.StatusCode);
-                    return Json(new { success = false, message = "Registration successful, but failed to retrieve user data." });
+                    return BadRequest(new { success = false, message = "Registration successful, but failed to retrieve user data." });
                 }
 
                 var userData = _jsonService.Deserialize<GetTokenResponse>(await userDataResponse.Content.ReadAsStringAsync());
                 if (userData == null)
                 {
                     _logger.LogWarning("Failed to deserialize user data after registration.");
-                    return Json(new { success = false, message = "Registration successful, but failed to retrieve user data." });
+                    return BadRequest(new { success = false, message = "Registration successful, but failed to retrieve user data." });
                 }
 
                 await SignInUser(userData, loginResponseData.AccessToken);
                 SetAuthCookies(loginResponseData.AccessToken, refreshToken);
 
                 _logger.LogInformation("User successfully authenticated after registration.");
-                return Json(new { success = true, redirectUrl = Url.Action("Home", "ManagerHome") });
+                return Ok(new { success = true, redirectUrl = Url.Action("Home", "ManagerHome") });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "SignUp failed due to an unexpected error.");
-                return Json(new { success = false, message = "Registration service is unavailable. Please try again later." });
+                return StatusCode(500, new { success = false, message = "Registration service is unavailable. Please try again later." });
             }
         }
+
+        private async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
+        {
+            try
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("📩 Received error response: {Content}", content);
+
+                var errorObj = JsonSerializer.Deserialize<Dictionary<string, object>>(content);
+                if (errorObj != null)
+                {
+                    string errorMessage = errorObj.TryGetValue("message", out var message) ? message?.ToString() ?? "Unknown error." : "Unknown error.";
+
+                    if (errorObj.TryGetValue("errors", out var errors) && errors is JsonElement errorsElement)
+                    {
+                        var errorDetails = new List<string>();
+
+                        foreach (var error in errorsElement.EnumerateObject())
+                        {
+                            string fieldName = error.Name;
+                            string fieldErrors = string.Join("; ", error.Value.EnumerateArray().Select(e => e.GetString()));
+                            errorDetails.Add($"{fieldName}: {fieldErrors}");
+                        }
+
+                        if (errorDetails.Any())
+                        {
+                            errorMessage += "\nDetails:\n" + string.Join("\n", errorDetails);
+                        }
+                    }
+
+                    return errorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Failed to parse error response.");
+            }
+
+            return $"Request failed with status code {response.StatusCode}";
+        }
+
+
 
         private async Task<bool> ValidateAndSignIn(string accessToken, string? refreshToken)
         {
@@ -287,26 +330,5 @@ namespace ManagerApp.Controllers.Auth
                 Expires = DateTime.UtcNow.AddDays(7)
             });
         }
-
-        private async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
-        {
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            try
-            {
-                var errorObj = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
-                if (errorObj != null && errorObj.TryGetValue("message", out var extractedMessage))
-                {
-                    return extractedMessage;
-                }
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogWarning(ex, "Failed to parse error message from response. Raw response: {ResponseContent}", responseContent);
-            }
-
-            return $"Registration failed with status code {response.StatusCode}";
-        }
-
     }
 }

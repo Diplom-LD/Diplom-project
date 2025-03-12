@@ -9,14 +9,20 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=myuser
-      - POSTGRES_PASSWORD=mypassword
-      - POSTGRES_DB=mydb
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=rootpassword
+      - POSTGRES_DB=main_db  
     volumes:
       - postgre_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  
     restart: always
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "root", "-d", "main_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -36,7 +42,7 @@ services:
       timeout: 10s
       retries: 10
 
-  auth-service:  
+  auth-service:
     build:
       context: .
       dockerfile: AuthService/Dockerfile
@@ -45,7 +51,7 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
+      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=auth_db;Username=auth_user;Password=auth_pass
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
       - RabbitMQ__User=guest
@@ -53,9 +59,10 @@ services:
     depends_on:
       - postgre
       - rabbitmq
+    entrypoint: ["/bin/sh", "-c", "sleep 10 && dotnet AuthService.dll"]
     restart: always
     networks:
-      - app-network  
+      - app-network
 
   order-service:
     build:
@@ -66,11 +73,11 @@ services:
       - "5002:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=mydb;Username=myuser;Password=mypassword
-      - AuthService__BaseUrl=http://auth-service:8080  
+      - ConnectionStrings__PostgresConnection=Host=postgre;Port=5432;Database=orders_db;Username=order_user;Password=order_pass
+      - AuthService__BaseUrl=http://auth-service:8080
       - MongoDB__ConnectionString=mongodb://mongo:27017
       - MongoDB__DatabaseName=warehouse_db
-      - Redis__ConnectionString=redis:6379  
+      - Redis__ConnectionString=redis:6379
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
       - RabbitMQ__User=guest
@@ -81,11 +88,12 @@ services:
       - mongo
       - redis
       - rabbitmq
+    entrypoint: ["/bin/sh", "-c", "sleep 15 && dotnet OrderService.dll"]
     restart: always
     networks:
-      - app-network  
+      - app-network
 
-  manager-app:  
+  manager-app:
     build:
       context: .
       dockerfile: ManagerApp/Dockerfile
@@ -94,18 +102,19 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - AuthService__BaseUrl=http://auth-service:8080  
-      - OrderService__BaseUrl=http://order-service:8080  
+      - AuthService__BaseUrl=http://auth-service:8080
+      - OrderService__BaseUrl=http://order-service:8080
       - DOTNET_USE_POLLING_FILE_WATCHER=1
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
     depends_on:
       - auth-service
       - order-service
+    entrypoint: ["/bin/sh", "-c", "sleep 20 && dotnet ManagerApp.dll"]
     restart: always
     networks:
-      - app-network  
+      - app-network
     volumes:
-      - data_protection:/var/data-protection  
+      - data_protection:/var/data-protection
 
   btu-calc-service:
     build:
@@ -132,6 +141,11 @@ services:
     restart: always
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongo-express:
     image: mongo-express
@@ -160,6 +174,11 @@ services:
       - "6379:6379"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgre_data:

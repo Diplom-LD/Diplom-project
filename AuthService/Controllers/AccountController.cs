@@ -23,10 +23,10 @@ namespace AuthService.Controllers
                 return Unauthorized(new { message = "User is not authenticated" });
             }
 
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
-                return Unauthorized(new { message = "User ID is missing in the token" });
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
             }
 
             var user = await _dbContext.Users
@@ -41,8 +41,8 @@ namespace AuthService.Controllers
                     u.LastName,
                     u.PhoneNumber,
                     u.Address,
-                    u.Latitude,  
-                    u.Longitude  
+                    u.Latitude,
+                    u.Longitude
                 })
                 .FirstOrDefaultAsync();
 
@@ -76,8 +76,8 @@ namespace AuthService.Controllers
                     u.LastName,
                     u.PhoneNumber,
                     u.Address,
-                    u.Latitude,  
-                    u.Longitude 
+                    u.Latitude,
+                    u.Longitude
                 })
                 .FirstOrDefaultAsync();
 
@@ -98,10 +98,10 @@ namespace AuthService.Controllers
                 return BadRequest(ModelState);
             }
 
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
-                return Unauthorized(new { message = "User ID is missing in the token" });
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
             }
 
             var user = await _dbContext.Users.FindAsync(userId);
@@ -160,11 +160,8 @@ namespace AuthService.Controllers
 
             await _dbContext.SaveChangesAsync();
 
-            if (user.Role == "worker")
-            {
-                _rabbitMqProducerService.PublishTechnicianUpdate([user]);
-                _logger.LogInformation("📤 Sent updated worker profile to RabbitMQ: {UserId}, {Name}", user.Id, $"{user.FirstName} {user.LastName}");
-            }
+            await _rabbitMqProducerService.PublishUserUpdatedAsync(user);
+            _logger.LogInformation("📤 Sent updated user profile to RabbitMQ: {UserId}, {Name}", user.Id, $"{user.FirstName} {user.LastName}");
 
             return Ok(new { message = "Profile updated successfully" });
         }
@@ -177,10 +174,10 @@ namespace AuthService.Controllers
                 return BadRequest(ModelState);
             }
 
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
-                return Unauthorized(new { message = "User ID is missing in the token" });
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
             }
 
             var user = await _dbContext.Users.FindAsync(userId);
@@ -213,10 +210,10 @@ namespace AuthService.Controllers
         [HttpDelete("delete-account")]
         public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request)
         {
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
-                return Unauthorized(new { message = "User ID is missing in the token" });
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
             }
 
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);

@@ -129,6 +129,7 @@ public class LocationController(
     public async Task<IActionResult> GetNearestLocationWithRoutes(
         [FromQuery] double latitude,
         [FromQuery] double longitude,
+        [FromQuery] OrderService.Models.Enums.OrderType orderType, 
         [FromQuery] List<string>? technicianIds = null,
         [FromQuery] int count = 2,
         [FromQuery] bool useTraffic = true)
@@ -139,7 +140,7 @@ public class LocationController(
         _logger.LogInformation("🔍 Поиск ближайшего склада, {Count} техников и маршрутов для координат: {Latitude}, {Longitude}, с учетом пробок: {UseTraffic}",
             count, latitude, longitude, useTraffic);
 
-        var result = await _nearestLocationFinderService.FindNearestLocationWithRoutesAsync(latitude, longitude, technicianIds, count);
+        var result = await _nearestLocationFinderService.FindNearestLocationWithRoutesAsync(latitude, longitude, orderType, count, technicianIds);
 
         if (result.Routes.Count == 0)
         {

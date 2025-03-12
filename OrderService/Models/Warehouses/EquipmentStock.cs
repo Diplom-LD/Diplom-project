@@ -8,18 +8,18 @@ namespace OrderService.Models.Warehouses
     public class EquipmentStock
     {
         [BsonId]
-        [BsonRepresentation(BsonType.String)] 
-        public string ID { get; set; } = Guid.NewGuid().ToString();
+        [BsonRepresentation(BsonType.String)]
+        public Guid ID { get; set; } = Guid.NewGuid(); 
 
         [BsonElement("warehouseId")]
-        [BsonRepresentation(BsonType.String)] 
+        [BsonRepresentation(BsonType.String)]
         [Required(ErrorMessage = "ID склада обязателен.")]
-        public string WarehouseId { get; set; } = null!;
+        public Guid WarehouseId { get; set; } 
 
         [BsonElement("modelName")]
         [Required(ErrorMessage = "Название модели обязательно.")]
         [StringLength(100, ErrorMessage = "Название модели не может превышать 100 символов.")]
-        public string ModelName { get; set; } = null!;
+        public string ModelName { get; set; } = string.Empty;
 
         [BsonElement("btu")]
         [Range(1000, 300000, ErrorMessage = "BTU должен быть в диапазоне от 1000 до 300000.")]
@@ -37,28 +37,11 @@ namespace OrderService.Models.Warehouses
         [Range(0, int.MaxValue, ErrorMessage = "Количество оборудования не может быть отрицательным.")]
         public int Quantity { get; set; }
 
-        public EquipmentStock() { }
+        public EquipmentStock() { } 
 
-        public EquipmentStock(string warehouseId, string modelName, int btu, int serviceArea, decimal price, int quantity)
+        public EquipmentStock(Guid warehouseId, string modelName, int btu, int serviceArea, decimal price, int quantity)
         {
-            if (string.IsNullOrWhiteSpace(warehouseId))
-                throw new ArgumentException("ID склада не может быть пустым.", nameof(warehouseId));
-
-            if (string.IsNullOrWhiteSpace(modelName) || modelName.Length > 100)
-                throw new ArgumentException("Название модели не может быть пустым или длиннее 100 символов.", nameof(modelName));
-
-            if (btu < 1000 || btu > 300000)
-                throw new ArgumentException("BTU должен быть в диапазоне от 1000 до 300000.", nameof(btu));
-
-            if (serviceArea < 1 || serviceArea > 500)
-                throw new ArgumentException("Площадь обслуживания должна быть от 1 до 500 м².", nameof(serviceArea));
-
-            if (price <= 0)
-                throw new ArgumentException("Цена оборудования должна быть больше 0.", nameof(price));
-
-            if (quantity < 0)
-                throw new ArgumentException("Количество оборудования не может быть отрицательным.", nameof(quantity));
-
+            ID = Guid.NewGuid(); 
             WarehouseId = warehouseId;
             ModelName = modelName;
             BTU = btu;

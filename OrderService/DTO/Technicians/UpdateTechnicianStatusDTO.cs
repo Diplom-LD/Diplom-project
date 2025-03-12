@@ -2,8 +2,8 @@
 {
     public class UpdateTechnicianStatusDTO
     {
-        public string TechnicianId { get; set; } = string.Empty;
+        public Guid TechnicianId { get; set; }  
         public bool IsAvailable { get; set; }
-        public string? OrderId { get; set; }
+        public Guid? OrderId { get; set; } 
     }
 }
