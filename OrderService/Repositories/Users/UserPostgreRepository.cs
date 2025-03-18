@@ -24,7 +24,6 @@ namespace OrderService.Repositories.Users
             }
         }
 
-
         public async Task<User?> GetUserByIdAsync(Guid userId)
         {
             try
@@ -32,13 +31,68 @@ namespace OrderService.Repositories.Users
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                 {
-                    _logger.LogWarning("❌ Пользователь с ID: {UserId} не найден", userId);
+                    _logger.LogWarning("⚠️ [PostgreSQL] Пользователь с ID: {UserId} не найден.", userId);
+                }
+                else
+                {
+                    _logger.LogInformation("✅ [PostgreSQL] Пользователь с ID: {UserId} загружен.", userId);
                 }
                 return user;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка при получении данных из PostgreSQL.");
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при получении пользователя с ID: {UserId}.", userId);
+                return null;
+            }
+        }
+
+        public async Task<List<Technician>> GetTechniciansAsync()
+        {
+            try
+            {
+                var technicians = await _context.Users
+                    .OfType<Technician>()
+                    .ToListAsync();
+
+                if (technicians.Count == 0)
+                {
+                    _logger.LogWarning("⚠️ [PostgreSQL] В системе нет зарегистрированных техников.");
+                }
+                else
+                {
+                    _logger.LogInformation("✅ [PostgreSQL] Загружено {Count} техников.", technicians.Count);
+                }
+
+                return technicians;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при получении данных о техниках.");
+                return [];
+            }
+        }
+
+        public async Task<Manager?> GetManagerByIdAsync(Guid managerId)
+        {
+            try
+            {
+                var manager = await _context.Users
+                    .OfType<Manager>()
+                    .FirstOrDefaultAsync(m => m.Id == managerId);
+
+                if (manager == null)
+                {
+                    _logger.LogWarning("⚠️ [PostgreSQL] Менеджер с ID: {ManagerId} не найден.", managerId);
+                }
+                else
+                {
+                    _logger.LogInformation("✅ [PostgreSQL] Менеджер с ID: {ManagerId} загружен.", managerId);
+                }
+                return manager;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при получении менеджера с ID: {ManagerId}.", managerId);
                 return null;
             }
         }
@@ -64,25 +118,6 @@ namespace OrderService.Repositories.Users
                 _logger.LogError(ex, "❌ Ошибка при сохранении данных в PostgreSQL.");
             }
         }
-
-        public async Task<List<Technician>> GetTechniciansAsync()
-        {
-            try
-            {
-                var technicians = await _context.Users
-                    .OfType<Technician>() 
-                    .ToListAsync();
-
-                _logger.LogInformation("📥 [PostgreSQL] Загружено {Count} техников.", technicians.Count);
-                return technicians;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Ошибка при получении данных о техниках из PostgreSQL.");
-                return [];
-            }
-        }
-
 
         public async Task UpdateUserAsync(User user)
         {
@@ -119,6 +154,7 @@ namespace OrderService.Repositories.Users
 
                 _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
+
                 _logger.LogInformation("🗑️ [PostgreSQL] Пользователь удалён с ID: {UserId}", userId);
             }
             catch (Exception ex)
@@ -126,5 +162,13 @@ namespace OrderService.Repositories.Users
                 _logger.LogError(ex, "❌ Ошибка при удалении данных из PostgreSQL.");
             }
         }
+
+        public async Task<Technician?> GetTechnicianByIdAsync(Guid technicianId)
+        {
+            return await _context.Technicians
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == technicianId);
+        }
+
     }
 }

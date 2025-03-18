@@ -17,7 +17,7 @@ RUN dotnet build -c $BUILD_CONFIGURATION --no-restore
 FROM build AS publish
 RUN dotnet publish -c $BUILD_CONFIGURATION --no-restore -o /app/publish
 
-FROM base AS final
+FROM build AS final  
 WORKDIR /app
 COPY --from=publish /app/publish .
 

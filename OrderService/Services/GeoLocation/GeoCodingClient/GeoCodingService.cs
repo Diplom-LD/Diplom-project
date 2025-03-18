@@ -1,7 +1,7 @@
 ﻿using OrderService.DTO.GeoLocation;
 using System.Text.Json;
 
-namespace OrderService.Services.GeoLocation
+namespace OrderService.Services.GeoLocation.GeoCodingClient
 {
     public class GeoCodingService : IGeoCodingService
     {

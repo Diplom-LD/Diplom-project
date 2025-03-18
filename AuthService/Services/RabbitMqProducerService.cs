@@ -68,11 +68,13 @@ namespace AuthService.Services
                     FullName = $"{user.FirstName} {user.LastName}".Trim(),
                     user.Address,
                     user.Latitude,
-                    user.Longitude
+                    user.Longitude,
+                    user.Email,
+                    user.PhoneNumber
                 });
 
                 await PublishMessageAsync("users_registered", message, cancellationToken);
-                _logger.LogInformation("📤 [RabbitMQ] Отправлен новый пользователь: {Id}", user.Id);
+                _logger.LogInformation("📤 [RabbitMQ] Отправлен новый пользователь: {Id}, Email: {Email}", user.Id, user.Email);
             }
             catch (Exception ex)
             {
@@ -97,11 +99,13 @@ namespace AuthService.Services
                     FullName = $"{user.FirstName} {user.LastName}".Trim(),
                     user.Address,
                     user.Latitude,
-                    user.Longitude
+                    user.Longitude,
+                    user.Email,
+                    user.PhoneNumber
                 });
 
                 await PublishMessageAsync("users_updated", message, cancellationToken);
-                _logger.LogInformation("📤 [RabbitMQ] Обновлены данные пользователя: {Id}", user.Id);
+                _logger.LogInformation("📤 [RabbitMQ] Обновлены данные пользователя: {Id}, Email: {Email}", user.Id, user.Email);
             }
             catch (Exception ex)
             {

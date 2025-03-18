@@ -1,0 +1,133 @@
+﻿using OrderService.Models.Enums;
+using OrderService.Models.Orders;
+using OrderService.Repositories.Orders;
+using OrderService.Repositories.Users;
+using OrderService.Models.Users;
+using OrderService.Services.GeoLocation.GeoCodingClient;
+using OrderService.DTO.Orders.CreateOrders;
+
+namespace OrderService.Services.Orders
+{
+    public class OrderServiceClient(
+        OrderRepository orderRepository,
+        GeoCodingService geoCodingService,
+        UserPostgreRepository userPostgreRepository,
+        ILogger<OrderServiceClient> logger)
+    {
+        private readonly OrderRepository _orderRepository = orderRepository;
+        private readonly GeoCodingService _geoCodingService = geoCodingService;
+        private readonly UserPostgreRepository _userPostgreRepository = userPostgreRepository;
+        private readonly ILogger<OrderServiceClient> _logger = logger;
+
+        /// <summary>
+        /// 📌 Создание заявки клиентом (⚡ Без склада, оборудования, материалов, техников).
+        /// </summary>
+        public async Task<CreatedOrderResponseDTO?> CreateOrderByClientAsync(CreateOrderRequestForClient request)
+        {
+            _logger.LogInformation("📌 Клиент {ClientId} создаёт заявку", request.ClientId);
+
+            var user = await _userPostgreRepository.GetUserByIdAsync(request.ClientId ?? Guid.Empty);
+            if (user is not Client client)
+            {
+                _logger.LogError("❌ Ошибка: Клиент с ID {ClientId} не найден!", request.ClientId);
+                return null;
+            }
+
+            return await CreateOrderInternalAsync(
+                request,
+                OrderType.Installation,
+                client.Id,
+                client.FullName,
+                client.PhoneNumber,
+                client.Email
+            );
+        }
+
+        /// <summary>
+        /// 🔄 Внутренняя логика создания заявки клиентом
+        /// </summary>
+        private async Task<CreatedOrderResponseDTO?> CreateOrderInternalAsync(
+            CreateOrderRequestForClient request,
+            OrderType orderType,
+            Guid clientId,
+            string clientName,
+            string clientPhone,
+            string clientEmail)
+        {
+            _logger.LogInformation("🔄 Создание заявки клиентом...");
+
+            await using var transaction = await _orderRepository.BeginTransactionAsync();
+
+            try
+            {
+                // 1️⃣ Определение координат установки
+                if (string.IsNullOrWhiteSpace(request.InstallationAddress))
+                {
+                    _logger.LogError("❌ Ошибка: Адрес установки не указан!");
+                    return null;
+                }
+
+                var location = await _geoCodingService.GetCoordinatesAsync(request.InstallationAddress);
+                if (location == null)
+                {
+                    _logger.LogError("❌ Ошибка: Невозможно определить координаты для {Address}", request.InstallationAddress);
+                    return null;
+                }
+
+                // 2️⃣ Создание заявки
+                var orderId = Guid.NewGuid();
+                _logger.LogInformation("📌 Создаётся заявка {OrderId} от клиента {ClientName} ({ClientPhone})",
+                    orderId, clientName, clientPhone);
+
+                var order = new Order
+                {
+                    Id = orderId,
+                    OrderType = orderType,
+                    FulfillmentStatus = FulfillmentStatus.New,
+                    WorkProgress = WorkProgress.OrderPlaced,
+                    PaymentStatus = PaymentStatus.UnPaid,
+                    PaymentMethod = PaymentMethod.Cash,
+                    CreationOrderDate = DateTime.UtcNow,
+                    InstallationDate = request.InstallationDate == default ? DateTime.UtcNow : request.InstallationDate,
+                    InstallationAddress = request.InstallationAddress,
+                    Notes = request.Notes ?? string.Empty,
+                    WorkCost = 0,
+                    ClientID = clientId,
+                    ClientName = clientName,
+                    ClientPhone = clientPhone,
+                    ClientEmail = clientEmail,
+                    ManagerId = null,  
+                    Manager = null,
+                    Equipment = [],         
+                    RequiredMaterials = [], 
+                    RequiredTools = [],      
+                    AssignedTechnicians = []
+                };
+
+                // 3️⃣ Сохранение заявки в БД
+                var created = await _orderRepository.CreateOrderAsync(order);
+                if (!created)
+                {
+                    _logger.LogError("❌ Ошибка при создании заявки {OrderId}!", orderId);
+                    await transaction.RollbackAsync();
+                    return null;
+                }
+
+                _logger.LogInformation("✅ Заявка {OrderId} успешно создана.", orderId);
+
+                // 4️⃣ Фиксация транзакции
+                await _orderRepository.SaveChangesAsync();
+                await transaction.CommitAsync();
+                _logger.LogInformation("✅ Заявка {OrderId} сохранена в БД.", orderId);
+
+                return new CreatedOrderResponseDTO(order, null); 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Ошибка при создании заявки клиентом. Откат транзакции...");
+                await transaction.RollbackAsync();
+                return null;
+            }
+        }
+    }
+}

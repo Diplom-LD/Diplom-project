@@ -12,46 +12,55 @@ namespace OrderService.Services.Technicians
         private readonly UserRedisRepository _userRedisRepository = userRedisRepository;
         private readonly ILogger<TechnicianAvailabilityService> _logger = logger;
 
-
         /// <summary>
-        /// Получение всех техников (из Redis или PostgreSQL)
+        /// 🔍 Получение всех техников (из Redis, а при отсутствии - из PostgreSQL).
         /// </summary>
         private async Task<List<Technician>> GetAllTechniciansAsync()
         {
             var technicians = await _userRedisRepository.GetAllTechniciansAsync();
 
-            if (technicians == null || technicians.Count == 0)
+            if (technicians is { Count: > 0 })
             {
-                _logger.LogWarning("⚠️ Redis пуст или недоступен. Загружаем техников из PostgreSQL...");
+                _logger.LogInformation("✅ [Redis] Загружено {Count} техников.", technicians.Count);
+                return technicians;
+            }
 
-                // Загружаем всех пользователей, но выбираем только техников
-                var users = await _userPostgreRepository.GetAllUsersAsync();
-                technicians = [.. users.OfType<Technician>()];
+            _logger.LogWarning("⚠️ [Redis] Пусто или недоступен. Загружаем из PostgreSQL...");
 
-                if (technicians.Count > 0)
-                {
-                    _logger.LogInformation("✅ Загружено {Count} техников из PostgreSQL. Кэшируем в Redis...", technicians.Count);
-                    await _userRedisRepository.SaveTechniciansAsync(technicians); 
-                }
-                else
-                {
-                    _logger.LogWarning("⚠️ В PostgreSQL нет данных о техниках!");
-                }
+            var users = await _userPostgreRepository.GetAllUsersAsync();
+            technicians = [.. users.OfType<Technician>()];
+
+            if (technicians.Count > 0)
+            {
+                _logger.LogInformation("✅ [PostgreSQL] Загружено {Count} техников. Кэшируем в Redis...", technicians.Count);
+                await _userRedisRepository.SaveTechniciansAsync(technicians);
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ [PostgreSQL] Нет данных о техниках!");
             }
 
             return technicians;
         }
 
         /// <summary>
-        /// Проверка занятости техника на конкретную дату
+        /// 🔍 Проверка занятости техника на конкретную дату.
         /// </summary>
-        private async Task<bool> IsTechnicianAvailableAsync(string technicianId, DateTime date)
+        private async Task<bool> IsTechnicianAvailableAsync(Guid technicianId, DateTime date)
         {
-            var user = await _userPostgreRepository.GetUserByIdAsync(Guid.Parse(technicianId));
+            // Попробуем загрузить техников из Redis
+            var technician = await _userRedisRepository.GetTechnicianByIdAsync(technicianId);
 
-            if (user is not Technician technician)
+            if (technician == null)
             {
-                _logger.LogWarning("❌ Техник с ID: {TechnicianId} не найден", technicianId);
+                _logger.LogWarning("⚠️ [Redis] Техник {TechnicianId} не найден. Загружаем из PostgreSQL...", technicianId);
+                var user = await _userPostgreRepository.GetUserByIdAsync(technicianId);
+                technician = user as Technician;
+            }
+
+            if (technician == null)
+            {
+                _logger.LogWarning("❌ Техник с ID {TechnicianId} не найден!", technicianId);
                 return false;
             }
 
@@ -60,11 +69,12 @@ namespace OrderService.Services.Technicians
 
 
         /// <summary>
-        /// Получение доступных техников на конкретную дату
+        /// 🔍 Получение доступных техников на конкретную дату.
         /// </summary>
         public async Task<List<Technician>> GetAvailableTechniciansAsync(DateTime date)
         {
             var allTechnicians = await GetAllTechniciansAsync();
+
             var availableTechnicians = allTechnicians
                 .Where(t => t.IsAvailable && !t.Appointments.Any(a => a.Date.Date == date.Date))
                 .ToList();

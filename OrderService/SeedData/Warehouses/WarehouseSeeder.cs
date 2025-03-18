@@ -1,7 +1,7 @@
 ﻿using MongoDB.Driver;
 using OrderService.Data.Warehouses;
 using OrderService.Models.Warehouses;
-using OrderService.Services.GeoLocation;
+using OrderService.Services.GeoLocation.GeoCodingClient;
 
 namespace OrderService.SeedData.Warehouses
 {

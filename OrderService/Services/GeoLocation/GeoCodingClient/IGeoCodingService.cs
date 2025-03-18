@@ -1,4 +1,4 @@
-﻿namespace OrderService.Services.GeoLocation
+﻿namespace OrderService.Services.GeoLocation.GeoCodingClient
 {
     public interface IGeoCodingService
     {

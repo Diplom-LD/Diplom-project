@@ -1,7 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using OrderService.Models.Warehouses;
 using OrderService.Repositories.Warehouses;
-using OrderService.Services.GeoLocation;
+using OrderService.Services.GeoLocation.GeoCodingClient;
 
 namespace OrderService.Services.Warehouses
 {

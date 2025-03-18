@@ -6,6 +6,7 @@ namespace OrderService.Models.Users
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         public string FullName { get; set; } = string.Empty;
@@ -14,8 +15,5 @@ namespace OrderService.Models.Users
         public string PhoneNumber { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-
-        [Required]
-        public string Role { get; set; } = string.Empty; 
     }
 }
