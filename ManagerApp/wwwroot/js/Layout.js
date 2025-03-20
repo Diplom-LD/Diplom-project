@@ -16,7 +16,7 @@
 
     menuLinks.forEach((item, index) => {
         let linkPath = item.getAttribute("href");
-        if (!linkPath || linkPath === "#") return; 
+        if (!linkPath || linkPath === "#") return;
 
         linkPath = linkPath.replace(/\/$/, "").toLowerCase();
         if (linkPath === currentPath || (currentPath === "" && linkPath === "/")) {

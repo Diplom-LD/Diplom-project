@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OrderService.DTO.Warehouses;
 using OrderService.Models.Warehouses;
 using OrderService.Services.Warehouses;
 
@@ -45,5 +46,15 @@ namespace OrderService.Controllers.Warehouses
             var deleted = await _stockService.DeleteAsync(id, cancellationToken);
             return deleted ? NoContent() : NotFound($"Оборудование с ID {id} не найдено.");
         }
+
+        [HttpGet("aggregated")]
+        public async Task<ActionResult<List<AggregatedEquipmentDTO>>> GetAllEquipmentFromWarehouses(CancellationToken cancellationToken)
+        {
+            var aggregatedEquipment = await _stockService.GetAllEquipmentFromWarehousesAsync(cancellationToken);
+            return Ok(aggregatedEquipment);
+        }
+
+
+
     }
 }

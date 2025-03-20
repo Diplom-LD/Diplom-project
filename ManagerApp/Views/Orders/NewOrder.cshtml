@@ -19,10 +19,8 @@
                 <option value="Maintenance">Maintenance</option>
             </select>
 
-            <div class="cost-input-group">
-                <label for="WorkCost">Work Cost (MDL)</label>
-                <input type="number" name="WorkCost" id="WorkCost" placeholder="Enter amount" required>
-            </div>
+            <label for="WorkCost">Work Cost (MDL)</label>
+            <input type="number" name="WorkCost" id="WorkCost" placeholder="Enter amount" required>
 
             <label for="PaymentMethod">Payment Method</label>
             <select id="PaymentMethod" name="PaymentMethod" required>
@@ -45,14 +43,6 @@
         </fieldset>
 
         <fieldset>
-            <legend>Client Information</legend>
-            <input type="text" name="ClientFullName" placeholder="Full Name" required>
-            <input type="tel" name="ClientPhone" placeholder="Phone" required>
-            <input type="email" name="ClientEmail" placeholder="Email" required>
-        </fieldset>
-
-
-        <fieldset>
             <legend>Equipment Information</legend>
 
             <label for="EquipmentSource">Select Equipment Source</label>
@@ -61,26 +51,54 @@
                 <option value="Store">Store</option>
             </select>
 
-            <div id="storeEquipmentSelection" class="hidden">
-                <label for="StoreEquipment">Select Equipment from Store</label>
-                <button type="button" id="openStorePopup">Choose from Store</button>
+            <!-- Поля для Warehouse -->
+            <div id="warehouseFields">
+                <label for="Filter">Filter by</label>
+                <div class="filters-container">
+                    <select id="Filter">
+                        <option value="">All</option>
+                        <option value="BTU">BTU</option>
+                        <option value="ServiceArea">Service Area (m²)</option>
+                        <option value="Price">Price (MDL)</option>
+                    </select>
+
+                    <select id="SortOrder">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </div>
+
+                <label for="WarehouseModel">Select Model</label>
+                <select name="WarehouseModel" id="WarehouseModel" required>
+                    <option value="">Select Model</option>
+                </select>
+
+                <label for="RequestedQuantity">Requested Quantity</label>
+                <input type="number" name="RequestedQuantity" id="RequestedQuantity" required min="1">
             </div>
 
-            <div id="manualEquipmentEntry">
-                <label for="ModelName">Model Name</label>
-                <input type="text" name="ModelName" id="ModelName" placeholder="Enter Model Name" required>
+            <!-- Поля для Store -->
+            <div id="storeFields" class="hidden">
+                <label for="StoreModelName">Model Name</label>
+                <input type="text" name="StoreModelName" id="StoreModelName" required>
+
+                <label for="StoreName">Store Name</label>
+                <input type="text" name="StoreName" id="StoreName" required>
 
                 <label for="ModelUrl">Product URL</label>
-                <input type="url" name="ModelUrl" id="ModelUrl" placeholder="Enter Product URL" required>
+                <input type="url" name="ModelUrl" id="ModelUrl" required>
 
                 <label for="BTU">BTU</label>
-                <input type="number" name="BTU" id="BTU" placeholder="Enter BTU Value" required>
+                <input type="number" name="BTU" id="BTU" required>
 
                 <label for="ServiceArea">Service Area (m²)</label>
-                <input type="number" name="ServiceArea" id="ServiceArea" placeholder="Enter Service Area" required>
+                <input type="number" name="ServiceArea" id="ServiceArea" required>
 
-                <label for="EquipmentCost">Equipment Cost (MDL)</label>
-                <input type="number" name="EquipmentCost" id="EquipmentCost" placeholder="Enter Cost" required>
+                <label for="StorePrice">Price (MDL)</label>
+                <input type="number" name="StorePrice" id="StorePrice" required>
+
+                <label for="StoreQuantity">Quantity</label>
+                <input type="number" name="StoreQuantity" id="StoreQuantity" required min="1">
             </div>
         </fieldset>
 

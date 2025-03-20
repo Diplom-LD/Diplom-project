@@ -1,5 +1,6 @@
 ﻿using OrderService.Models.Warehouses;
 using OrderService.Repositories.Warehouses;
+using OrderService.DTO.Warehouses;  
 
 namespace OrderService.Services.Warehouses
 {
@@ -38,5 +39,28 @@ namespace OrderService.Services.Warehouses
             _logger.LogInformation("{Action}: {ModelName} (ID: {Id})", action,
                 item?.ModelName ?? "Неизвестное оборудование", id);
         }
+
+        public async Task<List<AggregatedEquipmentDTO>> GetAllEquipmentFromWarehousesAsync(CancellationToken cancellationToken = default)
+        {
+            var allEquipment = await GetAllAsync(cancellationToken);
+
+            var aggregatedEquipment = allEquipment
+                .GroupBy(e => new { e.ModelName, e.BTU, e.ServiceArea, e.Price }) 
+                .Select(group => new AggregatedEquipmentDTO
+                {
+                    ModelName = group.Key.ModelName,
+                    BTU = group.Key.BTU, 
+                    ServiceArea = group.Key.ServiceArea,
+                    Price = group.Key.Price, 
+                    TotalQuantity = group.Sum(e => e.Quantity)
+                })
+                .OrderByDescending(e => e.TotalQuantity)
+                .ToList();
+
+            _logger.LogInformation("✅ Найдено {Count} уникальных моделей оборудования со всех складов.", aggregatedEquipment.Count);
+            return aggregatedEquipment;
+        }
+
+
     }
 }

@@ -35,6 +35,17 @@ if (string.IsNullOrEmpty(orderServiceBaseUrl))
     throw new InvalidOperationException("OrderService__BaseUrl is not configured.");
 }
 
+// Подключение WarehouseServiceClient
+builder.Services.AddHttpClient<WarehouseServiceClient>(client =>
+{
+    var baseUrl = builder.Configuration["WarehouseService:BaseUrl"];
+    if (string.IsNullOrEmpty(baseUrl))
+        throw new InvalidOperationException("WarehouseService BaseUrl is missing!");
+
+    client.BaseAddress = new Uri(baseUrl);
+});
+
+
 builder.Services.AddHttpClient<OrderServiceClient>(client =>
 {
     client.BaseAddress = new Uri(orderServiceBaseUrl);

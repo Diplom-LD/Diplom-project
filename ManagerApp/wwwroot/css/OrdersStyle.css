@@ -76,6 +76,7 @@
     justify-content: center;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    text-decoration: none;
 }
 
     .new-order-btn:hover {
@@ -567,7 +568,7 @@
 
     .new-order-btn {
         margin-top: 0.625rem;
-        font-size: 0.8125rem;
+        font-size: 0.83rem;
         width: 100%;
     }
 
