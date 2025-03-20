@@ -5,7 +5,7 @@
 <div class="cardBox">
     <div class="card">
         <div>
-            <div class="numbers">1,504</div>
+            <div class="numbers">0</div>
             <div class="cardName">Active orders</div>
         </div>
 
@@ -16,8 +16,8 @@
 
     <div class="card">
         <div>
-            <div class="numbers">80</div>
-            <div class="cardName">Necessary tools</div>
+            <div class="numbers">100</div>
+            <div class="cardName">Equipment</div>
         </div>
 
         <div class="iconBx">
@@ -27,7 +27,7 @@
 
     <div class="card">
         <div>
-            <div class="numbers">284</div>
+            <div class="numbers">10</div>
             <div class="cardName">Active workers</div>
         </div>
 
@@ -38,7 +38,7 @@
 
     <div class="card">
         <div>
-            <div class="numbers">$7,842</div>
+            <div class="numbers">0 lei</div>
             <div class="cardName">Earning</div>
         </div>
 
@@ -53,157 +53,51 @@
     <div class="recentOrders">
         <div class="cardHeader">
             <h2>Recent Orders</h2>
-            <a href="#" class="btn">View All</a>
+            <a asp-controller="Orders" asp-action="Orders" class="btn">View All</a>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <td>Name</td>
-                    <td>Price</td>
-                    <td>Payment</td>
-                    <td>Status</td>
-                </tr>
-            </thead>
+        <div id="ordersContainer">
+            <table id="recentOrdersTable">
+                <thead>
+                    <tr>
+                        <td>Name</td>
+                        <td>Price</td>
+                        <td>Payment</td>
+                        <td>Status</td>
+                    </tr>
+                </thead>
 
-            <tbody>
-                <tr>
-                    <td>Conditioner in shop</td>
-                    <td>$1200</td>
-                    <td>Paid</td>
-                    <td><span class="status completed">Сompleted</span></td>
-                </tr>
+                <tbody id="ordersBody">
+                    <tr class="loading-row">
+                        <td colspan="4">
+                            <div class="loading-container">
+                                <div class="spinner"></div>
+                                <p class="loading-text">Loading recent orders...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
 
-                <tr>
-                    <td>Installation of this model</td>
-                    <td>$110</td>
-                    <td>Due</td>
-                    <td><span class="status processing">Processing</span></td>
-                </tr>
 
-                <tr>
-                    <td>Installation of air conditioning</td>
-                    <td>$1200</td>
-                    <td>Paid</td>
-                    <td><span class="status cancel">Cancel</span></td>
-                </tr>
-
-                <tr>
-                    <td>Selling conditioner</td>
-                    <td>$620</td>
-                    <td>Due</td>
-                    <td><span class="status inProgress">In Progress</span></td>
-                </tr>
-
-                <tr>
-                    <td>Conditioner in shop</td>
-                    <td>$1200</td>
-                    <td>Paid</td>
-                    <td><span class="status completed">Сompleted</span></td>
-                </tr>
-
-                <tr>
-                    <td>Installation of this model</td>
-                    <td>$110</td>
-                    <td>Due</td>
-                    <td><span class="status processing">Processing</span></td>
-                </tr>
-
-                <tr>
-                    <td>Installation of air conditioning</td>
-                    <td>$1200</td>
-                    <td>Paid</td>
-                    <td><span class="status cancel">Cancel</span></td>
-                </tr>
-
-                <tr>
-                    <td>Selling conditioner</td>
-                    <td>$620</td>
-                    <td>Due</td>
-                    <td><span class="status inProgress">In Progress</span></td>
-                </tr>
-            </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 
     <!-- ================= New Customers ================ -->
     <div class="recentCustomers">
         <div class="cardHeader">
-            <h2>Recent Customers</h2>
+            <h2>Customers</h2>
         </div>
 
-        <table>
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer02.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Chris <br> <span>bd. Moscova</span></h4>
-                </td>
-            </tr>
+        <table id="customersTable">
+            <tbody>
+                <tr class="loading-row">
+                    <td colspan="2" class="loading-text">Loading customers...</td>
+                </tr>
+            </tbody>
 
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer01.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Dimon <br> <span>Moldova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer02.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Chris <br> <span>bd. Moscova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer01.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Dimon <br> <span>Moldova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer02.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Chris <br> <span>bd. Moscova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer01.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Dimon <br> <span>Moldova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer01.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Chris <br> <span>bd. Moscova</span></h4>
-                </td>
-            </tr>
-
-            <tr>
-                <td width="60px">
-                    <div class="imgBx"><img src="~/imgs/Home/customer02.jpg" alt=""></div>
-                </td>
-                <td>
-                    <h4>Dimon <br> <span>Moldova</span></h4>
-                </td>
-            </tr>
         </table>
     </div>
 </div>
+
+<script src="~/js/Home/ManagerHome.js"></script>

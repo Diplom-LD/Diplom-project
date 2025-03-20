@@ -78,6 +78,16 @@ namespace OrderService.Models.Orders
         [EmailAddress(ErrorMessage = "Некорректный email.")]
         public required string ClientEmail { get; set; } = string.Empty;
 
+        /* Посчитанные BTU клиентом*/
+        [Range(1000, 300000, ErrorMessage = "BTU должен быть в диапазоне от 1000 до 300000.")]
+        public int ClientCalculatedBTU { get; set; }
+
+        [Range(1000, 300000, ErrorMessage = "Минимальный BTU должен быть в диапазоне от 1000 до 300000.")]
+        public int ClientMinBTU { get; set; }
+
+        [Range(1000, 300000, ErrorMessage = "Максимальный BTU должен быть в диапазоне от 1000 до 300000.")]
+        public int ClientMaxBTU { get; set; }
+
         public Guid? ManagerId { get; set; }
 
         [ForeignKey("ManagerId")]
@@ -136,7 +146,10 @@ namespace OrderService.Models.Orders
         public decimal ModelPrice { get; set; }
 
         [Required]
-        public required string ModelSource { get; set; }
+        public required string ModelSource { get; set; } 
+
+        [MaxLength(500)]
+        public string? ModelUrl { get; set; } 
 
         [Range(1000, 300000)]
         public int ModelBTU { get; set; }
@@ -151,6 +164,7 @@ namespace OrderService.Models.Orders
 
         public virtual Order Order { get; set; } = null!;
     }
+
 
     public class OrderRequiredMaterial
     {

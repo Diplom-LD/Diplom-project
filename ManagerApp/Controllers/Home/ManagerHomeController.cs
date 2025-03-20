@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using System.Net.Http;
 
 namespace ManagerApp.Controllers.Home
 {
@@ -55,5 +56,36 @@ namespace ManagerApp.Controllers.Home
             return RedirectToAction("Auth", "Auth");
         }
 
+
+        [HttpGet("get-clients")]
+        public async Task<IActionResult> GetClients()
+        {
+            try
+            {
+                var accessToken = Request.Cookies["accessToken"];
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    _logger.LogWarning("Access token is missing.");
+                    return Unauthorized(new { message = "Access token is missing." });
+                }
+
+                _logger.LogInformation("Fetching clients from AuthService...");
+                var clients = await _authServiceClient.GetClientsAsync(accessToken);
+
+                if (clients == null || clients.Count == 0)
+                {
+                    _logger.LogWarning("No clients found.");
+                    return Ok(new List<object>());
+                }
+
+                _logger.LogInformation("Clients received: {Count}", clients.Count);
+                return Ok(clients);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching clients from AuthService.");
+                return StatusCode(500, new { message = "Error fetching clients." });
+            }
+        }
     }
 }

@@ -258,5 +258,37 @@ namespace AuthService.Controllers
             return Ok(new { message = "Account deleted successfully" });
         }
 
+        [HttpGet("get-all-clients")]
+        [Authorize(Roles = "manager")]
+        public async Task<IActionResult> GetAllClients()
+        {
+            _logger.LogInformation("🟡 Fetching all clients from database...");
+
+            var clients = await _dbContext.Users
+                .Where(u => u.Role == "client")
+                .Select(u => new
+                {
+                    u.Id,
+                    u.UserName,
+                    u.Email,
+                    u.FirstName,
+                    u.LastName,
+                    u.PhoneNumber,
+                    u.Address,
+                    u.Latitude,
+                    u.Longitude
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("🟢 Found {Count} clients in database.", clients.Count);
+
+            if (clients.Count == 0)
+            {
+                _logger.LogWarning("⚠️ No clients found in the database!");
+            }
+
+            return Ok(clients);
+        }
+
     }
 }

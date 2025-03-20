@@ -61,6 +61,30 @@ namespace OrderService.Services.Orders
         }
 
 
+        public async Task OpenWebSocketForOrderAsync(Guid orderId)
+        {
+            _logger.LogInformation("📡 Открываем WebSocket-трекинг для заявки {OrderId}", orderId);
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var orderRepository = scope.ServiceProvider.GetRequiredService<OrderRepository>();
+
+            var order = await orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                _logger.LogError("❌ Ошибка: заявка {OrderId} не найдена!", orderId);
+                return;
+            }
+
+            // Имитируем WebSocket-соединение (для вызова из OrderServiceManager)
+            using var fakeWebSocket = WebSocket.CreateFromStream(Stream.Null, new WebSocketCreationOptions
+            {
+                IsServer = true
+            });
+
+            await TrackTechniciansAsync(orderId, fakeWebSocket);
+        }
+
+
         /// <summary>
         /// 📌 Обновление местоположения техника в Redis и уведомление WebSocket.
         /// </summary>
@@ -340,28 +364,6 @@ namespace OrderService.Services.Orders
             _logger.LogInformation("🔄 Статус заявки {OrderId} обновлен на 'InstallationStarted' после прибытия техника {TechnicianId}", orderId, technicianId);
         }
 
-        public async Task OpenWebSocketForOrderAsync(Guid orderId)
-        {
-            _logger.LogInformation("📡 Открываем WebSocket-трекинг для заявки {OrderId}", orderId);
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var orderRepository = scope.ServiceProvider.GetRequiredService<OrderRepository>();
-
-            var order = await orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                _logger.LogError("❌ Ошибка: заявка {OrderId} не найдена!", orderId);
-                return;
-            }
-
-            // Имитируем WebSocket-соединение (для вызова из OrderServiceManager)
-            using var fakeWebSocket = WebSocket.CreateFromStream(Stream.Null, new WebSocketCreationOptions
-            {
-                IsServer = true
-            });
-
-            await TrackTechniciansAsync(orderId, fakeWebSocket);
-        }
 
     }
 }

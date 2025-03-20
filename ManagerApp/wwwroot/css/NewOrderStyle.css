@@ -1,0 +1,294 @@
+/* ===== Universal box-sizing reset ===== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== New Order Form Styles ===== */
+.order-form {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    margin: 10px;
+    max-width: 800px;
+    width: 100%;
+}
+
+    .order-form h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 24px;
+    }
+
+    .order-form fieldset {
+        border: 1px solid #e1e1e1;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+
+    .order-form legend {
+        font-weight: bold;
+        color: #333;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .order-form label {
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #555;
+        display: block;
+    }
+
+    .order-form input,
+    .order-form select,
+    .order-form textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background-color: #fff;
+        color: #333;
+    }
+
+    .order-form textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .order-form select {
+        cursor: pointer;
+        background-color: #f9f9f9;
+    }
+
+/* ===== Cost Input Group ===== */
+.cost-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .cost-input-group input {
+        flex: 1;
+    }
+
+    .cost-input-group select {
+        width: auto;
+        padding: 10px;
+    }
+
+/* ===== Submit Button ===== */
+.order-form button[type="submit"] {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+    width: 100%;
+}
+
+    .order-form button[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+
+/* ===== Date Input Group ===== */
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+    .date-input-group label {
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: #666;
+    }
+
+/* ===== Tools & Materials Selection ===== */
+.tools-and-materials-selection {
+    margin-bottom: 15px;
+}
+
+#toolsAndMaterials {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.selected-tools-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tool-tag {
+    background-color: #007bff;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+    .tool-tag .remove-tool {
+        margin-left: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+/* ===== Order Summary Section ===== */
+.order-summary-section {
+    background-color: #f3f3f3;
+    border: 1px solid #d1d1d1;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+    .order-summary-section input[readonly] {
+        background-color: #e9ecef;
+        font-size: 18px;
+        text-align: center;
+        font-weight: bold;
+        color: #333;
+    }
+
+/* ===== Floating Popup Button ===== */
+.floating-popup-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    padding: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+    transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+    .floating-popup-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .floating-popup-btn.close-mode {
+        background-color: #dc3545;
+    }
+
+        .floating-popup-btn.close-mode:hover {
+            background-color: #c82333;
+        }
+
+/* ===== Popup Styles ===== */
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+    .popup.hidden {
+        display: none;
+    }
+
+.popup-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90vw;
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* ===== Responsive Styles ===== */
+@media (max-width: 876px) {
+    .order-form {
+        padding: 15px;
+    }
+
+        .order-form h2 {
+            font-size: 20px;
+        }
+
+        .order-form legend {
+            font-size: 16px;
+        }
+
+        .order-form input,
+        .order-form select,
+        .order-form textarea,
+        .order-form button {
+            font-size: 14px;
+        }
+
+    .popup-content {
+        width: 95vw;
+        max-width: none;
+    }
+
+    .order-summary-section {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-form fieldset {
+        padding: 10px;
+    }
+
+    .order-form button[type="submit"] {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .popup-content {
+        width: 100vw;
+        border-radius: 0;
+        padding: 10px;
+    }
+
+    .floating-popup-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+
+    .order-summary-section {
+        display: flex;
+        flex-direction: column;
+    }
+}

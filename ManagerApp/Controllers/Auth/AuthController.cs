@@ -94,11 +94,18 @@ namespace ManagerApp.Controllers.Auth
                 return Json(new { success = false, message = "Authentication successful, but failed to retrieve user data." });
             }
 
+            if (userData.Role?.ToLower() != "manager")
+            {
+                _logger.LogWarning("Unauthorized login attempt: User {Identifier} has role {Role}", model.Identifier, userData.Role);
+                return Json(new { success = false, message = "Access denied. Only managers can log in." });
+            }
+
             await SignInUser(userData, loginResponse.AccessToken);
             SetAuthCookies(loginResponse.AccessToken, refreshToken);
 
             return Json(new { success = true, redirectUrl = Url.Action("Home", "ManagerHome") });
         }
+
 
         [HttpPost]
         public async Task<IActionResult> SignUp([FromBody] RegisterRequest model)
@@ -196,7 +203,7 @@ namespace ManagerApp.Controllers.Auth
                             errorDetails.Add($"{fieldName}: {fieldErrors}");
                         }
 
-                        if (errorDetails.Any())
+                        if (errorDetails.Count != 0)
                         {
                             errorMessage += "\nDetails:\n" + string.Join("\n", errorDetails);
                         }
@@ -212,8 +219,6 @@ namespace ManagerApp.Controllers.Auth
 
             return $"Request failed with status code {response.StatusCode}";
         }
-
-
 
         private async Task<bool> ValidateAndSignIn(string accessToken, string? refreshToken)
         {

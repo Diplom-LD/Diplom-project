@@ -10,6 +10,8 @@ using OrderService.DTO.Orders.CreateOrders;
 using OrderService.DTO.Orders.UpdateOrders;
 using Microsoft.EntityFrameworkCore;
 using OrderService.DTO.Orders;
+using OrderService.DTO.GeoLocation;
+using OrderService.DTO.Users;
 
 namespace OrderService.Services.Orders
 {
@@ -66,16 +68,16 @@ namespace OrderService.Services.Orders
         /// 🔄 Логика создания заявки менеджером
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> ProcessManagerOrderCreationAsync(
-    CreateOrderRequestManager request,
-    OrderType orderType,
-    Guid? clientId,
-    string clientName,
-    string clientPhone,
-    string clientEmail,
-    Guid managerId,
-    Manager manager,
-    string? equipmentModel,
-    List<string>? technicianIds)
+            CreateOrderRequestManager request,
+            OrderType orderType,
+            Guid? clientId,
+            string clientName,
+            string clientPhone,
+            string clientEmail,
+            Guid managerId,
+            Manager manager,
+            string? equipmentModel,
+            List<string>? technicianIds)
         {
             _logger.LogInformation("🔄 Создание заявки менеджером...");
 
@@ -103,15 +105,50 @@ namespace OrderService.Services.Orders
                 _logger.LogInformation("🔍 Входные параметры: TechnicianIds = {TechnicianIds}, EquipmentModel = {EquipmentModel}",
                     technicianIds != null ? string.Join(", ", technicianIds) : "None", equipmentModel);
 
-                // 2️⃣ Поиск склада, оборудования и техников
-                var nearestLocationData = await _nearestLocationFinderService.FindNearestLocationsAsync(
-                    location.Value.Latitude, location.Value.Longitude,
-                    orderType, equipmentModel, technicianIds);
+                // 2️⃣ Определяем источник оборудования (склад или магазин)
+                var isWarehouseSource = request.Equipment.ModelSource == "Warehouse";
+                NearestLocationResultDTO nearestLocationData;
 
-                if (nearestLocationData.NearestWarehouses.Count == 0)
+                if (isWarehouseSource)
                 {
-                    _logger.LogError("❌ Не найден склад с необходимыми ресурсами!");
-                    return null;
+                    // 📦 Поиск склада, оборудования и техников
+                    nearestLocationData = await _nearestLocationFinderService.FindNearestLocationsAsync(
+                        location.Value.Latitude, location.Value.Longitude,
+                        orderType, equipmentModel, technicianIds);
+
+                    if (nearestLocationData.NearestWarehouses.Count == 0)
+                    {
+                        _logger.LogError("❌ Не найден склад с необходимыми ресурсами!");
+                        return null;
+                    }
+                }
+                else
+                {
+                    // 🛒 Оборудование из магазина - берем данные напрямую из запроса
+                    // 🛒 Оборудование из магазина - берем данные напрямую из запроса
+                    nearestLocationData = new NearestLocationResultDTO
+                    {
+                        NearestWarehouses = [],
+                        AvailableEquipment = [
+                        new OrderEquipmentDTO
+                        {
+                            ModelName = request.Equipment.ModelName,
+                            ModelSource = "Store",
+                            ModelUrl = request.Equipment.ModelUrl,
+                            ModelBTU = request.Equipment.BTU,
+                            ServiceArea = request.Equipment.ServiceArea,
+                            ModelPrice = request.Equipment.Price,
+                            Quantity = request.Equipment.Quantity
+                        }
+                    ],
+                                        SelectedTechnicians = technicianIds?.Count > 0
+                        ? [.. (await _userPostgreRepository.GetTechniciansByIdsAsync(technicianIds)).Select(t => new TechnicianDTO(t))]
+                        : [.. (await _userPostgreRepository.GetNearestAvailableTechniciansAsync(
+                                location.Value.Latitude, location.Value.Longitude, 2))
+                            .Select(t => new TechnicianDTO(t))]
+                    };
+
+
                 }
 
                 if (nearestLocationData.SelectedTechnicians.Count == 0)
@@ -152,7 +189,7 @@ namespace OrderService.Services.Orders
                     Equipment = [],
                     RequiredMaterials = [],
                     RequiredTools = [],
-                    AssignedTechnicians = []  // <== Добавляем техников
+                    AssignedTechnicians = []
                 };
 
                 // 4️⃣ Сохранение заявки в БД
@@ -229,6 +266,7 @@ namespace OrderService.Services.Orders
                 return null;
             }
         }
+
 
 
         public async Task<bool> UpdateOrderGeneralDetailsAsync(Guid orderId, UpdateOrderRequestManager request)
@@ -384,8 +422,35 @@ namespace OrderService.Services.Orders
                     order.WorkProgress = WorkProgress.OrderProcessed;
                     _logger.LogInformation("📌 Заявка {OrderId} обработана менеджером. Статус -> InProgress", orderId);
 
-                    await _technicianTrackingService.OpenWebSocketForOrderAsync(orderId);
-                    await _technicianSimulationService.SimulateAllTechniciansMovementAsync(orderId);
+                    // ✅ Сначала сохраняем изменения в БД, чтобы техники были привязаны к заявке
+                    await _orderRepository.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // ✅ Достаем назначенных техников, чтобы убедиться, что они существуют
+                    var technicians = await _orderRepository.GetTechniciansByOrderIdAsync(orderId);
+                    if (technicians.Count == 0)
+                    {
+                        _logger.LogError("❌ Ошибка: Нет назначенных техников для заявки {OrderId}. Симуляция движения невозможна!", orderId);
+                        return false;
+                    }
+
+                    try
+                    {
+                        _logger.LogInformation("🔄 Открытие WebSocket и запуск симуляции движения техников для заявки {OrderId}", orderId);
+
+                        var trackingTask = _technicianTrackingService.OpenWebSocketForOrderAsync(orderId);
+                        var simulationTask = _technicianSimulationService.SimulateAllTechniciansMovementAsync(orderId);
+
+                        await Task.WhenAll(trackingTask, simulationTask);
+
+                        _logger.LogInformation("✅ WebSocket и симуляция движения техников завершены для заявки {OrderId}", orderId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "❌ Ошибка при запуске WebSocket и симуляции движения техников для заявки {OrderId}", orderId);
+                        return false;
+                    }
+
                 }
                 else if (currentStatus == FulfillmentStatus.InProgress && currentProgress == WorkProgress.OrderProcessed)
                 {
@@ -404,6 +469,9 @@ namespace OrderService.Services.Orders
                     order.FulfillmentStatus = FulfillmentStatus.Completed;
                     order.WorkProgress = WorkProgress.InstallationCompleted;
 
+                    await _orderRepository.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
                     await ReleaseTechniciansAsync(order.Id);
                     await _technicianTrackingService.CloseWebSocketForOrderAsync(order.Id);
                 }
@@ -411,6 +479,9 @@ namespace OrderService.Services.Orders
                 {
                     order.FulfillmentStatus = FulfillmentStatus.Cancelled;
                     _logger.LogWarning("⚠️ Заявка {OrderId} была отменена!", orderId);
+
+                    await _orderRepository.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
                     await ReleaseTechniciansAsync(order.Id);
                     await _technicianTrackingService.CloseWebSocketForOrderAsync(order.Id);
@@ -420,10 +491,6 @@ namespace OrderService.Services.Orders
                     _logger.LogWarning("⚠️ Недопустимый переход статусов: {CurrentStatus} -> {NewStatus}", currentStatus, newStatus);
                     return false;
                 }
-
-                await _orderRepository.SaveChangesAsync();
-                await transaction.CommitAsync();
-                _logger.LogInformation("✅ Статус заявки {OrderId} успешно обновлён на {NewStatus}, этап: {WorkProgress}", orderId, order.FulfillmentStatus, order.WorkProgress);
 
                 return true;
             }

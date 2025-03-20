@@ -28,6 +28,10 @@ namespace OrderService.DTO.Orders
         public string? ClientPhone { get; set; } = order.ClientPhone;
         public string? ClientEmail { get; set; } = order.ClientEmail;
 
+        public int ClientCalculatedBTU { get; set; } = order.ClientCalculatedBTU;
+        public int ClientMinBTU { get; set; } = order.ClientMinBTU;
+        public int ClientMaxBTU { get; set; } = order.ClientMaxBTU;
+
         public Guid? ManagerId { get; set; } = order.ManagerId;
 
         public List<OrderEquipmentDTO> Equipment { get; set; } = order.Equipment?.Select(e => new OrderEquipmentDTO(e)).ToList() ?? [];
@@ -65,7 +69,8 @@ namespace OrderService.DTO.Orders
     {
         public string ModelName { get; set; } = string.Empty;
         public decimal ModelPrice { get; set; }
-        public string ModelSource { get; set; } = string.Empty;
+        public string ModelSource { get; set; } = string.Empty; 
+        public string? ModelUrl { get; set; } 
         public int ModelBTU { get; set; }
         public int ServiceArea { get; set; }
         public int Quantity { get; set; }
@@ -77,11 +82,13 @@ namespace OrderService.DTO.Orders
             ModelName = equipment.ModelName;
             ModelPrice = equipment.ModelPrice;
             ModelSource = equipment.ModelSource;
+            ModelUrl = equipment.ModelSource == "Store" ? equipment.ModelUrl : null;
             ModelBTU = equipment.ModelBTU;
             ServiceArea = equipment.ServiceArea;
             Quantity = equipment.Quantity;
         }
     }
+
 
     public class OrderMaterialDTO
     {

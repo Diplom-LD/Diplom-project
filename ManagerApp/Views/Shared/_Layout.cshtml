@@ -33,7 +33,7 @@
 
 
                 <li>
-                    <a href="#">
+                    <a asp-controller="Orders" asp-action="Orders">
                         <span class="icon">
                             <ion-icon name="chatbox-ellipses"></ion-icon>
                         </span>
@@ -120,15 +120,15 @@
                     <ion-icon name="menu-outline"></ion-icon>
                 </div>
 
-                <div class="search">
-                    <label>
-                        <input type="text" placeholder="Search here">
-                        <ion-icon name="search-outline"></ion-icon>
-                    </label>
-                </div>
+                @* <div class="search"> *@
+                @*     <label> *@
+                @*         <input type="text" placeholder="Search here"> *@
+                @*         <ion-icon name="search-outline"></ion-icon> *@
+                @*     </label> *@
+                @* </div> *@
 
                 <div class="user">
-                    <img src="~/imgs/Home/customer01.jpg" alt="">
+                    <img src="~/imgs/Home/customer02.jpg" alt="">
                 </div>
             </div>
 
@@ -138,7 +138,7 @@
         </div>
     </div>
 
-    <script src="~/js/Home/ManagerHome.js"></script>
+    <script src="~/js/Layout.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>

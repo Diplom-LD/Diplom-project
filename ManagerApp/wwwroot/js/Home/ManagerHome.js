@@ -1,104 +1,153 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    let list = document.querySelectorAll(".navigation li a");
-    let toggle = document.querySelector(".toggle");
-    let navigation = document.querySelector(".navigation");
-    let main = document.querySelector(".main");
+    let lastOrdersHash = "";
 
-    if (list.length === 0) return;
+    async function loadClients() {
+        let customersTable = document.querySelector("#customersTable tbody");
+        if (!customersTable) return;
 
-    let currentPath = window.location.pathname.replace(/\/$/, "").toLowerCase();
-    let activeIndex = -1;
-
-    list.forEach((item, index) => {
-        let linkPath = item.getAttribute("href").replace(/\/$/, "").toLowerCase();
-        if (linkPath === currentPath || (currentPath === "" && linkPath === "/")) {
-            activeIndex = index;
-        }
-    });
-
-    let savedIndex = -1;
-    try {
-        if (typeof Storage !== "undefined") {
-            let storedIndex = Number(localStorage.getItem("activeMenuIndex"));
-            if (Number.isInteger(storedIndex) && storedIndex >= 0 && storedIndex < list.length) {
-                savedIndex = storedIndex;
-            }
-        }
-    } catch (e) {
-        console.warn("localStorage недоступен. Активный элемент не сохранится.");
-    }
-
-    if (activeIndex !== -1) {
-        list[activeIndex]?.parentElement.classList.add("hovered");
         try {
-            localStorage.setItem("activeMenuIndex", activeIndex);
-        } catch (e) {
-            console.warn("localStorage недоступен.");
-        }
-    } else if (savedIndex !== -1) {
-        list[savedIndex]?.parentElement.classList.add("hovered");
-    }
+            let response = await fetch("/get-clients");
+            if (!response.ok) throw new Error("Failed to fetch clients.");
+            let data = await response.json();
 
-    function activeLink(event) {
-        list.forEach((item) => item.parentElement.classList.remove("hovered"));
-        this.parentElement.classList.add("hovered");
-
-        let index = [...list].indexOf(this);
-        if (index !== -1) {
-            try {
-                localStorage.setItem("activeMenuIndex", index);
-            } catch (e) {
-                console.warn("localStorage недоступен. Активный элемент не сохранится.");
-            }
-        }
-    }
-
-    list.forEach((item) => item.addEventListener("click", activeLink));
-
-    let menuState = "open";
-    try {
-        if (typeof Storage !== "undefined") {
-            menuState = localStorage.getItem("menuState") || "open";
-        }
-    } catch (e) {
-        console.warn("localStorage недоступен.");
-    }
-
-    function applyMenuState() {
-        let isLargeScreen = window.innerWidth > 991;
-
-        if (isLargeScreen) {
-            if (menuState === "open") {
-                navigation.classList.add("active");
-                main.classList.add("active");
-            } else {
-                navigation.classList.remove("active");
-                main.classList.remove("active");
-            }
-        } else {
-            if (!navigation.classList.contains("active") && menuState === "closed") {
-                navigation.classList.remove("active");
-                main.classList.remove("active");
-            }
+            customersTable.innerHTML = data.length === 0
+                ? "<tr><td colspan='2'>No customers found</td></tr>"
+                : data.map(client => `
+                    <tr>
+                        <td width="60px">
+                            <div class="imgBx">
+                                <img src="${client.avatarUrl ? `/imgs/Home/${client.avatarUrl}` : "/imgs/Home/customer01.jpg"}"
+                                    onerror="this.onerror=null;this.src='/imgs/Home/customer01.jpg';">
+                            </div>
+                        </td>
+                        <td>
+                            <h4>${client.firstName} ${client.lastName} <br> 
+                                <span>${client.address || "No address"}</span>
+                            </h4>
+                        </td>
+                    </tr>`).join("");
+        } catch {
+            customersTable.innerHTML = "<tr><td colspan='2'>Failed to load customers</td></tr>";
         }
     }
 
-    applyMenuState();
+    async function loadRecentOrders() {
+        let ordersContainer = document.querySelector("#ordersContainer");
+        if (!ordersContainer) return;
 
-    if (toggle) {
-        toggle.addEventListener("click", () => {
-            let isOpen = navigation.classList.toggle("active");
-            main.classList.toggle("active", isOpen);
-            menuState = isOpen ? "open" : "closed";
-            try {
-                localStorage.setItem("menuState", menuState);
-            } catch (e) {
-                console.warn("localStorage недоступен.");
+        try {
+            let response = await fetch(`/Orders/GetOrders?recent=true`);
+            if (!response.ok) throw new Error(`Failed to load recent orders. Status: ${response.status}`);
+            let data = await response.json();
+
+            let orders = Array.isArray(data.orders) ? data.orders : (Array.isArray(data) ? data : []);
+            orders.sort((a, b) => new Date(b.creationOrderDate) - new Date(a.creationOrderDate));
+            let recentOrders = orders.slice(0, 10);
+
+            let newOrdersHash = JSON.stringify(recentOrders);
+            if (newOrdersHash !== lastOrdersHash) {
+                lastOrdersHash = newOrdersHash;
+                updateActiveOrders(recentOrders);
+                renderRecentOrders(recentOrders);
             }
+        } catch (error) {
+            console.error("❌ Ошибка загрузки последних заказов:", error);
+        }
+    }
+
+    function updateActiveOrders(orders) {
+        document.querySelector(".cardBox .card:nth-child(1) .numbers").textContent = orders.length;
+
+        let totalEarnings = orders
+            .filter(order => order.paymentStatus === "Paid")
+            .reduce((sum, order) => sum + (order.totalCost || 0), 0);
+
+        document.querySelector(".cardBox .card:nth-child(4) .numbers").textContent = `${totalEarnings.toFixed(2)} MDL`;
+    }
+
+    function renderRecentOrders(orders) {
+        let ordersContainer = document.querySelector("#ordersContainer");
+        if (orders.length === 0) {
+            ordersContainer.innerHTML = `
+            <div class="no-orders-message">
+                <div class="no-orders-icon">&#128721;</div>
+                <p>No recent orders available.</p>
+            </div>`;
+            return;
+        }
+
+        ordersContainer.innerHTML = `
+        <table id="recentOrdersTable">
+            <thead>
+                <tr>
+                    <td>Order Type</td>
+                    <td>Price (MDL)</td>
+                    <td>Payment</td>
+                    <td>Status</td>
+                </tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+        </table>`;
+
+        const ordersTable = document.querySelector("#ordersBody");
+
+        orders.forEach(order => {
+            let statusClass = mapStatusToClass(order.fulfillmentStatus);
+            let orderIcon = getOrderIcon(order.orderType);
+
+            const row = `
+            <tr>
+                <td>
+                    <div class="order-type">
+                        <span class="order-icon">${orderIcon}</span>
+                        <span class="order-name">${order.orderType || "Unknown"}</span>
+                    </div>
+                </td> 
+                <td>
+                    <div class="order-price">
+                        <span class="price-value">${order.totalCost ? order.totalCost.toFixed(2) : "0.00"}</span>
+                        <span class="currency">MDL</span>
+                    </div>
+                </td>   
+                <td>
+                    <div class="payment-status">${order.paymentStatus || "N/A"}</div>
+                </td>
+                <td>
+                    <span class="status ${statusClass}">${order.fulfillmentStatus || "Unknown"}</span>
+                </td>
+            </tr>`;
+            ordersTable.insertAdjacentHTML("beforeend", row);
         });
     }
 
-    window.addEventListener("resize", () => {
-        applyMenuState();
-    });
+    function mapStatusToClass(status) {
+        switch (status) {
+            case "Completed": return "completed";
+            case "Processing":
+            case "InProgress": return "processing";
+            case "Cancelled":
+            case "Cancel": return "cancel";
+            case "New":
+            case "Pending": return "inProgress";
+            default: return "unknown";
+        }
+    }
+
+    function getOrderIcon(orderType) {
+        switch (orderType) {
+            case "Installation": return "🛠️";
+            case "Maintenance": return "🔧";
+            case "Repair": return "⚙️";
+            case "Delivery": return "🚚";
+            default: return "📦";
+        }
+    }
+
+    setInterval(() => {
+        console.log("🔄 Проверка новых заказов...");
+        loadRecentOrders();
+    }, 10000);
+
+    loadRecentOrders();
+    loadClients();
 });

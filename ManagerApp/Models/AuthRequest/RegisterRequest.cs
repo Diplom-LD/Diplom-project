@@ -53,7 +53,7 @@ namespace ManagerApp.Models.AuthRequest
         public string? RegistrationCode { get; set; }
 
         [Required(ErrorMessage = "Role is required")]
-        [RegularExpression("^(client|manager|worker)$", ErrorMessage = "Role must be client, manager, or worker")]
-        public string Role { get; set; } = "manager";
+        public string Role { get; private set; } = "manager";
+
     }
 }

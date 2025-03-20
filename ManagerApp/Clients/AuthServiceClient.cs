@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
+    using ManagerApp.Models.Home;
 
     public class AuthServiceClient
     {
@@ -130,6 +131,90 @@
             }
         }
 
-    }
+        public async Task<List<ClientModel>> GetClientsAsync(string accessToken)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "/auth/account/get-all-clients");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
+                _logger.LogInformation("Sending request to AuthService: {Url}", request.RequestUri);
+
+                var response = await _httpClient.SendAsync(request);
+
+                _logger.LogInformation("Response received. Status: {StatusCode}", response.StatusCode);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Failed to get clients. Status: {StatusCode}, Error: {ErrorMessage}", response.StatusCode, errorMessage);
+                    return [];
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var clients = JsonSerializer.Deserialize<List<ClientModel>>(json, _jsonOptions);
+
+                _logger.LogInformation("Clients received: {Count}", clients?.Count ?? 0);
+
+                return clients ?? [];
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching clients from AuthService");
+                return [];
+            }
+        }
+
+
+        public async Task<UserProfile?> GetProfileAsync(string loginOrEmail, string accessToken)
+        {
+            _logger.LogInformation("Fetching profile for {LoginOrEmail}", loginOrEmail);
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"/auth/account/get-profile/{loginOrEmail}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<UserProfile>(_jsonOptions);
+                }
+
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("GetProfileAsync failed: {StatusCode} - {ErrorMessage}", response.StatusCode, errorMessage);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching profile from AuthService.");
+                return null;
+            }
+        }
+
+        public async Task<UserProfile?> GetMyProfileAsync(string accessToken)
+        {
+            _logger.LogInformation("Fetching current manager profile.");
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "/auth/account/my-profile");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<UserProfile>(_jsonOptions);
+                }
+
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("GetMyProfileAsync failed: {StatusCode} - {ErrorMessage}", response.StatusCode, errorMessage);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching current manager profile.");
+                return null;
+            }
+        }
+    }
 }
+

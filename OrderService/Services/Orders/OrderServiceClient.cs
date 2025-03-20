@@ -35,7 +35,7 @@ namespace OrderService.Services.Orders
 
             return await CreateOrderInternalAsync(
                 request,
-                OrderType.Installation,
+                request.OrderType, 
                 client.Id,
                 client.FullName,
                 client.PhoneNumber,
@@ -47,13 +47,33 @@ namespace OrderService.Services.Orders
         /// 🔄 Внутренняя логика создания заявки клиентом
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> CreateOrderInternalAsync(
-            CreateOrderRequestForClient request,
-            OrderType orderType,
-            Guid clientId,
-            string clientName,
-            string clientPhone,
-            string clientEmail)
+    CreateOrderRequestForClient request,
+    OrderType orderType,
+    Guid clientId,
+    string clientName,
+    string clientPhone,
+    string clientEmail)
         {
+            if (request is null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            if (string.IsNullOrEmpty(clientName))
+            {
+                throw new ArgumentException($"'{nameof(clientName)}' cannot be null or empty.", nameof(clientName));
+            }
+
+            if (string.IsNullOrEmpty(clientPhone))
+            {
+                throw new ArgumentException($"'{nameof(clientPhone)}' cannot be null or empty.", nameof(clientPhone));
+            }
+
+            if (string.IsNullOrEmpty(clientEmail))
+            {
+                throw new ArgumentException($"'{nameof(clientEmail)}' cannot be null or empty.", nameof(clientEmail));
+            }
+
             _logger.LogInformation("🔄 Создание заявки клиентом...");
 
             await using var transaction = await _orderRepository.BeginTransactionAsync();
@@ -82,26 +102,31 @@ namespace OrderService.Services.Orders
                 var order = new Order
                 {
                     Id = orderId,
-                    OrderType = orderType,
+                    OrderType = request.OrderType,
                     FulfillmentStatus = FulfillmentStatus.New,
                     WorkProgress = WorkProgress.OrderPlaced,
                     PaymentStatus = PaymentStatus.UnPaid,
-                    PaymentMethod = PaymentMethod.Cash,
+                    PaymentMethod = request.PaymentMethod,
                     CreationOrderDate = DateTime.UtcNow,
                     InstallationDate = request.InstallationDate == default ? DateTime.UtcNow : request.InstallationDate,
                     InstallationAddress = request.InstallationAddress,
+                    InstallationLatitude = location.Value.Latitude,
+                    InstallationLongitude = location.Value.Longitude,
                     Notes = request.Notes ?? string.Empty,
                     WorkCost = 0,
                     ClientID = clientId,
                     ClientName = clientName,
                     ClientPhone = clientPhone,
                     ClientEmail = clientEmail,
-                    ManagerId = null,  
+                    ManagerId = null,
                     Manager = null,
-                    Equipment = [],         
-                    RequiredMaterials = [], 
-                    RequiredTools = [],      
-                    AssignedTechnicians = []
+                    Equipment = [],
+                    RequiredMaterials = [],
+                    RequiredTools = [],
+                    AssignedTechnicians = [],
+                    ClientCalculatedBTU = request.ClientCalculatedBTU,
+                    ClientMinBTU = request.ClientMinBTU,
+                    ClientMaxBTU = request.ClientMaxBTU
                 };
 
                 // 3️⃣ Сохранение заявки в БД
@@ -120,7 +145,7 @@ namespace OrderService.Services.Orders
                 await transaction.CommitAsync();
                 _logger.LogInformation("✅ Заявка {OrderId} сохранена в БД.", orderId);
 
-                return new CreatedOrderResponseDTO(order, null); 
+                return new CreatedOrderResponseDTO(order, null);
             }
             catch (Exception ex)
             {
@@ -129,5 +154,6 @@ namespace OrderService.Services.Orders
                 return null;
             }
         }
+
     }
 }

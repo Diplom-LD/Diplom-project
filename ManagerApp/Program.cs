@@ -28,6 +28,18 @@ builder.Services.AddHttpClient<AuthServiceClient>();
 builder.Services.AddScoped<BTUCalcServiceClient>();
 builder.Services.AddSingleton<JsonService>();
 
+// Подключение OrderServiceClient
+var orderServiceBaseUrl = builder.Configuration["OrderService:BaseUrl"];
+if (string.IsNullOrEmpty(orderServiceBaseUrl))
+{
+    throw new InvalidOperationException("OrderService__BaseUrl is not configured.");
+}
+
+builder.Services.AddHttpClient<OrderServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(orderServiceBaseUrl);
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

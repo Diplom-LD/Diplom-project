@@ -270,14 +270,13 @@ body {
     width: 100%;
     padding: 20px;
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-gap: 30px;
     /* margin-top: 10px; */
 }
 
     .details .recentOrders {
         position: relative;
-        display: grid;
         min-height: 500px;
         background: var(--white);
         padding: 20px;
@@ -383,7 +382,7 @@ body {
 
 .recentCustomers {
     position: relative;
-    display: grid;
+/*    display: grid;*/
     min-height: 500px;
     padding: 20px;
     background: var(--white);
@@ -410,9 +409,11 @@ body {
 
     .recentCustomers table tr td {
         padding: 12px 10px;
+        text-align: center;
     }
 
         .recentCustomers table tr td h4 {
+            text-align: left;
             font-size: 16px;
             font-weight: 500;
             line-height: 1.2rem;
@@ -431,6 +432,240 @@ body {
         .recentCustomers table tr:hover td h4 span {
             color: var(--white);
         }
+
+/* Recent Orders */
+/* Общие стили для таблицы заказов */
+#recentOrdersTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+    #recentOrdersTable th, #recentOrdersTable td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+.order-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.order-icon {
+    font-size: 18px;
+}
+
+.order-price {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+}
+
+.price-value {
+    font-size: 16px;
+    margin-right: 5px;
+}
+
+.currency {
+    font-size: 14px;
+    color: gray;
+}
+
+.status {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.completed {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.processing {
+    background-color: #FFC107;
+    color: black;
+}
+
+.cancel {
+    background-color: #F44336;
+    color: white;
+}
+
+.inProgress {
+    background-color: #2196F3;
+    color: white;
+}
+
+
+/* Loading */
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.details .recentOrders table tbody tr.loading-row td {
+    border-bottom: none !important;
+}
+
+.details .recentOrders table tbody tr.loading-row td {
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+}
+
+.details .recentOrders table tbody tr.loading-row .loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+}
+
+
+.details .recentOrders table tbody tr.loading-row .spinner {
+    width: 30px;
+    height: 30px;
+}
+
+.details .recentOrders table tbody tr.loading-row:hover,
+.details .recentOrders table tbody tr.loading-row td:hover {
+    background: transparent !important;
+    color: inherit !important;
+    pointer-events: none;
+}
+
+.recentCustomers table tbody tr.loading-row:hover {
+    background: transparent !important;
+    color: inherit !important;
+    pointer-events: none;
+}
+
+.recentCustomers table tbody tr:not(.loading-row):hover {
+    background: var(--blue);
+    color: var(--white);
+}
+
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #777;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
+#ordersBody {
+    display: table-row-group;
+    width: 100%;
+}
+
+
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.no-orders-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    animation: fadeIn 1s ease-in-out;
+    min-height: 200px;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.no-orders-icon {
+    font-size: 50px;
+    color: #d9534f;
+    cursor: default;
+    margin-bottom: 10px;
+    animation: bounce 1.5s infinite alternate;
+}
+
+
+@keyframes bounce {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-15px);
+    }
+}
+
+.no-orders-message p {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
 
 /* ====================== Responsive Design ========================== */
 @media (max-width: 991px) {

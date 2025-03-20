@@ -170,5 +170,58 @@ namespace OrderService.Repositories.Users
                 .FirstOrDefaultAsync(t => t.Id == technicianId);
         }
 
+        public async Task<List<Technician>> GetTechniciansByIdsAsync(List<string> technicianIds)
+        {
+            if (technicianIds == null || technicianIds.Count == 0)
+            {
+                return [];
+            }
+
+            var guidTechnicianIds = technicianIds.Select(Guid.Parse).ToList();
+
+            try
+            {
+                var technicians = await _context.Technicians
+                    .Where(t => guidTechnicianIds.Contains(t.Id))
+                    .ToListAsync();
+
+                _logger.LogInformation("✅ [PostgreSQL] Загружено {Count} техников по ID.", technicians.Count);
+                return technicians;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при загрузке техников по ID.");
+                return [];
+            }
+        }
+
+        public async Task<List<Technician>> GetNearestAvailableTechniciansAsync(double latitude, double longitude, int count = 2)
+        {
+            try
+            {
+                var technicians = await _context.Technicians
+                    .Where(t => t.IsAvailable) 
+                    .OrderBy(t => Math.Sqrt(Math.Pow(t.Latitude - latitude, 2) + Math.Pow(t.Longitude - longitude, 2))) 
+                    .Take(count)
+                    .ToListAsync();
+
+                if (technicians.Count == 0)
+                {
+                    _logger.LogWarning("⚠️ [PostgreSQL] Не найдено свободных техников поблизости.");
+                }
+                else
+                {
+                    _logger.LogInformation("✅ [PostgreSQL] Найдено {Count} ближайших свободных техников.", technicians.Count);
+                }
+
+                return technicians;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при поиске ближайших свободных техников.");
+                return [];
+            }
+        }
+
     }
 }

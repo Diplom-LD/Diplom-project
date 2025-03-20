@@ -87,7 +87,10 @@ namespace OrderService.DTO.Orders.CreateOrders
             public required string ModelName { get; set; }
 
             [Required(ErrorMessage = "Источник модели обязателен.")]
-            public required string ModelSource { get; set; }
+            public required string ModelSource { get; set; } 
+
+            [Url(ErrorMessage = "Некорректный URL.")]
+            public string? ModelUrl { get; set; } 
 
             [Required(ErrorMessage = "BTU обязателен.")]
             [Range(1000, 300000, ErrorMessage = "BTU должен быть в диапазоне 1000-300000.")]
@@ -136,7 +139,13 @@ namespace OrderService.DTO.Orders.CreateOrders
                 {
                     yield return new ValidationResult("Количество должно быть не менее 1.", [nameof(Quantity)]);
                 }
+
+                if (ModelSource.Equals("Store", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(ModelUrl))
+                {
+                    yield return new ValidationResult("Для товаров из магазина необходимо указать ссылку на модель.", [nameof(ModelUrl)]);
+                }
             }
         }
+
     }
 }

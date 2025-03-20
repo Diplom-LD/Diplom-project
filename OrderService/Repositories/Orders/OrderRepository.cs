@@ -187,9 +187,10 @@ namespace OrderService.Repositories.Orders
                 CurrentOrderId = at.Technician.CurrentOrderId
             }).ToList();
 
-            _logger.LogInformation("✅ Найдено {TechnicianCount} техников для заявки {OrderId}", technicians.Count, orderId.ToString());
+            _logger.LogInformation("✅ Найдено {TechnicianCount} техников для заявки {OrderId}", technicians.Count, orderId);
             return technicians;
         }
+
 
 
         /// <summary>

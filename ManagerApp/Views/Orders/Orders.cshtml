@@ -1,0 +1,71 @@
+﻿@{
+    ViewData["Title"] = "Orders";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/OrdersStyle.css" />
+}
+
+<div class="orders-section">
+    <div class="orders-header">
+        <h2>Orders <span class="orders-count">0</span></h2>
+    </div>
+
+    <div class="filters-wrapper">
+        <div class="filters">
+            <button class="filter-btn active">All</button>
+            <button class="filter-btn" data-status="New">New</button>
+            <button class="filter-btn" data-status="InProgress">In Progress</button>
+            <button class="filter-btn" data-status="Unpaid">Unpaid</button>
+        </div>
+
+        <a asp-controller="Orders" asp-action="NewOrder" class="new-order-btn">
+            <span class="plus-icon">+</span> New Order
+        </a>
+
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="searchOrders" placeholder="Search orders...">
+        <ion-icon name="search-outline"></ion-icon>
+    </div>
+
+    <table class="orders-table">
+        <thead>
+            <tr>
+                <th>ORDER #</th>
+                <th>DATE</th>
+                <th>CUSTOMER</th>
+                <th>PAYMENT STATUS</th>
+                <th>FULFILLMENT STATUS</th>
+                <th>PAYMENT METHOD</th>
+                <th>ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="7" class="loading-text">Loading orders...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="pagination-section">
+        <div class="showing-info">
+            Showing:
+            <select class="showing-select" id="ordersPerPage">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+            of <span id="totalOrders">0</span>
+        </div>
+
+        <div class="pagination-controls">
+            <button class="pagination-btn prev-btn" id="prevPage" disabled>Prev</button>
+            <span class="current-page" id="currentPage">1</span>
+            <button class="pagination-btn next-btn" id="nextPage">Next</button>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/Orders/Orders.js"></script>

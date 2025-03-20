@@ -1,4 +1,6 @@
-﻿namespace OrderService.DTO.Users
+﻿using OrderService.Models.Users;
+
+namespace OrderService.DTO.Users
 {
     public class UserDTO
     {
@@ -16,5 +18,21 @@
     {
         public bool IsAvailable { get; set; }
         public Guid? CurrentOrderId { get; set; }
+
+        public TechnicianDTO() { }
+
+        public TechnicianDTO(Technician technician)
+        {
+            Id = technician.Id;
+            Email = technician.Email;
+            FullName = technician.FullName;
+            Address = technician.Address;
+            Latitude = technician.Latitude;
+            Longitude = technician.Longitude;
+            PhoneNumber = technician.PhoneNumber;
+            Role = "Technician";
+            IsAvailable = technician.IsAvailable;
+            CurrentOrderId = technician.CurrentOrderId;
+        }
     }
 }
