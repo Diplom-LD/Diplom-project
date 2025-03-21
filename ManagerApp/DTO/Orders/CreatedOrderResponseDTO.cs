@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
+using ManagerApp.Models.Orders;
 
-namespace ManagerApp.Models.Orders
+namespace ManagerApp.DTO.Orders
 {
 
     public class CreatedOrderResponseDTO

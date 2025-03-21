@@ -1,8 +1,10 @@
 ﻿using ManagerApp.Models.Orders;
+using ManagerApp.DTO.Technicians;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
 using System.Net;
+using ManagerApp.DTO.Orders;
 
 namespace ManagerApp.Clients
 {
@@ -10,29 +12,26 @@ namespace ManagerApp.Clients
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<OrderServiceClient> _logger;
-        private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+        private static readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         public OrderServiceClient(HttpClient httpClient, ILogger<OrderServiceClient> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
 
-            // Устанавливаем базовый URL из конфигурации
             _httpClient.BaseAddress = new Uri(configuration["OrderService:BaseUrl"] ?? throw new InvalidOperationException("OrderService BaseUrl is missing!"));
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        /// <summary>
-        /// Устанавливает Bearer-токен перед выполнением запроса.
-        /// </summary>
         private void SetAuthorizationHeader(string accessToken)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }
 
-        /// <summary>
-        /// Получение списка всех заявок.
-        /// </summary>
         public async Task<List<OrderResponse>> GetAllOrdersAsync(string accessToken)
         {
             try
@@ -59,53 +58,49 @@ namespace ManagerApp.Clients
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ [OrderServiceClient] Ошибка при запросе заявок.");
-                return []; 
+                return [];
             }
         }
 
-
-        /// <summary>
-        /// Получение заявки по ID.
-        /// </summary>
-        public async Task<OrderResponse?> GetOrderByIdAsync(Guid orderId, string accessToken)
+        public async Task<List<TechnicianDTO>> GetAvailableTechniciansTodayAsync(string accessToken)
         {
             try
             {
                 SetAuthorizationHeader(accessToken);
-                var response = await _httpClient.GetAsync($"orders/{orderId}");
+
+                var response = await _httpClient.GetAsync("technicians/availability/today");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("⚠️ [OrderService] Ошибка получения заявки {OrderId}: {StatusCode}", orderId, response.StatusCode);
-                    return null;
+                    _logger.LogWarning("⚠️ [OrderService] Ошибка получения доступных техников: {StatusCode}", response.StatusCode);
+                    return [];
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<OrderResponse>(content, _jsonOptions);
+                return JsonSerializer.Deserialize<List<TechnicianDTO>>(content, _jsonOptions) ?? [];
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ [OrderServiceClient] Ошибка при получении заявки {OrderId}.", orderId);
-                return null;
+                _logger.LogError(ex, "❌ [OrderServiceClient] Ошибка при получении доступных техников.");
+                return [];
             }
         }
 
-        /// <summary>
-        /// Создание новой заявки.
-        /// </summary>
         public async Task<CreatedOrderResponseDTO?> CreateOrderAsync(OrderRequest newOrder, string accessToken)
         {
             try
             {
                 SetAuthorizationHeader(accessToken);
+
                 var jsonContent = JsonSerializer.Serialize(newOrder);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("orders/create", content);
+                var response = await _httpClient.PostAsync("manager/orders/create", content);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("⚠️ [OrderService] Ошибка при создании заявки: {StatusCode}", response.StatusCode);
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("⚠️ [OrderService] Ошибка при создании заявки: {StatusCode}, Body: {Body}", response.StatusCode, errorBody);
                     return null;
                 }
 
@@ -115,6 +110,34 @@ namespace ManagerApp.Clients
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ [OrderServiceClient] Ошибка при создании заявки.");
+                return null;
+            }
+        }
+
+        public async Task<OrderResponse?> GetOrderByIdAsync(Guid orderId, string accessToken)
+        {
+            try
+            {
+                SetAuthorizationHeader(accessToken);
+
+                var response = await _httpClient.GetAsync($"manager/orders/get/{orderId}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("⚠️ [OrderService] Ошибка при получении заявки {OrderId}: {StatusCode}, Body: {Body}",
+                        orderId, response.StatusCode, error);
+                    return null;
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("📦 [OrderService] Получен JSON для заявки {OrderId}:\n{JsonContent}", orderId, content);
+
+                return JsonSerializer.Deserialize<OrderResponse>(content, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [OrderServiceClient] Исключение при получении заявки {OrderId}.", orderId);
                 return null;
             }
         }

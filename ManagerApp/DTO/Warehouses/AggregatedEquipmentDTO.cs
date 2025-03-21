@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ManagerApp.Models.Warehouses
+namespace ManagerApp.DTO.Warehouses
 {
     public class AggregatedEquipmentDTO
     {

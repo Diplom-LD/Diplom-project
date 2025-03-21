@@ -42,7 +42,7 @@
             <textarea name="Notes" id="Notes" placeholder="Client/Manager Notes"></textarea>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="equipmentSection">
             <legend>Equipment Information</legend>
 
             <label for="EquipmentSource">Select Equipment Source</label>
@@ -113,15 +113,10 @@
 
             <div id="manualTechnicianSelection" class="hidden">
                 <label for="Technicians">Select Technicians</label>
-                <select name="Technicians" id="Technicians" multiple>
-                    <option value="tech1">Technician 1</option>
-                    <option value="tech2">Technician 2</option>
-                    <option value="tech3">Technician 3</option>
-                    <option value="tech4">Technician 4</option>
-                </select>
+                <select name="Technicians" id="Technicians" multiple></select>
+                <div id="selectedTechniciansContainer" class="selected-items-container"></div>
             </div>
         </fieldset>
-        
 
         <button type="submit">Create Order</button>
     </form>
@@ -194,9 +189,9 @@
 
             <!-- Кнопка для отображения дополнительных параметров -->
             <label class="switch">
+                <span class="toggle-label">Show Additional Parameters</span>
                 <input type="checkbox" id="toggleParamsCheckbox" onchange="toggleParams()">
                 <span class="slider round"></span>
-                <span class="toggle-label">Show Additional Parameters</span>
             </label>
 
 

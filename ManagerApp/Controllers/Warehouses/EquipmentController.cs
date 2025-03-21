@@ -1,5 +1,5 @@
 ﻿using ManagerApp.Clients;
-using ManagerApp.Models.Warehouses;
+using ManagerApp.DTO.Warehouses;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 

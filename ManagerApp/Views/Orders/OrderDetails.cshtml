@@ -1,0 +1,165 @@
+﻿@using ManagerApp.Models.Orders
+@model OrderResponse
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/OrderDetailsStyle.css" />
+}
+
+<div class="order-details">
+
+    <!-- Заголовок и статусы -->
+    <div class="order-details__header">
+        <h2 class="order-details__id">Order ID: #@Model.Id</h2>
+
+        <div class="order-details__statuses">
+            <span class="order-details__status order-details__status--fulfilled">@Model.FulfillmentStatus</span>
+            <span class="order-details__status order-details__status--paid">@Model.PaymentStatus</span>
+            <span class="order-details__date">Created: @Model.CreationOrderDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
+            <span class="order-details__date">Installation: @Model.InstallationDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
+        </div>
+
+        <div class="order-details__actions">
+            <button class="order-details__edit-button">Edit</button>
+        </div>
+    </div>
+
+    <div class="order-details__grid">
+
+        <!-- Diagnostic Info -->
+        <div class="order-card" style="border: 2px dashed crimson; padding: 10px; margin-bottom: 20px;">
+            <p><strong>Debug Info:</strong></p>
+            <p><strong>Order Type:</strong> @Model.OrderType</p>
+            <p><strong>Equipment Count:</strong> @Model.Equipment?.Count()</p>
+            <p><strong>Equipment Exists:</strong> @(Model.Equipment != null ? "Yes" : "No")</p>
+            <p><strong>Condition Passes:</strong> @(Model.OrderType == OrderType.Installation && Model.Equipment != null && Model.Equipment.Any() ? "✅ YES" : "❌ NO")</p>
+        </div>
+
+
+        <!-- Установка и оборудование -->
+        @if (Model.OrderType == OrderType.Installation && Model.Equipment != null && Model.Equipment.Any())
+        {
+            var eq = Model.Equipment.First();
+            <div class="order-card order-card--installation">
+                <h3 class="order-card__title">Installation & Equipment</h3>
+                <p><strong>Model name:</strong> @eq.ModelName</p>
+                <p><strong>Model price:</strong> @eq.ModelPrice.ToString("N0") MDL</p>
+                <p><strong>Model source:</strong> @eq.ModelSource</p>
+                <p><strong>Model BTU:</strong> @eq.ModelBTU</p>
+                <p><strong>Service area:</strong> @eq.ServiceArea m²</p>
+                <p><strong>Quantity:</strong> @eq.Quantity</p>
+                <p><strong>Notes:</strong> @Model.Notes</p>
+
+                <div class="order-card__summary">
+                    <p><strong>Work Cost:</strong> @Model.WorkCost.ToString("C")</p>
+                    <p><strong>Equipment Cost:</strong> @Model.EquipmentCost.ToString("C")</p>
+                    <p><strong>Materials Cost:</strong> @Model.MaterialsCost.ToString("C")</p>
+                    <p><strong>Total Cost:</strong> @Model.TotalCost.ToString("C")</p>
+                </div>
+            </div>
+        }
+
+        <!-- Клиент -->
+        <div class="order-card order-card--client">
+            <h3 class="order-card__title">Client Info</h3>
+            <p><strong>Name:</strong> @Model.ClientName</p>
+            <p><strong>Phone:</strong> @Model.ClientPhone</p>
+            <p><strong>Email:</strong> @Model.ClientEmail</p>
+            <p><strong>Installation Address:</strong> @Model.InstallationAddress</p>
+            <p><strong>Manager:</strong> @Model.ManagerId</p>
+            <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+        </div>
+
+        <!-- Материалы и инструменты -->
+        @if (Model.RequiredMaterials.Any() || Model.RequiredTools.Any())
+        {
+            <div class="order-card order-card--materials">
+                <h3 class="order-card__title">Materials & Tools</h3>
+
+                @if (Model.RequiredMaterials.Any())
+                {
+                    <p><strong>Materials:</strong></p>
+                    <ul>
+                        @foreach (var m in Model.RequiredMaterials)
+                        {
+                            <li>@m.MaterialName — @m.Quantity шт. (@m.MaterialPrice.ToString("N0") MDL)</li>
+                        }
+                    </ul>
+                }
+
+                @if (Model.RequiredTools.Any())
+                {
+                    <p><strong>Tools:</strong></p>
+                    <ul>
+                        @foreach (var t in Model.RequiredTools)
+                        {
+                            <li>@t.ToolName — @t.Quantity шт.</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+
+        <!-- Техники -->
+        @{
+            var steps = new List<WorkProgress>
+        {
+        WorkProgress.OrderPlaced,
+        WorkProgress.OrderProcessed,
+        WorkProgress.WorkersOnTheRoad,
+        WorkProgress.InstallationStarted,
+        WorkProgress.InstallationCompleted
+        };
+
+            bool currentReached = false;
+        }
+
+        <ul class="order-card__timeline">
+            @foreach (var step in steps)
+            {
+                string cssClass;
+
+                if (!currentReached && step == Model.WorkProgress)
+                {
+                    cssClass = "current-step";
+                    currentReached = true;
+                }
+                else if (!currentReached)
+                {
+                    cssClass = "completed-step";
+                }
+                else
+                {
+                    cssClass = "upcoming-step";
+                }
+
+                <li class="@cssClass">@step.ToString()</li>
+            }
+        </ul>
+
+
+
+        <!-- Карта маршрута -->
+        @if (Model.InitialRoutes.Any())
+        {
+            <div class="order-card order-card--tracking">
+                <h3 class="order-card__title">Technician Routes</h3>
+
+                @foreach (var route in Model.InitialRoutes)
+                {
+                    <p>
+                        <strong>@route.TechnicianName</strong>
+                        (@route.PhoneNumber) – @route.Distance.ToString("N2") km / @route.Duration.ToString("N1") min
+                    </p>
+                }
+
+                <div id="map" class="order-card__map-placeholder"
+                     data-routes='@Html.Raw(Json.Serialize(Model.InitialRoutes))'>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="~/js/Orders/OrderDetails.js"></script>

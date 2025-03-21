@@ -1,7 +1,7 @@
-﻿using ManagerApp.Models.Warehouses;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Net;
+using ManagerApp.DTO.Warehouses;
 
 namespace ManagerApp.Clients
 {

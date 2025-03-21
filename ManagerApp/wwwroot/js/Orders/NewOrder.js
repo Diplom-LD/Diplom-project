@@ -7,15 +7,17 @@
     const filterSelect = document.getElementById("Filter");
     const sortOrderSelect = document.getElementById("SortOrder");
 
-    const btuField = document.getElementById("BTU");
-    const serviceAreaField = document.getElementById("ServiceArea");
-    const storePriceField = document.getElementById("StorePrice");
-    const quantityField = document.getElementById("RequestedQuantity");
-
     const storeModelName = document.getElementById("StoreModelName");
     const storeName = document.getElementById("StoreName");
     const modelUrl = document.getElementById("ModelUrl");
+    const btuField = document.getElementById("BTU");
+    const serviceAreaField = document.getElementById("ServiceArea");
+    const storePriceField = document.getElementById("StorePrice");
     const storeQuantity = document.getElementById("StoreQuantity");
+    const quantityField = document.getElementById("RequestedQuantity");
+
+    const conditionersTableBody = document.getElementById("conditionersTableBody");
+    const equipmentSourceSelect = document.getElementById("EquipmentSource");
 
     let fullEquipmentList = [];
 
@@ -41,20 +43,24 @@
             storeModelName.value = "";
             storeName.value = "";
             modelUrl.value = "";
-            btuField.value = "";
-            serviceAreaField.value = "";
             storePriceField.value = "";
             storeQuantity.value = "";
+            warehouseModel.selectedIndex = 0;
+            quantityField.value = "";
+            btuField.value = "";
+            serviceAreaField.value = "";
 
             applySortAndFilter();
         } else {
             warehouseFields.classList.add("hidden");
             storeFields.classList.remove("hidden");
-
             warehouseModel.selectedIndex = 0;
             quantityField.value = "";
+            btuField.value = "";
+            serviceAreaField.value = "";
         }
     }
+
 
     function updateModelOptions(list) {
         warehouseModel.innerHTML = `<option value="">Select Model</option>`;
@@ -94,15 +100,16 @@
 
     warehouseModel.addEventListener("change", function () {
         const selectedOption = warehouseModel.options[warehouseModel.selectedIndex];
+
         if (!selectedOption.value) {
+            quantityField.value = "";
             return;
         }
-        btuField.value = selectedOption.dataset.btu;
-        serviceAreaField.value = selectedOption.dataset.serviceArea;
-        storePriceField.value = selectedOption.dataset.price;
+
         quantityField.max = selectedOption.dataset.totalQuantity;
         quantityField.value = "";
     });
+
 
     quantityField.addEventListener("input", function () {
         const maxQuantity = parseInt(quantityField.max, 10);
@@ -124,4 +131,167 @@
 
     toggleFields();
     await loadEquipment();
+
+    /* Technician selection */
+    const technicianSelect = document.getElementById("Technicians");
+    const technicianMode = document.getElementById("TechnicianSelection");
+    const manualBlock = document.getElementById("manualTechnicianSelection");
+    const selectedTechniciansContainer = document.getElementById("selectedTechniciansContainer");
+
+    technicianMode.addEventListener("change", async () => {
+        if (technicianMode.value === "manual") {
+            manualBlock.classList.remove("hidden");
+            await loadTechnicians();
+        } else {
+            manualBlock.classList.add("hidden");
+            resetTechnicianSelection();
+        }
+    });
+
+    async function loadTechnicians() {
+        try {
+            console.log("🔄 Загружаем список техников...");
+            const response = await fetch("/technicians/available-today");
+            if (!response.ok) throw new Error(`Ошибка загрузки. Код: ${response.status}`);
+
+            const technicians = await response.json();
+
+            technicianSelect.innerHTML = ""; 
+
+            if (technicians.length === 0) {
+                technicianSelect.innerHTML = `<option disabled>Нет доступных техников</option>`;
+                console.warn("⚠️ Нет доступных техников!");
+                return;
+            }
+
+            technicians.forEach(t => {
+                const option = document.createElement("option");
+                option.value = t.id;
+                option.textContent = t.fullName;
+                technicianSelect.appendChild(option);
+            });
+
+            console.log(`✅ Загружено техников: ${technicians.length}`);
+
+            if (technicianSelect) {
+                setupMultiSelect(); 
+            }
+        } catch (err) {
+            console.error("❌ Ошибка загрузки техников:", err);
+            technicianSelect.innerHTML = `<option disabled>Ошибка загрузки</option>`;
+        }
+    }
+
+    function resetTechnicianSelection() {
+        technicianSelect.innerHTML = "";
+        selectedTechniciansContainer.innerHTML = "";
+    }
+
+    function setupMultiSelect() {
+        selectedTechniciansContainer.innerHTML = "";
+
+        technicianSelect.addEventListener("change", updateTags);
+        updateTags();
+    }
+
+    function updateTags() {
+        selectedTechniciansContainer.innerHTML = "";
+
+        Array.from(technicianSelect.selectedOptions).forEach(option => {
+            const tag = createTag(option);
+            selectedTechniciansContainer.appendChild(tag);
+        });
+    }
+
+    function createTag(option) {
+        const tag = document.createElement("div");
+        tag.classList.add("technician-tag");
+        tag.textContent = option.textContent;
+
+        const removeBtn = document.createElement("span");
+        removeBtn.classList.add("remove-technician");
+        removeBtn.textContent = "×";
+        removeBtn.addEventListener("click", () => {
+            option.selected = false;
+            updateTags();
+        });
+
+        tag.appendChild(removeBtn);
+        return tag;
+    }
+
+
+    /*BTU Calculator*/
+    const openPopupBtn = document.getElementById('openPopupBtn');
+    const popupIcon = openPopupBtn.querySelector('ion-icon');
+    const btuPopup = document.getElementById('btuPopup');
+
+    function togglePopup() {
+        const isHidden = btuPopup.classList.contains('hidden');
+        btuPopup.classList.toggle('hidden');
+        popupIcon.setAttribute('name', isHidden ? 'close-outline' : 'calculator-outline');
+        openPopupBtn.style.backgroundColor = isHidden ? '#dc3545' : '#2a2185';
+    }
+
+    function closePopup() {
+        btuPopup.classList.add('hidden');
+        popupIcon.setAttribute('name', 'calculator-outline');
+        openPopupBtn.style.backgroundColor = '#2a2185';
+    }
+
+    openPopupBtn.addEventListener('click', togglePopup);
+
+    btuPopup.addEventListener('click', (e) => {
+        if (e.target === btuPopup) closePopup();
+    });
+
+
+    /*Выбор кондиционера*/
+    function handleConditionerSelection(event) {
+        const selectedRow = event.target.closest("tr");
+        if (!selectedRow) return;
+
+        const columns = selectedRow.children;
+        if (columns.length < 5) return;
+
+        let modelLinkElement = columns[0].querySelector("a");
+        let selectedModel = modelLinkElement ? modelLinkElement.innerText.trim() : columns[0].innerText.trim();
+        let selectedUrl = modelLinkElement ? modelLinkElement.href : "";
+
+        let selectedPrice = columns[1].innerText.trim().replace(/[^\d]/g, "");
+        let selectedBTU = columns[2].innerText.trim().replace(/[^\d]/g, "");
+        let selectedServiceArea = columns[3].innerText.trim().replace(/[^\d]/g, "");
+        let selectedStore = columns[4].innerText.trim();
+
+        if (equipmentSourceSelect.value === "Store") {
+            storeModelName.value = selectedModel;
+            storeName.value = selectedStore;
+            modelUrl.value = selectedUrl;
+            btuField.value = selectedBTU;
+            serviceAreaField.value = selectedServiceArea;
+            storePriceField.value = selectedPrice;
+            storeQuantity.value = "1";
+
+            closePopup();
+        }
+    }
+
+    conditionersTableBody.addEventListener("click", handleConditionerSelection);
+
+
+    const orderTypeSelect = document.getElementById("OrderType");
+    const equipmentSection = document.getElementById("equipmentSection");
+    function toggleEquipmentSection() {
+        const selected = orderTypeSelect.value;
+        if (selected === "Maintenance") {
+            equipmentSection.classList.add("hidden");
+        } else {
+            equipmentSection.classList.remove("hidden");
+        }
+    }
+    orderTypeSelect.addEventListener("change", toggleEquipmentSection);
+    toggleEquipmentSection();
+
+
+
 });

@@ -529,6 +529,54 @@ button:active {
     min-width: 80px;
 }
 
+/* Toggle */
+.switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+    .switch input {
+        display: none;
+    }
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: 0.4s;
+}
+
+    .slider::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.4s;
+    }
+
+input:checked + .slider {
+    background-color: #007bff;
+}
+
+    input:checked + .slider::before {
+        transform: translateX(20px);
+    }
+
+.toggle-label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+}
+
 
 /* =================== Responsive Design =================== */
 /* Для экранов меньше 1425px (планшеты) */

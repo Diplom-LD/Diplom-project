@@ -122,11 +122,12 @@ namespace ManagerApp.Models.Orders
         public class OrderEquipmentDTO
         {
             public string ModelName { get; set; } = null!;
-            public decimal ModelPrice { get; set; }
             public string ModelSource { get; set; } = null!;
             public int ModelBTU { get; set; }
             public int ServiceArea { get; set; }
+            public decimal ModelPrice { get; set; }
             public int Quantity { get; set; }
+            public string? ModelUrl { get; set; }
         }
 
         public class OrderMaterialDTO
