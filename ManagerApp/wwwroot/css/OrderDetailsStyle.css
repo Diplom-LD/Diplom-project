@@ -181,22 +181,22 @@
         }
 
         .order-card__timeline li.completed-step::before {
-            background-color: #28a745;
-            box-shadow: 0 0 0 2px #28a745;
-        }
+    background-color: #28a745;
+    box-shadow: 0 0 0 2px #28a745;
+}
 
-        .order-card__timeline li.current-step::before {
-            background-color: #007bff;
-            box-shadow: 0 0 0 2px #007bff;
-        }
+.order-card__timeline li.current-step::before {
+    background-color: #007bff;
+    box-shadow: 0 0 0 2px #007bff;
+}
 
-        .order-card__timeline li.upcoming-step::before {
-            background-color: #ccc;
-            box-shadow: 0 0 0 2px #ccc;
-        }
+.order-card__timeline li.upcoming-step::before {
+    background-color: #ccc;
+    box-shadow: 0 0 0 2px #ccc;
+}
 
 
-
+/* Карты */
 .order-card__map-placeholder {
     height: 370px;
     background-color: #f3f3f3;
@@ -207,11 +207,63 @@
     margin-top: 10px;
 }
 
-@media (max-width: 1024px) {
-    .order-details__grid {
-        grid-template-columns: 1fr;
-    }
+.map-container {
+    position: relative;
 }
+
+.map-legend {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    z-index: 1000;
+    max-width: 200px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 6px 0;
+}
+
+.legend-icon {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.warehouse-icon {
+    background-color: #8B4513; 
+}
+
+.technician-icon {
+    background-color: blue;
+}
+
+.client-icon {
+    background-color: red;
+}
+
+#route-legend-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 6px 0 0;
+}
+
+    #route-legend-list li {
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        margin: 4px 0;
+    }
+
+
 
 @media (max-width: 768px) {
     .order-details__header {

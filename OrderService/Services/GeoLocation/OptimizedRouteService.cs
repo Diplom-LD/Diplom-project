@@ -14,19 +14,18 @@ namespace OrderService.Services.GeoLocation
         /// ✅ Строит маршрут техника с учетом всех ресурсов (оборудование, материалы, инструменты)
         /// </summary>
         public async Task<List<RouteDTO>> BuildOptimizedRouteAsync(
-            double jobLatitude, double jobLongitude,
-            List<WarehouseDTO> warehouses,
-            List<TechnicianDTO> technicians)
+    double jobLatitude, double jobLongitude,
+    List<WarehouseDTO> warehouses,
+    List<TechnicianDTO> technicians)
         {
             var routes = new List<RouteDTO>();
 
-            if (technicians.Count == 0)
+            if (technicians.Count == 0 || warehouses.Count == 0)
             {
-                _logger.LogWarning("⚠️ Нет доступных техников для выполнения заказа.");
+                _logger.LogWarning("⚠️ Нет доступных техников или складов.");
                 return routes;
             }
 
-            // 📌 Фильтруем техников без координат
             var validTechnicians = technicians.Where(t => t.Latitude != 0 && t.Longitude != 0).ToList();
             if (validTechnicians.Count == 0)
             {
@@ -36,24 +35,29 @@ namespace OrderService.Services.GeoLocation
 
             _logger.LogInformation("📍 Доступно техников: {Count}", validTechnicians.Count);
 
-            // 📌 Выбираем ближайшего техника, который будет забирать ресурсы
+            //  Находим ближайший склад 
+            var nearestWarehouse = warehouses.OrderBy(w =>
+                validTechnicians.Min(t => DistanceCalculator.CalculateDistance(t.Latitude, t.Longitude, w.Latitude, w.Longitude))
+            ).First();
+
+            // Теперь выбираем техника, который ближе всего к ближайшему складу
             var assignedTechnician = validTechnicians
-                .OrderBy(t => DistanceCalculator.CalculateDistance(t.Latitude, t.Longitude, jobLatitude, jobLongitude))
+                .OrderBy(t => DistanceCalculator.CalculateDistance(t.Latitude, t.Longitude, nearestWarehouse.Latitude, nearestWarehouse.Longitude))
                 .FirstOrDefault();
 
             if (assignedTechnician == null)
             {
-                _logger.LogWarning("⚠️ Нет доступных техников для выполнения заказа.");
+                _logger.LogWarning("⚠️ Не удалось назначить техника для маршрута через склад.");
                 return routes;
             }
 
-            _logger.LogInformation("📍 Техник {TechnicianName} (📍 {Lat}, {Lon}) назначен для маршрута через склады.",
+            _logger.LogInformation("📦 Техник {TechnicianName} (📍 {Lat}, {Lon}) назначен для маршрута через склады.",
                 assignedTechnician.FullName, assignedTechnician.Latitude, assignedTechnician.Longitude);
 
-            // ✅ Добавляем маршрут через склады для назначенного техника
+            //  Добавляем маршрут через склады
             await AddMultiWarehouseRouteAsync(assignedTechnician, warehouses, jobLatitude, jobLongitude, routes);
 
-            // 📌 Остальные техники едут напрямую на заказ
+            //  Остальные техники — прямой маршрут
             var otherTechnicianTasks = validTechnicians
                 .Where(t => t.Id != assignedTechnician.Id)
                 .Select(t => AddDirectRouteAsync(t, jobLatitude, jobLongitude, routes));
@@ -62,6 +66,7 @@ namespace OrderService.Services.GeoLocation
 
             return routes;
         }
+
 
         /// <summary>
         /// ✅ Добавляет маршрут техника через несколько складов

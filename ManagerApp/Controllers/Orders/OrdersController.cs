@@ -110,7 +110,7 @@ namespace ManagerApp.Controllers.Orders
                 return NotFound(new { message = $"Order with ID {id} not found." });
             }
 
-            return View("OrderDetails", order); 
+            return View("OrderDetails", order);
         }
 
     }

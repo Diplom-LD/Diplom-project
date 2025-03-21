@@ -1,7 +1,7 @@
 ﻿@using ManagerApp.Models.Orders
 @model OrderResponse
 @section Styles {
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/OrderDetailsStyle.css" />
 }
 
@@ -24,17 +24,6 @@
     </div>
 
     <div class="order-details__grid">
-
-        <!-- Diagnostic Info -->
-        <div class="order-card" style="border: 2px dashed crimson; padding: 10px; margin-bottom: 20px;">
-            <p><strong>Debug Info:</strong></p>
-            <p><strong>Order Type:</strong> @Model.OrderType</p>
-            <p><strong>Equipment Count:</strong> @Model.Equipment?.Count()</p>
-            <p><strong>Equipment Exists:</strong> @(Model.Equipment != null ? "Yes" : "No")</p>
-            <p><strong>Condition Passes:</strong> @(Model.OrderType == OrderType.Installation && Model.Equipment != null && Model.Equipment.Any() ? "✅ YES" : "❌ NO")</p>
-        </div>
-
-
         <!-- Установка и оборудование -->
         @if (Model.OrderType == OrderType.Installation && Model.Equipment != null && Model.Equipment.Any())
         {
@@ -67,6 +56,42 @@
             <p><strong>Installation Address:</strong> @Model.InstallationAddress</p>
             <p><strong>Manager:</strong> @Model.ManagerId</p>
             <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+
+            @{
+                var steps = new List<WorkProgress>
+            {
+            WorkProgress.OrderPlaced,
+            WorkProgress.OrderProcessed,
+            WorkProgress.WorkersOnTheRoad,
+            WorkProgress.InstallationStarted,
+            WorkProgress.InstallationCompleted
+            };
+
+                bool currentReached = false;
+            }
+
+            <ul class="order-card__timeline">
+                @foreach (var step in steps)
+                {
+                    string cssClass;
+
+                    if (!currentReached && step == Model.WorkProgress)
+                    {
+                        cssClass = "current-step";
+                        currentReached = true;
+                    }
+                    else if (!currentReached)
+                    {
+                        cssClass = "completed-step";
+                    }
+                    else
+                    {
+                        cssClass = "upcoming-step";
+                    }
+
+                    <li class="@cssClass">@step.ToString()</li>
+                }
+            </ul>
         </div>
 
         <!-- Материалы и инструменты -->
@@ -99,46 +124,6 @@
             </div>
         }
 
-        <!-- Техники -->
-        @{
-            var steps = new List<WorkProgress>
-        {
-        WorkProgress.OrderPlaced,
-        WorkProgress.OrderProcessed,
-        WorkProgress.WorkersOnTheRoad,
-        WorkProgress.InstallationStarted,
-        WorkProgress.InstallationCompleted
-        };
-
-            bool currentReached = false;
-        }
-
-        <ul class="order-card__timeline">
-            @foreach (var step in steps)
-            {
-                string cssClass;
-
-                if (!currentReached && step == Model.WorkProgress)
-                {
-                    cssClass = "current-step";
-                    currentReached = true;
-                }
-                else if (!currentReached)
-                {
-                    cssClass = "completed-step";
-                }
-                else
-                {
-                    cssClass = "upcoming-step";
-                }
-
-                <li class="@cssClass">@step.ToString()</li>
-            }
-        </ul>
-
-
-
-        <!-- Карта маршрута -->
         @if (Model.InitialRoutes.Any())
         {
             <div class="order-card order-card--tracking">
@@ -152,14 +137,35 @@
                     </p>
                 }
 
-                <div id="map" class="order-card__map-placeholder"
-                     data-routes='@Html.Raw(Json.Serialize(Model.InitialRoutes))'>
+                <div class="map-container">
+                    <div id="map" class="order-card__map-placeholder"
+                         data-routes='@Html.Raw(Json.Serialize(Model.InitialRoutes))'>
+                    </div>
+
+                    <div class="map-legend">
+                        <h4>Legend</h4>
+                        <div class="legend-item">
+                            <input type="checkbox" id="toggle-warehouse" checked>
+                            <span class="legend-icon warehouse-icon"></span> Warehouse
+                        </div>
+                        <div class="legend-item">
+                            <input type="checkbox" id="toggle-technician" checked>
+                            <span class="legend-icon technician-icon"></span> Technician
+                        </div>
+                        <div class="legend-item">
+                            <input type="checkbox" id="toggle-client" checked>
+                            <span class="legend-icon client-icon"></span> Installation Point
+                        </div>
+                        <h5>Routes</h5>
+                        <ul id="route-legend-list"></ul>
+                    </div>
                 </div>
             </div>
         }
 
+
     </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="~/js/Orders/OrderDetails.js"></script>

@@ -347,7 +347,7 @@ namespace OrderService.Services.Orders
         {
             _logger.LogInformation("🔍 Получение заявки {OrderId}...", orderId);
 
-            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            var order = await _orderRepository.GetOrderByIdAsync(orderId, includeDetails: true);
             if (order == null)
             {
                 _logger.LogError("❌ Заявка {OrderId} не найдена!", orderId);
