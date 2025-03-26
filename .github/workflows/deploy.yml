@@ -18,26 +18,32 @@ jobs:
 
       - name: 📦 Сборка и загрузка образов в Docker Hub
         run: |
-          set -e
-          
-          VERSION=${{ github.run_number }}  
+          set -e  # Остановка выполнения при первой ошибке
 
-          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION ./AuthService
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION
-          docker tag ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+          # Генерация версии на основе номера сборки GitHub Actions
+          VERSION="${{ github.run_number }}"  
 
-          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION ./OrderService
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION
-          docker tag ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/order-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:latest
+          echo "🔹 Используем версию: $VERSION"
 
-          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION ./BTUCalcService
-          docker push ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION
-          docker tag ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:latest
+          build_and_push() {
+            local SERVICE_NAME=$1
+            local SERVICE_PATH=$2
 
-          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION ./ManagerApp
-          docker push ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION
-          docker tag ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION ${{ secrets.DOCKER_USERNAME }}/manager-app:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/manager-app:latest
+            echo "🚀 Сборка образа: $SERVICE_NAME"
+            docker build --no-cache -t "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" "$SERVICE_PATH"
+            
+            echo "📤 Загрузка образа в Docker Hub: $SERVICE_NAME:$VERSION"
+            docker push "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION"
+
+            echo "🔄 Обновление latest-тега для $SERVICE_NAME"
+            docker tag "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:latest"
+            docker push "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:latest"
+          }
+
+          build_and_push "auth-service" "./AuthService"
+          build_and_push "order-service" "./OrderService"
+          build_and_push "btu-calc-service" "./BTUCalcService"
+          build_and_push "manager-app" "./ManagerApp"
+
+      - name: ✅ Развертывание завершено
+        run: echo "🎉 Все образы успешно загружены в Docker Hub!"
