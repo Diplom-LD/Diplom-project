@@ -668,38 +668,34 @@ body {
 
 
 /* ====================== Responsive Design ========================== */
-@media (max-width: 991px) {
-    .navigation.active {
-            left: 0;
-    }
-
+@media (max-width: 1024px) {
     .cardBox {
         grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .navigation {
-        left: -300px;
-    }
-
-    .main {
-        width: 100%;
-        left: 0;
+        gap: 20px;
     }
 
     .details {
         grid-template-columns: 1fr;
     }
 
-    .recentOrders {
-        overflow-x: auto;
+    .cardHeader h2 {
+        font-size: 20px;
     }
 
-    .status.inProgress {
-        white-space: nowrap;
+    .orders-table th,
+    .orders-table td,
+    #recentOrdersTable th,
+    #recentOrdersTable td {
+        font-size: 13px;
+        padding: 10px;
     }
 
+    .price-value, .currency {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
     .navigation {
         width: 100%;
         left: -100%;
@@ -707,9 +703,33 @@ body {
     }
 
         .navigation.active {
-            width: 100%;
             left: 0;
         }
+
+    .main {
+        width: 100%;
+        left: 0;
+    }
+
+    .cardBox {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+        .cardBox .card {
+            padding: 20px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+            .cardBox .card .numbers {
+                font-size: 2rem;
+            }
+
+            .cardBox .card .cardName {
+                font-size: 1rem;
+            }
 
     .toggle {
         z-index: 10001;
@@ -718,22 +738,101 @@ body {
     .main.active .toggle {
         color: #fff;
         position: fixed;
-        right: 0;
-        left: initial;
+        right: 10px;
+    }
+
+    .recentOrders,
+    .recentCustomers {
+        overflow-x: auto;
+    }
+
+    #recentOrdersTable,
+    #recentOrdersTable thead,
+    #recentOrdersTable tbody,
+    #recentOrdersTable th,
+    #recentOrdersTable td,
+    #recentOrdersTable tr {
+        display: block;
+        width: 100%;
+    }
+
+        #recentOrdersTable thead {
+            display: none;
+        }
+
+        #recentOrdersTable tr {
+            margin-bottom: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        #recentOrdersTable td {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 8px 10px;
+            border-bottom: none;
+        }
+
+            #recentOrdersTable td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #555;
+            }
+
+    .order-type, .order-price, .payment-status, .status {
+        font-size: 13px;
     }
 }
 
 @media (max-width: 480px) {
-    .cardBox {
-        grid-template-columns: repeat(1, 1fr);
+    .cardHeader h2 {
+        font-size: 18px;
     }
 
-    .cardHeader h2 {
-        font-size: 20px;
+    .cardBox .card .numbers {
+        font-size: 1.75rem;
+    }
+
+    .cardBox .card .cardName {
+        font-size: 0.95rem;
+    }
+
+    .search label input {
+        font-size: 14px;
     }
 
     .user {
-        min-width: 40px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .toggle {
+        font-size: 2rem;
+    }
+
+    .order-icon {
+        font-size: 16px;
+    }
+
+    .price-value {
+        font-size: 14px;
+    }
+
+    .currency {
+        font-size: 12px;
+    }
+
+    .status {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .no-orders-message p {
+        font-size: 16px;
     }
 }
+
 

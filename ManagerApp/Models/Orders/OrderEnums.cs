@@ -27,7 +27,7 @@ namespace ManagerApp.Models.Orders
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PaymentStatus
     {
-        UnPaid,
+        Unpaid,
         Paid
     }
 

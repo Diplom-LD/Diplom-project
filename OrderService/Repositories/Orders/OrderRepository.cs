@@ -114,12 +114,12 @@ namespace OrderService.Repositories.Orders
                 query = query.Include(o => o.Equipment)
                              .Include(o => o.RequiredMaterials)
                              .Include(o => o.RequiredTools)
-                             .Include(o => o.AssignedTechnicians);
+                             .Include(o => o.AssignedTechnicians)
+                             .Include(o => o.Manager); 
             }
 
             return await query.FirstOrDefaultAsync(o => o.Id == orderId);
         }
-
 
         /// <summary>
         /// 📋 Получение всех заявок
@@ -156,8 +156,10 @@ namespace OrderService.Repositories.Orders
         {
             return await _context.Orders
                 .Include(o => o.AssignedTechnicians)
-                .FirstOrDefaultAsync(o => o.AssignedTechnicians.Any(t => t.TechnicianID == technicianId)
-                                          && o.FulfillmentStatus == FulfillmentStatus.InProgress);
+                .FirstOrDefaultAsync(o =>
+                    o.AssignedTechnicians.Any(t => t.TechnicianID == technicianId)
+                    && o.FulfillmentStatus != FulfillmentStatus.Completed
+                    && o.FulfillmentStatus != FulfillmentStatus.Cancelled);
         }
 
         public async Task<List<TechnicianDTO>> GetTechniciansByOrderIdAsync(Guid orderId)

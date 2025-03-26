@@ -36,30 +36,36 @@
     }
 
     function toggleFields() {
+        const storeInputs = storeFields.querySelectorAll("[data-required]");
+        const warehouseInputs = warehouseFields.querySelectorAll("[data-required]");
+
         if (equipmentSource.value === "Warehouse") {
             warehouseFields.classList.remove("hidden");
             storeFields.classList.add("hidden");
+            storeInputs.forEach(input => input.removeAttribute("required"));
+            warehouseInputs.forEach(input => input.setAttribute("required", "required"));
 
             storeModelName.value = "";
             storeName.value = "";
             modelUrl.value = "";
             storePriceField.value = "";
             storeQuantity.value = "";
-            warehouseModel.selectedIndex = 0;
-            quantityField.value = "";
             btuField.value = "";
             serviceAreaField.value = "";
-
             applySortAndFilter();
         } else {
             warehouseFields.classList.add("hidden");
             storeFields.classList.remove("hidden");
+            warehouseInputs.forEach(input => input.removeAttribute("required"));
+            storeInputs.forEach(input => input.setAttribute("required", "required"));
+
             warehouseModel.selectedIndex = 0;
             quantityField.value = "";
             btuField.value = "";
             serviceAreaField.value = "";
         }
     }
+
 
 
     function updateModelOptions(list) {
@@ -293,5 +299,93 @@
     toggleEquipmentSection();
 
 
+    /* Сreate Order */
+    const orderForm = document.getElementById("orderForm");
+
+    orderForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const orderType = document.getElementById("OrderType").value;
+        const workCost = parseFloat(document.getElementById("WorkCost").value);
+        const paymentMethod = document.getElementById("PaymentMethod").value;
+        const installationDate = new Date(document.getElementById("InstallationDate").value).toISOString();
+        const addressInstallation = document.getElementById("AddressInstallation").value;
+        const notes = document.getElementById("Notes").value;
+
+        const equipmentSource = equipmentSourceSelect.value;
+        let equipment = null;
+
+        if (orderType === "Installation") {
+            if (equipmentSource === "Warehouse") {
+                const selectedOption = warehouseModel.options[warehouseModel.selectedIndex];
+                equipment = {
+                    modelName: selectedOption.value,
+                    modelSource: "Warehouse",
+                    btu: parseInt(selectedOption.dataset.btu),
+                    serviceArea: parseFloat(selectedOption.dataset.serviceArea),
+                    price: parseFloat(selectedOption.dataset.price),
+                    quantity: parseInt(document.getElementById("RequestedQuantity").value)
+                };
+            } else if (equipmentSource === "Store") {
+                equipment = {
+                    modelName: storeModelName.value,
+                    modelSource: "Store",
+                    btu: parseInt(btuField.value),
+                    serviceArea: parseFloat(serviceAreaField.value),
+                    price: parseFloat(storePriceField.value),
+                    quantity: parseInt(storeQuantity.value)
+                };
+            }
+        }
+
+        const client = {
+            fullName: document.getElementById("FullName")?.value,
+            phoneNumber: document.getElementById("PhoneNumber")?.value,
+            email: document.getElementById("Email")?.value
+        };
+
+        const technicianMode = document.getElementById("TechnicianSelection").value;
+        const selectedTechnicians = Array.from(technicianSelect.selectedOptions).map(opt => opt.value);
+
+        const payload = {
+            orderType,
+            installationDate,
+            installationAddress: addressInstallation,
+            notes,
+            workCost,
+            paymentMethod,
+            paymentStatus: "UnPaid",
+            fulfillmentStatus: "New",
+            equipment,
+            fullName: client.fullName,
+            phoneNumber: client.phoneNumber,
+            email: client.email,
+            technicianIds: technicianMode === "manual" ? selectedTechnicians : []
+        };
+
+        try {
+            const response = await fetch("/manager/orders/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']")?.value ?? ""
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error("❌ Ошибка при создании:", err);
+                alert("Ошибка при создании заявки. Проверьте введённые данные.");
+                return;
+            }
+
+            const result = await response.json();
+            window.location.href = `/orders/details/${result.orderId}`;
+        } catch (err) {
+            console.error("❌ Сетевая ошибка:", err);
+            alert("Сетевая ошибка при создании заявки.");
+        }
+    });
 
 });

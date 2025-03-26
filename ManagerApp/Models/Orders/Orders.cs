@@ -10,7 +10,7 @@ namespace ManagerApp.Models.Orders
         public OrderType OrderType { get; set; }
 
         [Required(ErrorMessage = "Дата установки обязательна.")]
-        public DateTime InstallationDate { get; set; }
+        public DateTimeOffset InstallationDate { get; set; }
 
         [Required(ErrorMessage = "Адрес установки обязателен.")]
         [StringLength(255, MinimumLength = 5, ErrorMessage = "Адрес должен содержать от 5 до 255 символов.")]
@@ -95,8 +95,8 @@ namespace ManagerApp.Models.Orders
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public PaymentMethod PaymentMethod { get; set; }
 
-        public DateTime CreationOrderDate { get; set; }
-        public DateTime InstallationDate { get; set; }
+        public DateTimeOffset CreationOrderDate { get; set; }
+        public DateTimeOffset InstallationDate { get; set; }
         public string InstallationAddress { get; set; } = null!;
         public double InstallationLatitude { get; set; }
         public double InstallationLongitude { get; set; }
@@ -110,6 +110,7 @@ namespace ManagerApp.Models.Orders
         public string? ClientName { get; set; }
         public string? ClientPhone { get; set; }
         public string? ClientEmail { get; set; }
+        public string? ManagerName { get; set; }
         public Guid? ManagerId { get; set; }
 
         public List<OrderEquipmentDTO> Equipment { get; set; } = [];

@@ -10,6 +10,7 @@
 <div class="order-form">
     <h2>New Order</h2>
     <form action="#" method="POST" id="orderForm">
+        @Html.AntiForgeryToken()
         <fieldset>
             <legend>Order Details</legend>
 
@@ -42,6 +43,19 @@
             <textarea name="Notes" id="Notes" placeholder="Client/Manager Notes"></textarea>
         </fieldset>
 
+        <fieldset>
+            <legend>Client Information</legend>
+
+            <label for="FullName">Full Name</label>
+            <input type="text" name="FullName" id="FullName" placeholder="Client's full name" required>
+
+            <label for="PhoneNumber">Phone Number</label>
+            <input type="tel" name="PhoneNumber" id="PhoneNumber" placeholder="+373..." required>
+
+            <label for="Email">Email</label>
+            <input type="email" name="Email" id="Email" placeholder="example@email.com">
+        </fieldset>
+
         <fieldset id="equipmentSection">
             <legend>Equipment Information</legend>
 
@@ -69,37 +83,38 @@
                 </div>
 
                 <label for="WarehouseModel">Select Model</label>
-                <select name="WarehouseModel" id="WarehouseModel" required>
+                <select name="WarehouseModel" id="WarehouseModel" data-required>
                     <option value="">Select Model</option>
                 </select>
 
                 <label for="RequestedQuantity">Requested Quantity</label>
-                <input type="number" name="RequestedQuantity" id="RequestedQuantity" required min="1">
+                <input type="number" name="RequestedQuantity" id="RequestedQuantity" data-required min="1">
             </div>
 
             <!-- Поля для Store -->
             <div id="storeFields" class="hidden">
                 <label for="StoreModelName">Model Name</label>
-                <input type="text" name="StoreModelName" id="StoreModelName" required>
+                <input type="text" name="StoreModelName" id="StoreModelName" data-required>
 
                 <label for="StoreName">Store Name</label>
-                <input type="text" name="StoreName" id="StoreName" required>
+                <input type="text" name="StoreName" id="StoreName" data-required>
 
                 <label for="ModelUrl">Product URL</label>
-                <input type="url" name="ModelUrl" id="ModelUrl" required>
+                <input type="url" name="ModelUrl" id="ModelUrl" data-required>
 
                 <label for="BTU">BTU</label>
-                <input type="number" name="BTU" id="BTU" required>
+                <input type="number" name="BTU" id="BTU" data-required>
 
                 <label for="ServiceArea">Service Area (m²)</label>
-                <input type="number" name="ServiceArea" id="ServiceArea" required>
+                <input type="number" name="ServiceArea" id="ServiceArea" data-required>
 
                 <label for="StorePrice">Price (MDL)</label>
-                <input type="number" name="StorePrice" id="StorePrice" required>
+                <input type="number" name="StorePrice" id="StorePrice" data-required>
 
                 <label for="StoreQuantity">Quantity</label>
-                <input type="number" name="StoreQuantity" id="StoreQuantity" required min="1">
+                <input type="number" name="StoreQuantity" id="StoreQuantity" data-required min="1">
             </div>
+
         </fieldset>
 
         <fieldset>

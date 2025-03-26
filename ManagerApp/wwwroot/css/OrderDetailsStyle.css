@@ -1,6 +1,6 @@
 .order-details {
     background-color: #ffffff;
-    padding: 20px;
+    padding: 5px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,6 +23,7 @@
     font-weight: 600;
 }
 
+
 .order-details__statuses {
     display: flex;
     align-items: center;
@@ -39,15 +40,87 @@
     text-transform: capitalize;
 }
 
-.order-details__status--fulfilled {
-    background-color: #e1f5fe;
+/* Dropdown */
+.order-status-dropdown {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #f9f9f9;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 28px;
+}
+
+    .order-status-dropdown option {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+
+    .order-status-dropdown:hover {
+        border-color: #007bff;
+        background-color: #f1f9ff;
+    }
+
+    .order-status-dropdown:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+    }
+
+/* Общие стили для статусов */
+.order-status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: capitalize;
+    display: inline-block;
+    border: 1px solid transparent;
+}
+
+/* FulfillmentStatus */
+select.status-new {
+    background-color: #e3f2fd;
     color: #0277bd;
 }
 
-.order-details__status--paid {
-    background-color: #e6f4ea;
+select.status-inprogress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+select.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+select.status-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* PaymentStatus */
+select.status-paid {
+    background-color: #d1e7dd;
     color: #0f5132;
 }
+
+select.status-unpaid {
+    background-color: #fce8e6;
+    color: #842029;
+}
+
 
 .order-details__date {
     font-size: 12px;
@@ -120,88 +193,124 @@
 
 .order-card__timeline {
     list-style: none;
+    padding-top: 5px;
     padding-left: 25px;
+    margin: 0;
     position: relative;
 }
 
     .order-card__timeline li {
         position: relative;
-        margin-bottom: 24px;
-        padding-left: 15px;
-        padding-top: 2px;
-        font-size: 14px;
+        margin-bottom: 10px;
+        padding-left: 18px;
+        font-size: 15px;
         color: #555;
-        line-height: 1.4;
+        line-height: 1.5;
+        display: none;
+        transition: all 0.3s ease;
     }
 
         .order-card__timeline li::before {
             content: '';
             position: absolute;
-            left: -22px;
-            top: 3px;
+            left: -24px;
+            top: 2px;
             width: 14px;
             height: 14px;
-            background-color: #007bff;
             border-radius: 50%;
-            border: 2px solid #ffffff;
-            box-shadow: 0 0 0 2px #007bff;
-            z-index: 1;
+            border: 2px solid #fff;
+            background-color: #ccc;
+            box-shadow: 0 0 0 2px #ccc;
+            z-index: 2;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .order-card__timeline li.completed-step {
-            color: #28a745;
-            font-weight: bold;
-        }
-
-        .order-card__timeline li.current-step {
-            color: #007bff;
-            font-weight: bold;
-        }
-
 
         .order-card__timeline li::after {
             content: '';
             position: absolute;
-            left: calc(-20px + 6px);
-            top: 22px;
-            width: 2px;
-            height: calc(100% + 6px);
-            background-color: #007bff;
-            z-index: 0;
+            left: -18px;
+            top: 4px;
+            width: 6px;
+            height: calc(100% + 8px);
+            background-color: #28a745;
+            z-index: 1;
         }
 
-
-        .order-card__timeline li:last-child::after {
-            display: none;
+        .order-card__timeline li.last-visible::after {
+            display: none !important;
         }
 
-        .order-card__timeline li.upcoming-step {
-            color: #aaa;
-            font-weight: normal;
-            opacity: 0.6;
-        }
-
-        .order-card__timeline li.completed-step::before {
-    background-color: #28a745;
-    box-shadow: 0 0 0 2px #28a745;
+/* Состояния */
+.timeline-step.completed {
+    display: block;
+    color: #28a745;
+    font-weight: 600;
 }
 
-.order-card__timeline li.current-step::before {
-    background-color: #007bff;
-    box-shadow: 0 0 0 2px #007bff;
+.order-card .timeline-step.completed {
+    background-color: transparent;
 }
 
-.order-card__timeline li.upcoming-step::before {
-    background-color: #ccc;
-    box-shadow: 0 0 0 2px #ccc;
+    .timeline-step.completed::before {
+        background-color: #28a745;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+
+.timeline-step.current {
+    display: block;
+    color: #007bff;
+    font-weight: 700;
 }
 
+    .timeline-step.current::before {
+        background-color: #007bff;
+        box-shadow: 0 0 0 2px #007bff;
+        animation: pulse-dot 1.2s infinite ease-in-out;
+    }
+
+.timeline-step.upcoming {
+    display: none;
+}
+
+.timeline-step.last-visible::after {
+    display: none !important;
+}
+
+.timeline-step.completed-installation {
+    color: #28a745 !important;
+}
+
+    .timeline-step.completed-installation::before {
+        background-color: #28a745;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+
+    .timeline-step.completed-installation::after {
+        background-color: #28a745 !important;
+    }
+
+@keyframes pulse-dot {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 
 /* Карты */
 .order-card__map-placeholder {
     height: 370px;
     background-color: #f3f3f3;
     text-align: center;
-    line-height: 300px;
     color: #777;
     border-radius: 8px;
     margin-top: 10px;
@@ -224,6 +333,26 @@
     max-width: 200px;
 }
 
+.legend-toggle-btn {
+    position: absolute;
+    top: 0px;
+    right: 4px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #333;
+    z-index: 10;
+}
+
+.map-legend.hidden {
+    pointer-events: auto;
+}
+
+    .map-legend.hidden .map-legend__content {
+        display: none;
+    }
+
 .legend-item {
     display: flex;
     align-items: center;
@@ -235,7 +364,8 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    margin-right: 8px;
+    margin-right: 2px;
+    margin-left: 2px;
 }
 
 .warehouse-icon {
@@ -262,6 +392,119 @@
         font-size: 13px;
         margin: 4px 0;
     }
+
+.popup-card {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    min-width: 160px;
+    line-height: 1.4;
+}
+
+.popup-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.popup-phone {
+    color: #333;
+}
+
+.maplibregl-popup-content{
+    padding: 0;
+}
+
+/* Материалы и инструменты */
+.order-card--materials h4 {
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.material-list,
+.tool-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.material-item,
+.tool-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+}
+
+    .material-item:last-child,
+    .tool-item:last-child {
+        border-bottom: none;
+    }
+
+    .material-item span,
+    .tool-item span {
+        flex: 1;
+    }
+
+    .material-item .name,
+    .tool-item .name {
+        font-weight: 500;
+        color: #222;
+    }
+
+    .material-item .price {
+        text-align: right;
+        color: #666;
+        min-width: 80px;
+    }
+
+.material-icon,
+.tool-icon {
+    font-style: normal;
+    font-size: 16px;
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 100px;
+    align-items: center;
+    font-size: 14px;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #222;
+    word-break: break-word;
+}
+
+.item-qty,
+.item-price {
+    text-align: right;
+    color: #555;
+    font-weight: 400;
+}
+
+.icon {
+    font-style: normal;
+    margin-right: 6px;
+}
 
 
 

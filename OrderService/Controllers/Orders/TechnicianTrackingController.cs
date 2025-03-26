@@ -6,9 +6,10 @@ namespace OrderService.Controllers.Orders
 {
     [ApiController]
     [Route("technicians")]
-    public class TechnicianTrackingController(TechnicianTrackingService trackingService) : ControllerBase
+    public class TechnicianTrackingController(TechnicianTrackingService trackingService, TechnicianSimulationService simulationService) : ControllerBase
     {
         private readonly TechnicianTrackingService _trackingService = trackingService;
+        private readonly TechnicianSimulationService _simulationService = simulationService;
 
         /// <summary>
         /// 📡 WebSocket для live-трекинга передвижения техников по заявке.
@@ -17,20 +18,15 @@ namespace OrderService.Controllers.Orders
         public async Task<IActionResult> TrackOrder(Guid orderId)
         {
             if (!HttpContext.WebSockets.IsWebSocketRequest)
-            {
                 return BadRequest(new { error = "❌ Это не WebSocket-запрос!" });
-            }
 
-            try
-            {
-                using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                await _trackingService.TrackTechniciansAsync(orderId, webSocket);
-                return StatusCode(101); // WebSocket Switching Protocols
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "❌ Ошибка при обработке WebSocket-соединения.", details = ex.Message });
-            }
+            using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+            _ = _simulationService.SimulateAllTechniciansMovementAsync(orderId);
+
+            await _trackingService.TrackTechniciansAsync(orderId, webSocket);
+
+            return StatusCode(101); 
         }
 
         /// <summary>

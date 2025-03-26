@@ -11,7 +11,6 @@ using OrderService.DTO.Orders.UpdateOrders;
 using Microsoft.EntityFrameworkCore;
 using OrderService.DTO.Orders;
 using OrderService.DTO.GeoLocation;
-using OrderService.DTO.Users;
 
 namespace OrderService.Services.Orders
 {
@@ -68,16 +67,16 @@ namespace OrderService.Services.Orders
         /// 🔄 Логика создания заявки менеджером
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> ProcessManagerOrderCreationAsync(
-            CreateOrderRequestManager request,
-            OrderType orderType,
-            Guid? clientId,
-            string clientName,
-            string clientPhone,
-            string clientEmail,
-            Guid managerId,
-            Manager manager,
-            string? equipmentModel,
-            List<string>? technicianIds)
+     CreateOrderRequestManager request,
+     OrderType orderType,
+     Guid? clientId,
+     string clientName,
+     string clientPhone,
+     string clientEmail,
+     Guid managerId,
+     Manager manager,
+     string? equipmentModel,
+     List<string>? technicianIds)
         {
             _logger.LogInformation("🔄 Создание заявки менеджером...");
 
@@ -85,7 +84,7 @@ namespace OrderService.Services.Orders
 
             try
             {
-                // 1️⃣ Определение координат установки
+                // 1 Проверка адреса и геолокация
                 if (string.IsNullOrWhiteSpace(request.InstallationAddress))
                 {
                     _logger.LogError("❌ Ошибка: Адрес установки не указан!");
@@ -99,19 +98,13 @@ namespace OrderService.Services.Orders
                     return null;
                 }
 
-                _logger.LogInformation("📍 Определены координаты установки: {Latitude}, {Longitude}",
-                    location.Value.Latitude, location.Value.Longitude);
-
-                _logger.LogInformation("🔍 Входные параметры: TechnicianIds = {TechnicianIds}, EquipmentModel = {EquipmentModel}",
-                    technicianIds != null ? string.Join(", ", technicianIds) : "None", equipmentModel);
-
-                // 2️⃣ Определяем источник оборудования (склад или магазин)
+                // 2 Определение источника оборудования (склад/магазин) и получение необходимых данных
                 var isWarehouseSource = request.Equipment.ModelSource == "Warehouse";
                 NearestLocationResultDTO nearestLocationData;
 
                 if (isWarehouseSource)
                 {
-                    // 📦 Поиск склада, оборудования и техников
+                    // 2.1️⃣ Оборудование со склада — находим всё сразу
                     nearestLocationData = await _nearestLocationFinderService.FindNearestLocationsAsync(
                         location.Value.Latitude, location.Value.Longitude,
                         orderType, equipmentModel, technicianIds);
@@ -124,13 +117,14 @@ namespace OrderService.Services.Orders
                 }
                 else
                 {
-                    // 🛒 Оборудование из магазина - берем данные напрямую из запроса
-                    // 🛒 Оборудование из магазина - берем данные напрямую из запроса
-                    nearestLocationData = new NearestLocationResultDTO
-                    {
-                        NearestWarehouses = [],
-                        AvailableEquipment = [
-                        new OrderEquipmentDTO
+                    // 2.2 Оборудование из магазина — материалы и инструменты всё равно подбираем со склада
+                    nearestLocationData = await _nearestLocationFinderService.FindNearestLocationsAsync(
+                        location.Value.Latitude, location.Value.Longitude,
+                        orderType, null, technicianIds);
+
+                    nearestLocationData.AvailableEquipment =
+                    [
+                        new()
                         {
                             ModelName = request.Equipment.ModelName,
                             ModelSource = "Store",
@@ -140,30 +134,18 @@ namespace OrderService.Services.Orders
                             ModelPrice = request.Equipment.Price,
                             Quantity = request.Equipment.Quantity
                         }
-                    ],
-                                        SelectedTechnicians = technicianIds?.Count > 0
-                        ? [.. (await _userPostgreRepository.GetTechniciansByIdsAsync(technicianIds)).Select(t => new TechnicianDTO(t))]
-                        : [.. (await _userPostgreRepository.GetNearestAvailableTechniciansAsync(
-                                location.Value.Latitude, location.Value.Longitude, 2))
-                            .Select(t => new TechnicianDTO(t))]
-                    };
-
-
+                    ];
                 }
 
+                // 3 Проверка доступных техников
                 if (nearestLocationData.SelectedTechnicians.Count == 0)
                 {
                     _logger.LogError("❌ Нет доступных техников для выполнения заявки!");
                     return null;
                 }
 
-                _logger.LogInformation("📌 Координаты для установки: {Latitude}, {Longitude}",
-                        location.Value.Latitude, location.Value.Longitude);
-
-                // 3️⃣ Создание заявки
+                // 4 Создание сущности заявки
                 var orderId = Guid.NewGuid();
-                _logger.LogInformation("📌 Создаётся заявка {OrderId} для {ClientName} ({ClientPhone})",
-                    orderId, clientName, clientPhone);
 
                 var order = new Order
                 {
@@ -192,7 +174,7 @@ namespace OrderService.Services.Orders
                     AssignedTechnicians = []
                 };
 
-                // 4️⃣ Сохранение заявки в БД
+                // 5 Сохраняем заказ в БД
                 var created = await _orderRepository.CreateOrderAsync(order);
                 if (!created)
                 {
@@ -201,9 +183,7 @@ namespace OrderService.Services.Orders
                     return null;
                 }
 
-                _logger.LogInformation("✅ Заявка {OrderId} успешно создана.", orderId);
-
-                // 5️⃣ Добавление оборудования, материалов и инструментов
+                // 6 Добавляем оборудование
                 order.Equipment.AddRange(nearestLocationData.AvailableEquipment.Select(e => new OrderEquipment
                 {
                     ModelName = e.ModelName,
@@ -212,9 +192,11 @@ namespace OrderService.Services.Orders
                     ServiceArea = e.ServiceArea,
                     ModelPrice = e.ModelPrice,
                     Quantity = e.Quantity,
+                    ModelUrl = e.ModelUrl,
                     OrderID = orderId
                 }));
 
+                // 7 Добавляем материалы
                 order.RequiredMaterials.AddRange(nearestLocationData.AvailableMaterials.Select(m => new OrderRequiredMaterial
                 {
                     MaterialName = m.MaterialName,
@@ -223,6 +205,7 @@ namespace OrderService.Services.Orders
                     OrderId = orderId
                 }));
 
+                // 8 Добавляем инструменты
                 order.RequiredTools.AddRange(nearestLocationData.AvailableTools.Select(t => new OrderRequiredTool
                 {
                     ToolName = t.ToolName,
@@ -230,32 +213,26 @@ namespace OrderService.Services.Orders
                     OrderId = orderId
                 }));
 
-                // 6️⃣ Добавление техников в заявку
+                // 9 Добавляем техников
                 order.AssignedTechnicians.AddRange(nearestLocationData.SelectedTechnicians.Select(t => new OrderTechnician
                 {
                     TechnicianID = t.Id,
                     OrderID = orderId
                 }));
 
-                _logger.LogInformation("👷 Назначены техники: {TechnicianIds}",
-                    string.Join(", ", order.AssignedTechnicians.Select(t => t.TechnicianID)));
-
+                // 10 Сохраняем OrderId в Redis для техников
                 foreach (var technician in nearestLocationData.SelectedTechnicians)
                 {
                     await _userRedisRepository.SetTechnicianLocationAsync(
-                        technician.Id, technician.Latitude, technician.Longitude, orderId
-                    );
-                    _logger.LogInformation("📡 Установлен OrderId в Redis для техника {TechnicianId}: {OrderId}",
-                        technician.Id, orderId);
+                        technician.Id, technician.Latitude, technician.Longitude, orderId);
                 }
 
-                // 7️⃣ Сохранение маршрутов перед фиксацией транзакции
+                // 11 Сохраняем маршруты
                 await _technicianRouteSaveService.SaveInitialRoutesAsync(orderId, nearestLocationData.Routes);
 
-                // 8️⃣ Фиксация транзакции
+                // 12 Фиксация транзакции
                 await _orderRepository.SaveChangesAsync();
                 await transaction.CommitAsync();
-                _logger.LogInformation("✅ Заявка {OrderId} успешно сохранена.", orderId);
 
                 return new CreatedOrderResponseDTO(order, nearestLocationData.Routes);
             }
@@ -266,8 +243,6 @@ namespace OrderService.Services.Orders
                 return null;
             }
         }
-
-
 
         public async Task<bool> UpdateOrderGeneralDetailsAsync(Guid orderId, UpdateOrderRequestManager request)
         {
@@ -286,13 +261,11 @@ namespace OrderService.Services.Orders
 
                 _orderRepository.AttachEntity(order);
 
-                // Обновляем только не критичные параметры
                 order.Notes = request.Notes ?? order.Notes;
                 order.WorkCost = request.WorkCost ?? order.WorkCost;
                 order.PaymentStatus = request.PaymentStatus ?? order.PaymentStatus;
                 order.PaymentMethod = request.PaymentMethod ?? order.PaymentMethod;
 
-                // Обновляем данные клиента, если он не привязан к базе
                 if (order.ClientID == null)
                 {
                     order.ClientName = request.ClientName ?? order.ClientName;
@@ -421,36 +394,6 @@ namespace OrderService.Services.Orders
                     order.FulfillmentStatus = FulfillmentStatus.InProgress;
                     order.WorkProgress = WorkProgress.OrderProcessed;
                     _logger.LogInformation("📌 Заявка {OrderId} обработана менеджером. Статус -> InProgress", orderId);
-
-                    // ✅ Сначала сохраняем изменения в БД, чтобы техники были привязаны к заявке
-                    await _orderRepository.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    // ✅ Достаем назначенных техников, чтобы убедиться, что они существуют
-                    var technicians = await _orderRepository.GetTechniciansByOrderIdAsync(orderId);
-                    if (technicians.Count == 0)
-                    {
-                        _logger.LogError("❌ Ошибка: Нет назначенных техников для заявки {OrderId}. Симуляция движения невозможна!", orderId);
-                        return false;
-                    }
-
-                    try
-                    {
-                        _logger.LogInformation("🔄 Открытие WebSocket и запуск симуляции движения техников для заявки {OrderId}", orderId);
-
-                        var trackingTask = _technicianTrackingService.OpenWebSocketForOrderAsync(orderId);
-                        var simulationTask = _technicianSimulationService.SimulateAllTechniciansMovementAsync(orderId);
-
-                        await Task.WhenAll(trackingTask, simulationTask);
-
-                        _logger.LogInformation("✅ WebSocket и симуляция движения техников завершены для заявки {OrderId}", orderId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "❌ Ошибка при запуске WebSocket и симуляции движения техников для заявки {OrderId}", orderId);
-                        return false;
-                    }
-
                 }
                 else if (currentStatus == FulfillmentStatus.InProgress && currentProgress == WorkProgress.OrderProcessed)
                 {
@@ -465,12 +408,8 @@ namespace OrderService.Services.Orders
                 else if (newStatus == FulfillmentStatus.Completed && currentStatus == FulfillmentStatus.InProgress)
                 {
                     _logger.LogInformation("✅ Менеджер завершил заявку {OrderId}. Статус -> Completed", orderId);
-
                     order.FulfillmentStatus = FulfillmentStatus.Completed;
                     order.WorkProgress = WorkProgress.InstallationCompleted;
-
-                    await _orderRepository.SaveChangesAsync();
-                    await transaction.CommitAsync();
 
                     await ReleaseTechniciansAsync(order.Id);
                     await _technicianTrackingService.CloseWebSocketForOrderAsync(order.Id);
@@ -479,9 +418,6 @@ namespace OrderService.Services.Orders
                 {
                     order.FulfillmentStatus = FulfillmentStatus.Cancelled;
                     _logger.LogWarning("⚠️ Заявка {OrderId} была отменена!", orderId);
-
-                    await _orderRepository.SaveChangesAsync();
-                    await transaction.CommitAsync();
 
                     await ReleaseTechniciansAsync(order.Id);
                     await _technicianTrackingService.CloseWebSocketForOrderAsync(order.Id);
@@ -492,6 +428,8 @@ namespace OrderService.Services.Orders
                     return false;
                 }
 
+                await _orderRepository.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return true;
             }
             catch (Exception ex)
@@ -501,6 +439,7 @@ namespace OrderService.Services.Orders
                 return false;
             }
         }
+
 
 
         private async Task ReleaseTechniciansAsync(Guid orderId)

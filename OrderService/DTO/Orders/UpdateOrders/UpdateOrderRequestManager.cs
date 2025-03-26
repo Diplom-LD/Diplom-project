@@ -14,7 +14,7 @@ namespace OrderService.DTO.Orders.UpdateOrders
 
         public string? InstallationAddress { get; set; }
 
-        public DateTime? InstallationDate { get; set; } 
+        public DateTimeOffset? InstallationDate { get; set; } 
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public PaymentMethod? PaymentMethod { get; set; }

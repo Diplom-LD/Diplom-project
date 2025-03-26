@@ -47,7 +47,7 @@ namespace AuthService.Controllers
 
             await _dbContext.SaveChangesAsync();
 
-            _tokenService.SetRefreshToken(Response, Request, refreshToken, user.RefreshTokenExpiry.Value);
+            _tokenService.SetRefreshToken(Response, Request, refreshToken, user.RefreshTokenExpiry.Value.UtcDateTime);
 
             _logger.LogInformation("User {Identifier} successfully logged in", request.Identifier);
             return Ok(new { accessToken });
@@ -78,7 +78,7 @@ namespace AuthService.Controllers
             user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             await _dbContext.SaveChangesAsync();
 
-            _tokenService.SetRefreshToken(Response, Request, newRefreshToken, user.RefreshTokenExpiry.Value);
+            _tokenService.SetRefreshToken(Response, Request, refreshToken, user.RefreshTokenExpiry.Value.UtcDateTime);
 
             _logger.LogInformation("Access token refreshed for user {UserId}", user.Id);
             return Ok(new { accessToken = newAccessToken });

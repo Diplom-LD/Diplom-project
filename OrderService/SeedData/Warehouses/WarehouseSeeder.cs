@@ -150,7 +150,7 @@ namespace OrderService.SeedData.Warehouses
                     BTU = random.Next(9000, 30000),
                     ServiceArea = random.Next(20, 100),
                     Price = random.Next(45000, 95000),
-                    Quantity = random.Next(5, 15)
+                    Quantity = random.Next(1, 5)
                 })).ToList();
 
             await _equipmentCollection.InsertManyAsync(equipmentStock);
@@ -225,7 +225,7 @@ namespace OrderService.SeedData.Warehouses
                     ID = Guid.NewGuid(),
                     WarehouseId = Guid.Parse(warehouseId),
                     ToolName = tool,
-                    Quantity = random.Next(1, 10)
+                    Quantity = random.Next(3, 10)
                 })).ToList();
 
             await _toolsCollection.InsertManyAsync(toolsStock);

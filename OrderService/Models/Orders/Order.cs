@@ -16,8 +16,8 @@ namespace OrderService.Models.Orders
         public WorkProgress WorkProgress { get; set; } = WorkProgress.OrderPlaced;
         public PaymentMethod PaymentMethod { get; set; }
         public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.UnPaid;
-        public DateTime CreationOrderDate { get; set; } = DateTime.UtcNow;
-        public DateTime InstallationDate { get; set; }
+        public DateTimeOffset CreationOrderDate { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset InstallationDate { get; set; }
 
         [Required(ErrorMessage = "Адрес установки обязателен.")]
         public required string InstallationAddress { get; set; }

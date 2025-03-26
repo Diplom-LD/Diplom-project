@@ -13,7 +13,7 @@ namespace OrderService.Models.Technicians
         public Guid TechnicianId { get; set; }
         public Technician Technician { get; set; } = null!;
 
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
 
         [ForeignKey("Order")]
         public Guid OrderId { get; set; } 

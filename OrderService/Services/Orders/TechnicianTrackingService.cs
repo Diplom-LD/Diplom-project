@@ -24,7 +24,7 @@ namespace OrderService.Services.Orders
         /// <summary>
         /// 📡 Подключение менеджера к WebSocket для отслеживания техников по заявке.
         /// </summary>
-        public async Task TrackTechniciansAsync(Guid orderId, WebSocket webSocket)
+        public async Task TrackTechniciansAsync(Guid orderId, WebSocket webSocket, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("📡 Менеджер подключился к отслеживанию заявки {OrderId}", orderId);
 
@@ -38,8 +38,14 @@ namespace OrderService.Services.Orders
 
             try
             {
-                while (webSocket.State == WebSocketState.Open)
+                while (webSocket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
                 {
+                    if (webSocket.CloseStatus.HasValue)
+                    {
+                        _logger.LogInformation("🔌 WebSocket закрыт клиентом: {Status}", webSocket.CloseStatus);
+                        break;
+                    }
+
                     if (await ShouldCloseTrackingAsync(orderId))
                     {
                         _logger.LogWarning("⚠️ Все техники прибыли, закрываем WebSocket для заявки {OrderId}.", orderId);
@@ -47,18 +53,27 @@ namespace OrderService.Services.Orders
                     }
 
                     await NotifyManagerAsync(orderId);
-                    await Task.Delay(2000);
+                    await Task.Delay(2000, cancellationToken);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("⛔ WebSocket-трекинг для заявки {OrderId} отменён через CancellationToken", orderId);
+            }
+            catch (WebSocketException ex)
+            {
+                _logger.LogError(ex, "❌ WebSocket исключение во время отслеживания заявки {OrderId}", orderId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка WebSocket для заявки {OrderId}", orderId);
+                _logger.LogError(ex, "❌ Необработанная ошибка в WebSocket-трекинге заявки {OrderId}", orderId);
             }
             finally
             {
                 await RemoveWebSocketConnection(orderId, webSocket);
             }
         }
+
 
 
         public async Task OpenWebSocketForOrderAsync(Guid orderId)
@@ -111,7 +126,7 @@ namespace OrderService.Services.Orders
             }
 
             var distance = DistanceCalculator.CalculateDistance(latitude, longitude, order.InstallationLatitude, order.InstallationLongitude);
-            if (distance < 0.1) 
+            if (distance < 0.000045) 
             {
                 _logger.LogInformation("✅ Техник {TechnicianId} прибыл к заявке {OrderId}", technicianId, order.Id);
 
@@ -168,10 +183,11 @@ namespace OrderService.Services.Orders
             foreach (var technician in technicians)
             {
                 var loc = await _userRedisRepository.GetTechnicianLocationAsync(technician.Id);
-                if (loc == null || DistanceCalculator.CalculateDistance(loc.Latitude, loc.Longitude, order.InstallationLatitude, order.InstallationLongitude) > 0.1)
+                if (loc == null || DistanceCalculator.CalculateDistance(loc.Latitude, loc.Longitude, order.InstallationLatitude, order.InstallationLongitude) > 0.000045)
                 {
                     return false;
                 }
+
             }
             return true;
         }
@@ -311,7 +327,7 @@ namespace OrderService.Services.Orders
                         location.Latitude, location.Longitude,
                         order.InstallationLatitude, order.InstallationLongitude);
 
-                    if (distance < 0.1)
+                    if (distance < 0.000045)
                     {
                         arrivedCount++;
                     }

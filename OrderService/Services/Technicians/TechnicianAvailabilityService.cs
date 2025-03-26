@@ -75,12 +75,19 @@ namespace OrderService.Services.Technicians
         {
             var allTechnicians = await GetAllTechniciansAsync();
 
-            var availableTechnicians = allTechnicians
+            // Убираем дубликаты по TechnicianId
+            var distinctTechnicians = allTechnicians
+                .GroupBy(t => t.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            var availableTechnicians = distinctTechnicians
                 .Where(t => t.IsAvailable && !t.Appointments.Any(a => a.Date.Date == date.Date))
                 .ToList();
 
             _logger.LogInformation("✅ Найдено {Count} доступных техников на {Date}", availableTechnicians.Count, date.ToShortDateString());
             return availableTechnicians;
         }
+
     }
 }

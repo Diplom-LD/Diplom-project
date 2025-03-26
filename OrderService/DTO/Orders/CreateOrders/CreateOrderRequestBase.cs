@@ -5,7 +5,7 @@ namespace OrderService.DTO.Orders.CreateOrders
 {
     public abstract class CreateOrderRequestBase : IValidatableObject
     {
-        public abstract DateTime InstallationDate { get; set; }
+        public abstract DateTimeOffset InstallationDate { get; set; }
         public abstract string InstallationAddress { get; set; }
         public abstract string Notes { get; set; }
         public abstract PaymentMethod PaymentMethod { get; set; }

@@ -143,11 +143,63 @@
         }
     }
 
+    async function fetchAvailableTechnicianCount() {
+        try {
+            const response = await fetch("/technicians/available-today", {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+
+            if (!response.ok) throw new Error("Failed to fetch technician data");
+
+            const technicianList = await response.json();
+
+            console.log("👷 Доступные техники:", technicianList);
+
+            const techCount = Array.isArray(technicianList) ? technicianList.length : 0;
+
+            const techCounter = document.getElementById("availableTechnicians");
+            if (techCounter) {
+                techCounter.textContent = techCount;
+            }
+        } catch (error) {
+            console.error("❌ Ошибка при получении списка техников:", error);
+        }
+    }
+
+    async function fetchTotalEquipmentCount() {
+        try {
+            const response = await fetch("/equipment/all-warehouses", {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+
+            if (!response.ok) throw new Error("Failed to fetch equipment data");
+
+            const equipmentList = await response.json();
+
+            console.log("📦 Получен список оборудования:", equipmentList);
+
+            let total = 0;
+            for (const item of equipmentList) {
+                total += item.totalQuantity || 0;
+            }
+
+            const equipmentCounter = document.getElementById("equipmentCount");
+            if (equipmentCounter) {
+                equipmentCounter.textContent = total;
+            }
+        } catch (error) {
+            console.error("❌ Ошибка при получении оборудования:", error);
+        }
+    }
+
+    fetchAvailableTechnicianCount();
+    fetchTotalEquipmentCount();
+    loadRecentOrders();
+    loadClients();
+
+
     setInterval(() => {
         console.log("🔄 Проверка новых заказов...");
         loadRecentOrders();
     }, 10000);
-
-    loadRecentOrders();
-    loadClients();
 });

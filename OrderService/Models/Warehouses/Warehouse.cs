@@ -32,7 +32,7 @@ namespace OrderService.Models.Warehouses
         public string PhoneNumber { get; set; } = string.Empty;
 
         [BsonElement("lastInventoryCheck")]
-        public DateTime LastInventoryCheck { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset LastInventoryCheck { get; set; } = DateTime.UtcNow;
 
         [BsonElement("latitude")]
         public double Latitude { get; set; }

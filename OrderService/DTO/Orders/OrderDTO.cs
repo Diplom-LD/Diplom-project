@@ -12,8 +12,8 @@ namespace OrderService.DTO.Orders
         public string WorkProgress { get; set; } = order.WorkProgress.ToString();
         public string PaymentStatus { get; set; } = order.PaymentStatus.ToString();
         public string PaymentMethod { get; set; } = order.PaymentMethod.ToString();
-        public DateTime CreationOrderDate { get; set; } = order.CreationOrderDate;
-        public DateTime InstallationDate { get; set; } = order.InstallationDate;
+        public DateTimeOffset CreationOrderDate { get; set; } = order.CreationOrderDate;
+        public DateTimeOffset InstallationDate { get; set; } = order.InstallationDate;
         public string InstallationAddress { get; set; } = order.InstallationAddress;
         public double InstallationLatitude { get; set; } = order.InstallationLatitude;
         public double InstallationLongitude { get; set; } = order.InstallationLongitude;
@@ -31,9 +31,8 @@ namespace OrderService.DTO.Orders
         public int ClientCalculatedBTU { get; set; } = order.ClientCalculatedBTU;
         public int ClientMinBTU { get; set; } = order.ClientMinBTU;
         public int ClientMaxBTU { get; set; } = order.ClientMaxBTU;
-
+        public string? ManagerName { get; set; } = order.Manager?.FullName ?? "Not Assigned";
         public Guid? ManagerId { get; set; } = order.ManagerId;
-
         public List<OrderEquipmentDTO> Equipment { get; set; } = order.Equipment?.Select(e => new OrderEquipmentDTO(e)).ToList() ?? [];
         public List<OrderMaterialDTO> RequiredMaterials { get; set; } = order.RequiredMaterials?.Select(m => new OrderMaterialDTO(m)).ToList() ?? [];
         public List<OrderToolDTO> RequiredTools { get; set; } = order.RequiredTools?.Select(t => new OrderToolDTO(t)).ToList() ?? [];

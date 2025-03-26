@@ -16,7 +16,7 @@
 
     public class TechnicianAppointmentDTO
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public Guid OrderId { get; set; }
     }
 

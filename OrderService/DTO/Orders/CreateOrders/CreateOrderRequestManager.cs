@@ -18,7 +18,7 @@ namespace OrderService.DTO.Orders.CreateOrders
         public OrderType OrderType { get; set; }
 
         [Required(ErrorMessage = "Дата установки обязательна.")]
-        public override DateTime InstallationDate { get; set; }
+        public override DateTimeOffset InstallationDate { get; set; }
 
         [Required(ErrorMessage = "Адрес установки обязателен.")]
         [StringLength(255, MinimumLength = 5, ErrorMessage = "Адрес должен содержать от 5 до 255 символов.")]

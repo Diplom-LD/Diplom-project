@@ -16,7 +16,7 @@ namespace AuthService.Models.User
 
         // To exit from all devices
         public string? RefreshToken { get; set; }
-        public DateTime? RefreshTokenExpiry { get; set; }
+        public DateTimeOffset? RefreshTokenExpiry { get; set; }
     }
 
     public class Client : User { }

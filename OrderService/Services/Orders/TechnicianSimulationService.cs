@@ -41,6 +41,12 @@ namespace OrderService.Services.Orders
                 return false;
             }
 
+            if (technicians.Any(t => _activeSimulations.ContainsKey(t.Id)))
+            {
+                _logger.LogWarning("⚠️ Симуляция уже идёт хотя бы для одного техника. Пропускаем повторный запуск.");
+                return false;
+            }
+
             _logger.LogInformation("🚦 Запуск симуляции для {TechnicianCount} техников...", technicians.Count);
 
             List<Task> simulationTasks = [.. technicians.Select(technician => SimulateTechnicianMovementAsync(technician.Id, orderId, intervalSeconds))];
@@ -98,9 +104,9 @@ namespace OrderService.Services.Orders
             }
 
             var route = routes.FirstOrDefault(r => r.TechnicianId == technicianId);
-            if (route == null || route.RoutePoints.Count == 0)
+            if (route == null || route.RoutePoints.Count < 2)
             {
-                _logger.LogWarning("⚠️ Техник {TechnicianId} не имеет маршрута. Пропускаем...", technicianId);
+                _logger.LogWarning("⚠️ Недостаточно точек маршрута для техника {TechnicianId}. Пропускаем...", technicianId);
                 return;
             }
 
@@ -115,17 +121,19 @@ namespace OrderService.Services.Orders
 
             try
             {
-                foreach (var point in route.RoutePoints)
+                for (int i = 1; i < route.RoutePoints.Count; i++)
                 {
-                    if (cts.Token.IsCancellationRequested)
-                    {
-                        _logger.LogWarning("⛔ Симуляция техника {TechnicianId} остановлена.", technicianId);
-                        return;
-                    }
+                    var previous = route.RoutePoints[i - 1];
+                    var current = route.RoutePoints[i];
 
-                    await MoveSmoothlyBetweenPoints(technicianId, point.Latitude, point.Longitude, intervalSeconds, cts.Token);
+                    await MoveSmoothlyBetweenPoints(
+                        technicianId,
+                        previous.Latitude, previous.Longitude,
+                        current.Latitude, current.Longitude,
+                        intervalSeconds,
+                        cts.Token
+                    );
                 }
-
 
                 _logger.LogInformation("✅ Техник {TechnicianId} прибыл к клиенту по заявке {OrderId}", technicianId, orderId);
 
@@ -144,6 +152,7 @@ namespace OrderService.Services.Orders
                 cts.Dispose();
             }
         }
+
 
         /// <summary>
         /// 🛑 Останавливает симуляцию всех техников в заявке.
@@ -178,25 +187,79 @@ namespace OrderService.Services.Orders
         }
 
 
-        private async Task MoveSmoothlyBetweenPoints(Guid technicianId, double latitude, double longitude, int intervalSeconds, CancellationToken token)
+        private async Task MoveSmoothlyBetweenPoints(
+    Guid technicianId,
+    double startLat,
+    double startLng,
+    double endLat,
+    double endLng,
+    int totalDurationSeconds,
+    CancellationToken token)
         {
-            if (token.IsCancellationRequested)
-            {
-                _logger.LogWarning("⛔ Движение техника {TechnicianId} остановлено принудительно.", technicianId);
-                return;
-            }
+            double distanceKm = CalculateDistance(startLat, startLng, endLat, endLng);
 
-            await _technicianTrackingService.UpdateTechnicianLocationAsync(technicianId, latitude, longitude);
+            int steps = Math.Clamp((int)(distanceKm * 40), 60, 120);
 
-            try
+            double baseDelay = (totalDurationSeconds * 1000.0) / steps;
+            var random = new Random();
+
+            for (int i = 1; i <= steps; i++)
             {
-                await Task.Delay(intervalSeconds * 1000, token);
-            }
-            catch (TaskCanceledException)
-            {
-                _logger.LogWarning("⛔ Движение техника {TechnicianId} прервано принудительно.", technicianId);
+                if (token.IsCancellationRequested)
+                {
+                    _logger.LogWarning("⛔ Движение техника {TechnicianId} остановлено.", technicianId);
+                    return;
+                }
+
+                double lat = Interpolate(startLat, endLat, i / (double)steps);
+                double lng = Interpolate(startLng, endLng, i / (double)steps);
+
+                await _technicianTrackingService.UpdateTechnicianLocationAsync(technicianId, lat, lng);
+
+                try
+                {
+                    double speedFactor = random.NextDouble() * 0.2 + 0.9; 
+                    int delay = (int)(baseDelay * speedFactor);
+
+                    if (random.NextDouble() < 0.07)
+                    {
+                        int microPause = random.Next(100, 300);
+                        _logger.LogInformation("🕒 Техник {TechnicianId} ненадолго притормозил на {PauseMs} мс", technicianId, microPause);
+                        delay += microPause;
+                    }
+
+                    await Task.Delay(delay, token);
+                }
+                catch (TaskCanceledException)
+                {
+                    _logger.LogWarning("⛔ Движение техника {TechnicianId} прервано.", technicianId);
+                    return;
+                }
             }
         }
+
+        private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; 
+            double dLat = ToRadians(lat2 - lat1);
+            double dLon = ToRadians(lon2 - lon1);
+
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        private static double ToRadians(double deg) => deg * Math.PI / 180;
+
+        private static double Interpolate(double start, double end, double fraction)
+        {
+            return start + (end - start) * fraction;
+        }
+
+
 
     }
 }

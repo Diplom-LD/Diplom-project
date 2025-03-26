@@ -9,11 +9,37 @@
 
     <!-- Заголовок и статусы -->
     <div class="order-details__header">
-        <h2 class="order-details__id">Order ID: #@Model.Id</h2>
+        <h2 class="order-details__id">Order #@Model.Id.ToString().Substring(0, 8)</h2>
 
         <div class="order-details__statuses">
-            <span class="order-details__status order-details__status--fulfilled">@Model.FulfillmentStatus</span>
-            <span class="order-details__status order-details__status--paid">@Model.PaymentStatus</span>
+            <select class="order-status-dropdown" id="fulfillment-status" data-field="fulfillment-status">
+                @foreach (FulfillmentStatus status in Enum.GetValues(typeof(FulfillmentStatus)))
+                {
+                    if (status == Model.FulfillmentStatus)
+                    {
+                        <option value="@status" selected>@status</option>
+                    }
+                    else
+                    {
+                        <option value="@status">@status</option>
+                    }
+                }
+            </select>
+
+            <select class="order-status-dropdown" id="payment-status" data-field="payment-status">
+                @foreach (PaymentStatus status in Enum.GetValues(typeof(PaymentStatus)))
+                {
+                    if (status == Model.PaymentStatus)
+                    {
+                        <option value="@status" selected>@status</option>
+                    }
+                    else
+                    {
+                        <option value="@status">@status</option>
+                    }
+                }
+            </select>
+
             <span class="order-details__date">Created: @Model.CreationOrderDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
             <span class="order-details__date">Installation: @Model.InstallationDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
         </div>
@@ -39,10 +65,10 @@
                 <p><strong>Notes:</strong> @Model.Notes</p>
 
                 <div class="order-card__summary">
-                    <p><strong>Work Cost:</strong> @Model.WorkCost.ToString("C")</p>
-                    <p><strong>Equipment Cost:</strong> @Model.EquipmentCost.ToString("C")</p>
-                    <p><strong>Materials Cost:</strong> @Model.MaterialsCost.ToString("C")</p>
-                    <p><strong>Total Cost:</strong> @Model.TotalCost.ToString("C")</p>
+                    <p><strong>Work Cost:</strong> @Model.WorkCost.ToString("N2") MDL</p>
+                    <p><strong>Equipment Cost:</strong> @Model.EquipmentCost.ToString("N2") MDL</p>
+                    <p><strong>Materials Cost:</strong> @Model.MaterialsCost.ToString("N2") MDL</p>
+                    <p><strong>Total Cost:</strong> @Model.TotalCost.ToString("N2") MDL</p>
                 </div>
             </div>
         }
@@ -54,7 +80,7 @@
             <p><strong>Phone:</strong> @Model.ClientPhone</p>
             <p><strong>Email:</strong> @Model.ClientEmail</p>
             <p><strong>Installation Address:</strong> @Model.InstallationAddress</p>
-            <p><strong>Manager:</strong> @Model.ManagerId</p>
+            <p><strong>Manager:</strong> @Model.ManagerName</p>
             <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
 
             @{
@@ -70,31 +96,45 @@
                 bool currentReached = false;
             }
 
-            <ul class="order-card__timeline">
+            <ul class="order-card__timeline" data-current="@Model.WorkProgress">
                 @foreach (var step in steps)
                 {
                     string cssClass;
+                    string status;
 
                     if (!currentReached && step == Model.WorkProgress)
                     {
                         cssClass = "current-step";
+                        status = "current";
                         currentReached = true;
                     }
                     else if (!currentReached)
                     {
                         cssClass = "completed-step";
+                        status = "completed";
                     }
                     else
                     {
                         cssClass = "upcoming-step";
+                        status = "upcoming";
                     }
 
-                    <li class="@cssClass">@step.ToString()</li>
+                    var isInstallationCompleted = (step == WorkProgress.InstallationCompleted && (status == "current" || status == "completed"));
+                    if (isInstallationCompleted)
+                    {
+                        cssClass += " completed-installation";
+                    }
+
+                    <li class="@cssClass timeline-step" data-step="@step.ToString()" data-status="@status">
+                        @step.ToString()
+                    </li>
                 }
+
             </ul>
+
+
         </div>
 
-        <!-- Материалы и инструменты -->
         @if (Model.RequiredMaterials.Any() || Model.RequiredTools.Any())
         {
             <div class="order-card order-card--materials">
@@ -102,27 +142,40 @@
 
                 @if (Model.RequiredMaterials.Any())
                 {
-                    <p><strong>Materials:</strong></p>
-                    <ul>
-                        @foreach (var m in Model.RequiredMaterials)
-                        {
-                            <li>@m.MaterialName — @m.Quantity шт. (@m.MaterialPrice.ToString("N0") MDL)</li>
-                        }
-                    </ul>
+                    <div class="materials-section">
+                        <h4><span class="icon">📦</span> Materials</h4>
+                        <div class="item-list">
+                            @foreach (var m in Model.RequiredMaterials)
+                            {
+                                <div class="item-row">
+                                    <div class="item-name">@m.MaterialName</div>
+                                    <div class="item-qty">@m.Quantity шт.</div>
+                                    <div class="item-price">@m.MaterialPrice.ToString("N0") MDL</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 }
 
                 @if (Model.RequiredTools.Any())
                 {
-                    <p><strong>Tools:</strong></p>
-                    <ul>
-                        @foreach (var t in Model.RequiredTools)
-                        {
-                            <li>@t.ToolName — @t.Quantity шт.</li>
-                        }
-                    </ul>
+                    <div class="tools-section">
+                        <h4><span class="icon">🛠</span> Tools</h4>
+                        <div class="item-list">
+                            @foreach (var t in Model.RequiredTools)
+                            {
+                                <div class="item-row">
+                                    <div class="item-name">@t.ToolName</div>
+                                    <div class="item-qty">@t.Quantity шт.</div>
+                                    <div class="item-price"></div> 
+                                </div>
+                            }
+                        </div>
+                    </div>
                 }
             </div>
         }
+
 
         @if (Model.InitialRoutes.Any())
         {
@@ -143,23 +196,28 @@
                     </div>
 
                     <div class="map-legend">
-                        <h4>Legend</h4>
-                        <div class="legend-item">
-                            <input type="checkbox" id="toggle-warehouse" checked>
-                            <span class="legend-icon warehouse-icon"></span> Warehouse
+                        <button id="toggle-legend-btn" class="legend-toggle-btn" title="Hide Legend">✖</button>
+
+                        <div class="map-legend__content">
+                            <h4>Legend</h4>
+                            <div class="legend-item">
+                                <input type="checkbox" id="toggle-warehouse" checked>
+                                <span class="legend-icon warehouse-icon"></span> Warehouse
+                            </div>
+                            <div class="legend-item">
+                                <input type="checkbox" id="toggle-technician" checked>
+                                <span class="legend-icon technician-icon"></span> Technician
+                            </div>
+                            <div class="legend-item">
+                                <input type="checkbox" id="toggle-client" checked>
+                                <span class="legend-icon client-icon"></span> Installation Point
+                            </div>
+                            <h5>Routes</h5>
+                            <ul id="route-legend-list"></ul>
                         </div>
-                        <div class="legend-item">
-                            <input type="checkbox" id="toggle-technician" checked>
-                            <span class="legend-icon technician-icon"></span> Technician
-                        </div>
-                        <div class="legend-item">
-                            <input type="checkbox" id="toggle-client" checked>
-                            <span class="legend-icon client-icon"></span> Installation Point
-                        </div>
-                        <h5>Routes</h5>
-                        <ul id="route-legend-list"></ul>
                     </div>
                 </div>
+
             </div>
         }
 
