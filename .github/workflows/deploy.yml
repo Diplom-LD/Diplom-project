@@ -19,16 +19,6 @@ jobs:
       - name: 📦 Сборка и загрузка образов в Docker Hub
         run: |
           set -e  
-          
-          if [[ -z "${{ secrets.DOCKER_USERNAME }}" ]]; then
-            echo "❌ Ошибка: DOCKER_USERNAME не задан в GitHub Secrets!"
-            exit 1
-          fi
-
-	  if [[ -z "${{ secrets.DOCKER_PASSWORD }}" ]]; then
-            echo "❌ Ошибка: DOCKER_PASSWORD (Docker Hub Token) не задан в GitHub Secrets!"
-            exit 1
-          fi
 
           # Генерация версии на основе номера сборки GitHub Actions
           VERSION="${{ github.run_number }}"  
