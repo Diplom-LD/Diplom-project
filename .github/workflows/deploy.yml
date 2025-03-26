@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  auth-service:
+    image: myrepo/auth-service:latest
+    ports:
+      - "5001:8080"
+
+  order-service:
+    image: myrepo/order-service:latest
+    ports:
+      - "5002:8080"
+    depends_on:
+      - postgres
+      - redis
+
+  btu-calc-service:
+    image: myrepo/btu-calc-service:latest
+    ports:
+      - "8085:8000"
+
+  manager-app:
+    image: myrepo/manager-app:latest
+    ports:
+      - "5000:8080"
+    depends_on:
+      - order-service
+      - auth-service
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
