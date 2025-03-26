@@ -1,50 +1,43 @@
-version: '3.8'
+name: Deploy with Docker Hub
 
-services:
-  auth-service:
-    image: myrepo/auth-service:latest
-    ports:
-      - "5001:8080"
+on:
+  push:
+    branches:
+      - main  
 
-  order-service:
-    image: myrepo/order-service:latest
-    ports:
-      - "5002:8080"
-    depends_on:
-      - postgres
-      - redis
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
 
-  btu-calc-service:
-    image: myrepo/btu-calc-service:latest
-    ports:
-      - "8085:8000"
+    steps:
+      - name: 🛎️ Клонирование репозитория
+        uses: actions/checkout@v3
 
-  manager-app:
-    image: myrepo/manager-app:latest
-    ports:
-      - "5000:8080"
-    depends_on:
-      - order-service
-      - auth-service
+      - name: 🏗️ Логин в Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-  postgres:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminpass
-    ports:
-      - "5432:5432"
+      - name: 📦 Сборка и загрузка образов в Docker Hub
+        run: |
+          set -e
+          
+          VERSION=${{ github.run_number }}  
 
-  redis:
-    image: redis:7
-    restart: always
-    ports:
-      - "6379:6379"
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION ./AuthService
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION
+          docker tag ${{ secrets.DOCKER_USERNAME }}/auth-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION ./OrderService
+          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION
+          docker tag ${{ secrets.DOCKER_USERNAME }}/order-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/order-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:latest
+
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION ./BTUCalcService
+          docker push ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION
+          docker tag ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:$VERSION ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/btu-calc-service:latest
+
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION ./ManagerApp
+          docker push ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION
+          docker tag ${{ secrets.DOCKER_USERNAME }}/manager-app:$VERSION ${{ secrets.DOCKER_USERNAME }}/manager-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/manager-app:latest
