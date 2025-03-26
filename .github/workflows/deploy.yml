@@ -13,33 +13,66 @@ jobs:
       - name: 🛎️ Клонирование репозитория
         uses: actions/checkout@v3
 
+      - name: ✅ Проверка переменных перед аутентификацией
+        run: |
+          set -e  # Остановка при первой ошибке
+
+          echo "🔍 Проверка переменных..."
+          
+          # Убираем возможные пробелы и переносы строк
+          DOCKER_USER_CLEAN=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr -d '[:space:]')
+
+          # Проверяем, что `DOCKER_USERNAME` задан
+          if [[ -z "$DOCKER_USER_CLEAN" ]]; then
+            echo "❌ Ошибка: DOCKER_USERNAME не задан в GitHub Secrets или содержит пробелы!"
+            exit 1
+          fi
+
+          # Проверяем, что `DOCKER_PASSWORD` задан
+          if [[ -z "${{ secrets.DOCKER_PASSWORD }}" ]]; then
+            echo "❌ Ошибка: DOCKER_PASSWORD не задан в GitHub Secrets!"
+            exit 1
+          fi
+
+          echo "✅ Все переменные заданы и корректны!"
+          echo "🔹 DOCKER_USERNAME: $DOCKER_USER_CLEAN (без пробелов)"
+
       - name: 🏗️ Логин в Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: |
+          echo "🔑 Авторизация в Docker Hub..."
+          DOCKER_USER_CLEAN=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr -d '[:space:]')
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USER_CLEAN" --password-stdin
+          echo "✅ Успешно авторизовались в Docker Hub!"
 
       - name: 📦 Сборка и загрузка образов в Docker Hub
         run: |
-          set -e  
+          set -e  # Остановка выполнения при ошибке
 
           # Генерация версии на основе номера сборки GitHub Actions
           VERSION="${{ github.run_number }}"  
 
           echo "🔹 Используем версию: $VERSION"
 
+          # Функция для сборки и загрузки образа
           build_and_push() {
             local SERVICE_NAME=$1
             local SERVICE_PATH=$2
 
-            echo "🚀 Сборка образа: $SERVICE_NAME"
+            echo "🚀 Начало сборки образа: $SERVICE_NAME"
             docker build --no-cache -t "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" "$SERVICE_PATH"
-            
+            echo "✅ Образ $SERVICE_NAME:$VERSION успешно собран"
+
             echo "📤 Загрузка образа в Docker Hub: $SERVICE_NAME:$VERSION"
             docker push "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION"
+            echo "✅ Образ $SERVICE_NAME:$VERSION загружен в Docker Hub"
 
             echo "🔄 Обновление latest-тега для $SERVICE_NAME"
             docker tag "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:latest"
             docker push "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:latest"
+            echo "✅ Обновлен latest-тег для $SERVICE_NAME"
           }
 
+          # Вызываем функцию для каждого микросервиса
           build_and_push "auth-service" "./AuthService"
           build_and_push "order-service" "./OrderService"
           build_and_push "btu-calc-service" "./BTUCalcService"
