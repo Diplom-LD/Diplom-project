@@ -77,7 +77,11 @@ jobs:
               exit 1
             fi
 
-            docker build --no-cache -t "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" "$SERVICE_PATH"
+            echo "📁 Проверяем файлы в $SERVICE_PATH перед сборкой"
+            ls -l "$SERVICE_PATH"
+
+            echo "🛠️ Запускаем сборку Docker-образа"
+            docker build --no-cache -t "${{ secrets.DOCKER_USERNAME }}/$SERVICE_NAME:$VERSION" -f "$SERVICE_PATH/Dockerfile" .
             if [ $? -ne 0 ]; then
               echo "❌ Ошибка: Сборка образа $SERVICE_NAME завершилась неудачно!"
               exit 1
@@ -103,10 +107,10 @@ jobs:
           }
 
           # Вызываем функцию для каждого микросервиса
-          build_and_push "auth-service" "./AuthService"
-          build_and_push "order-service" "./OrderService"
-          build_and_push "btu-calc-service" "./BTUCalcService"
-          build_and_push "manager-app" "./ManagerApp"
+          build_and_push "auth-service" "AuthService"
+          build_and_push "order-service" "OrderService"
+          build_and_push "btu-calc-service" "BTUCalcService"
+          build_and_push "manager-app" "ManagerApp"
 
       - name: ✅ Развертывание завершено
         run: echo "🎉 Все образы успешно загружены в Docker Hub!"

@@ -8,7 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Копируем только .csproj для кэширования зависимостей
-COPY ./AuthService/AuthService.csproj ./AuthService/
+COPY AuthService/AuthService.csproj AuthService/
 RUN dotnet restore ./AuthService/AuthService.csproj --disable-parallel --no-cache
 
 # Копируем весь код после `restore`
