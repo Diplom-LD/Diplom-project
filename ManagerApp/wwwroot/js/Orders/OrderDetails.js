@@ -13,7 +13,6 @@
 
     let technicianSocket = null;
     let isTrackingConnected = false;
-    let currentPopup = null;
 
     /* Взаимодействие с картой */
     const mapElement = document.getElementById("map");
@@ -34,13 +33,6 @@
         console.error("❌ Ошибка парсинга routesData:", err, routesData);
         return;
     }
-
-    /* Popup technician on map */
-    function createMarkerWithPopup({ lngLat, color, html }) {
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(html);
-        return new maplibregl.Marker({ color }).setLngLat(lngLat).setPopup(popup).addTo(map);
-    }
-
 
     let apiKey = null;
     try {
@@ -140,6 +132,13 @@
                     <div class="popup-phone">📞 ${route.phoneNumber}</div>
                 </div>
             `);
+
+
+            /* Popup technician on map */
+            technicianPopup.on('close', () => {
+                console.log("❌ Попап закрыт, удаляем маркер...");
+                removeMarker(route.technicianId);
+            });
 
             const technicianMarker = new maplibregl.Marker({ color: "blue" })
                 .setLngLat(startPoint)
@@ -290,17 +289,21 @@
     /* Time line */
     const timelineSteps = document.querySelectorAll(".timeline-step");
     const timeline = document.querySelector(".order-card__timeline");
-    const current = timeline?.dataset.current;
+    const currentStep = timeline?.dataset.current?.trim();  
 
     let reachedCurrent = false;
     let lastVisible = null;
 
     timelineSteps.forEach((stepEl) => {
-        const step = stepEl.dataset.step;
+        const step = stepEl.dataset.step.trim();  
 
-        if (!reachedCurrent && step === current) {
-            stepEl.classList.add("timeline-step", "current");
-            reachedCurrent = true;
+        if (!reachedCurrent && step === currentStep) {
+            if (currentStep === "InstallationCompleted") {
+                stepEl.classList.add("timeline-step", "completed");
+            } else {
+                stepEl.classList.add("timeline-step", "current");
+                reachedCurrent = true;
+            }
             lastVisible = stepEl;
         } else if (!reachedCurrent) {
             stepEl.classList.add("timeline-step", "completed");
@@ -310,9 +313,11 @@
         }
     });
 
+    // Последний видимый элемент получает доп. класс
     if (lastVisible) {
         lastVisible.classList.add("last-visible");
     }
+
 
     // Асинхронное обновление заявки 
     let lastOrderHash = null;

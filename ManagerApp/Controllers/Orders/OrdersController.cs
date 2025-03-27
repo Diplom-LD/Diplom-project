@@ -4,15 +4,21 @@ using ManagerApp.Models.Orders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Text.Json; 
+using System.Text.Json;
 
 namespace ManagerApp.Controllers.Orders
 {
     [Authorize]
-    public class OrdersController(IOrderServiceClient orderServiceClient, ILogger<OrdersController> logger) : Controller
+    public class OrdersController : Controller
     {
-        private readonly IOrderServiceClient _orderServiceClient = orderServiceClient;
-        private readonly ILogger<OrdersController> _logger = logger;
+        private readonly OrderServiceClient _orderServiceClient;
+        private readonly ILogger<OrdersController> _logger;
+
+        public OrdersController(OrderServiceClient orderServiceClient, ILogger<OrdersController> logger)
+        {
+            _orderServiceClient = orderServiceClient;
+            _logger = logger;
+        }
 
         public IActionResult Orders()
         {
@@ -47,7 +53,7 @@ namespace ManagerApp.Controllers.Orders
             return Json(orders);
         }
 
-        //// <summary>
+        /// <summary>
         /// Создаёт новую заявку через OrderServiceClient.
         /// </summary>
         [HttpPost("/manager/orders/create")]

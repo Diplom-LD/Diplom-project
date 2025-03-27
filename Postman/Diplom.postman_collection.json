@@ -25,7 +25,7 @@
 												"header": [],
 												"body": {
 													"mode": "raw",
-													"raw": "{\r\n    \"login\": \"test1\",\r\n    \"email\": \"test1@example.com\",\r\n    \"password\": \"Test11!\",\r\n    \"role\": \"manager\",\r\n    \"firstName\": \"Test\",\r\n    \"lastName\": \"User\",\r\n    \"phone\": \"+12345678901\",\r\n    \"address\": \"123 Example Street\",\r\n    \"registrationCode\": \"mng301\"\r\n}\r\n",
+													"raw": "{\r\n    \"login\": \"test1\",\r\n    \"email\": \"test1@example.com\",\r\n    \"password\": \"Test11!\",\r\n    \"role\": \"manager\",\r\n    \"firstName\": \"Test\",\r\n    \"lastName\": \"User\",\r\n    \"phone\": \"+12345678921\",\r\n    \"address\": \"20/2, Московский проспект, Кишинёв\",\r\n    \"registrationCode\": \"mng301\"\r\n}\r\n",
 													"options": {
 														"raw": {
 															"language": "json"
@@ -128,7 +128,7 @@
 												"header": [],
 												"body": {
 													"mode": "raw",
-													"raw": "{\r\n    \"login\": \"client_user\",\r\n    \"email\": \"client@example.com\",\r\n    \"password\": \"Client123\",\r\n    \"role\": \"client\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"phone\": \"1234567890\",\r\n    \"address\": \"123 Main St\"\r\n}\r\n",
+													"raw": "{\r\n    \"login\": \"client_user\",\r\n    \"email\": \"client@example.com\",\r\n    \"password\": \"Test@123\",\r\n    \"role\": \"client\",\r\n    \"firstName\": \"John\",\r\n    \"lastName\": \"Doe\",\r\n    \"phone\": \"+121234567890\",\r\n    \"address\": \"20/2, Московский проспект, Кишинёв,\"\r\n}\r\n",
 													"options": {
 														"raw": {
 															"language": "json"
@@ -192,7 +192,7 @@
 												"header": [],
 												"body": {
 													"mode": "raw",
-													"raw": "{\r\n    \"login\": \"worker_user\",\r\n    \"email\": \"worker@example.com\",\r\n    \"password\": \"Worker123\",\r\n    \"role\": \"worker\",\r\n    \"firstName\": \"Bob\",\r\n    \"lastName\": \"Brown\",\r\n    \"phone\": \"1122334455\",\r\n    \"address\": \"789 Factory St\"\r\n}\r\n",
+													"raw": "{\r\n    \"login\": \"worker_user\",\r\n    \"email\": \"worker@example.com\",\r\n    \"password\": \"Worker123\",\r\n    \"role\": \"worker\",\r\n    \"firstName\": \"Bob\",\r\n    \"lastName\": \"Brown\",\r\n    \"phone\": \"+11122334455\",\r\n    \"address\": \"20/2, Московский проспект, Кишинёв\",\r\n    \"registrationCode\": \"wrk101\"\r\n}\r\n",
 													"options": {
 														"raw": {
 															"language": "json"
@@ -363,7 +363,7 @@
 												"header": [],
 												"body": {
 													"mode": "raw",
-													"raw": "{\r\n    \"identifier\": \"test1@example.com\",\r\n    \"password\": \"Test11!\"\r\n}\r\n",
+													"raw": "{\r\n    \"identifier\": \"client1@test.com\",\r\n    \"password\": \"Test@123\"\r\n}\r\n",
 													"options": {
 														"raw": {
 															"language": "json"
@@ -516,6 +516,46 @@
 												"body": {
 													"mode": "raw",
 													"raw": "{\r\n    \"firstName\": \"Иван\",\r\n    \"lastName\": \"Петров\",\r\n    \"phone\": \"+79991234567\",\r\n    \"address\": \"Москва, ул. Ленина, д. 10\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "http://localhost:5001/auth/account/update-profile",
+													"protocol": "http",
+													"host": [
+														"localhost"
+													],
+													"port": "5001",
+													"path": [
+														"auth",
+														"account",
+														"update-profile"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Успешный update profile адрес",
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk2ZjViNmI2LTUxNjQtNGFjZi05OTYyLTkxMDYzNjZkNmFiMyIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJjbGllbnQxIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoiY2xpZW50MUB0ZXN0LmNvbSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNsaWVudCIsImV4cCI6MTc0MTE4ODUzNCwiaXNzIjoiQXV0aFNlcnZpY2UiLCJhdWQiOiJBdXRoU2VydmljZVVzZXJzIn0.u96TNHDZ2K_nnxzs7vNx14K0_jIlZOCtFokjJFmocIA",
+															"type": "string"
+														}
+													]
+												},
+												"method": "PUT",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n    \"address\": \"Технический Университет Молдовы (ТУМ), Блок 2, 78, улица 31 Августа 1989\"\r\n}",
 													"options": {
 														"raw": {
 															"language": "json"
@@ -866,7 +906,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8085/BTUCalcService/products/range/?btu_min=9000&btu_max=18000",
+									"raw": "http://localhost:8085/BTUCalcService/products/range/?btu_min=20000&btu_max=21000",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -881,11 +921,11 @@
 									"query": [
 										{
 											"key": "btu_min",
-											"value": "9000"
+											"value": "20000"
 										},
 										{
 											"key": "btu_max",
-											"value": "18000"
+											"value": "21000"
 										}
 									]
 								}
@@ -898,7 +938,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8085/BTUCalcService/products/btu/12000",
+									"raw": "http://localhost:8085/BTUCalcService/products/btu/20130",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -908,7 +948,7 @@
 										"BTUCalcService",
 										"products",
 										"btu",
-										"12000"
+										"20130"
 									]
 								}
 							},
@@ -918,12 +958,725 @@
 							"name": "Получение кондиционеров из конкретного магазина",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/products/store/jara",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"products",
+										"store",
+										"jara"
+									]
+								}
 							},
 							"response": []
 						},
 						{
 							"name": "Ошибка: btu_min > btu_max",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/products/range/?btu_min=18000&btu_max=9000",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"products",
+										"range",
+										""
+									],
+									"query": [
+										{
+											"key": "btu_min",
+											"value": "18000"
+										},
+										{
+											"key": "btu_max",
+											"value": "9000"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Получение кондиционера по service area",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8085/BTUCalcService/products/service_area/25",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"BTUCalcService",
+										"products",
+										"service_area",
+										"25"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "OrderService",
+			"item": [
+				{
+					"name": "GeoLocation",
+					"item": [
+						{
+							"name": "LocationController",
+							"item": [
+								{
+									"name": "Получение координат по адресу",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/location/coordinates?address=10, улица Кантонулуй",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"location",
+												"coordinates"
+											],
+											"query": [
+												{
+													"key": "address",
+													"value": "10, улица Кантонулуй"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Получение лучших координат по адресу",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/location/best-coordinates?address=10, улица Кантонулуй",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"location",
+												"best-coordinates"
+											],
+											"query": [
+												{
+													"key": "address",
+													"value": "10, улица Кантонулуй"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Проверка ближайшего склада",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/location/nearest-warehouse?latitude=46.9857&longitude=28.77711",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"location",
+												"nearest-warehouse"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "46.9857"
+												},
+												{
+													"key": "longitude",
+													"value": "28.77711"
+												}
+											]
+										}
+									},
+									"response": [
+										{
+											"name": "Проверка ближайшего склада",
+											"originalRequest": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "http://localhost:5002/location/nearest-warehouse?latitude=47.03086&longitude=28.82371",
+													"protocol": "http",
+													"host": [
+														"localhost"
+													],
+													"port": "5002",
+													"path": [
+														"location",
+														"nearest-warehouse"
+													],
+													"query": [
+														{
+															"key": "latitude",
+															"value": "47.03086"
+														},
+														{
+															"key": "longitude",
+															"value": "28.82371"
+														}
+													]
+												}
+											},
+											"_postman_previewlanguage": null,
+											"header": null,
+											"cookie": [],
+											"body": null
+										},
+										{
+											"name": "Проверка ближайшего склада",
+											"originalRequest": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "http://localhost:5002/location/nearest-warehouse?latitude=46.9857&longitude=28.77711",
+													"protocol": "http",
+													"host": [
+														"localhost"
+													],
+													"port": "5002",
+													"path": [
+														"location",
+														"nearest-warehouse"
+													],
+													"query": [
+														{
+															"key": "latitude",
+															"value": "46.9857"
+														},
+														{
+															"key": "longitude",
+															"value": "28.77711"
+														}
+													]
+												}
+											},
+											"_postman_previewlanguage": null,
+											"header": null,
+											"cookie": [],
+											"body": null
+										}
+									]
+								},
+								{
+									"name": "Проверка ближайших техников",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/location/nearest-technicians?latitude=48.858844&longitude=2.294351&count=3",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"location",
+												"nearest-technicians"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "48.858844"
+												},
+												{
+													"key": "longitude",
+													"value": "2.294351"
+												},
+												{
+													"key": "count",
+													"value": "3"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Маршруты к заявке + склад + техники",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/location/nearest-location-with-routes?latitude=47.03509&longitude=28.78382&count=3&useTraffic=true",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"location",
+												"nearest-location-with-routes"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "47.03509"
+												},
+												{
+													"key": "longitude",
+													"value": "28.78382"
+												},
+												{
+													"key": "count",
+													"value": "3"
+												},
+												{
+													"key": "useTraffic",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "WarehouseController",
+							"item": [
+								{
+									"name": "Получение всех элементов склада",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/equipment-stock",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"equipment-stock"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "OrdersController",
+							"item": [
+								{
+									"name": "Создание заявки",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"clientId\": \"c1a1b2c3-d4e5-6789-abcd-ef0123456789\",\r\n    \"managerId\": \"b2d2a3c4-e5f6-7890-abcd-ef0123456789\",\r\n    \"orderType\": \"Installation\",  \r\n    \"installationAddress\": \"20/3, Московский проспект\",\r\n    \"installationDate\": \"2025-03-15T10:00:00Z\",\r\n    \"paymentStatus\": \"UnPaid\",\r\n    \"paymentMethod\": \"Cash\",\r\n    \"workCost\": 2500,\r\n    \"equipmentCost\": 5000,\r\n    \"totalCost\": 7500,\r\n    \"technicianIds\": [],\r\n    \"technicianCount\": 2,\r\n    \"useWarehouseEquipment\": true,\r\n    \"requiredBTU\": 12000\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/order/create",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"order",
+												"create"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Orders",
+					"item": [
+						{
+							"name": "Create",
+							"item": [
+								{
+									"name": "Create order (Создание заявки менеджером)",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"OrderType\": \"Installation\",\r\n    \"InstallationDate\": \"2025-03-20T10:00:00Z\",\r\n    \"InstallationAddress\": \"1-й переулок Друмул Скиноасей\",\r\n    \"Notes\": \"Установка кондиционера\",\r\n    \"Equipment\": {\r\n        \"ModelName\": \"LG Standard Plus\",\r\n        \"ModelSource\": \"Warehouse\",\r\n        \"BTU\": 25882,\r\n        \"ServiceArea\": 32,\r\n        \"Price\": 92818,\r\n        \"Quantity\": 1\r\n    },\r\n    \"FullName\": \"Иван Петров\",\r\n    \"PhoneNumber\": \"+37360000000\",\r\n    \"Email\": \"ivan.petrov@test.com\",\r\n    \"FulfillmentStatus\": \"New\",\r\n    \"PaymentStatus\": \"UnPaid\",\r\n    \"PaymentMethod\": \"Visa\",\r\n    \"WorkCost\": 500.00,\r\n    \"ManagerId\": \"0195c365-4db3-72b4-bd11-abf2aa116ec9\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/create",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create order (Создание заявки клиентом)",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"ClientId\": \"0195b338-a838-7851-a43c-76131e555c39\",\r\n    \"OrderType\": \"Installation\",\r\n    \"InstallationDate\": \"2025-03-21T10:00:00Z\",\r\n    \"InstallationAddress\": \"87, улица Букурешть, Валя Дическу\",\r\n    \"Notes\": \"Установка кондиционера\",\r\n    \"PaymentMethod\": \"Mastercard\",\r\n    \"ClientCalculatedBTU\": 12000,\r\n    \"ClientMinBTU\": 11000,\r\n    \"ClientMaxBTU\": 13000\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/orders/client/create",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"orders",
+												"client",
+												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Удаление заявки",
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/delete/90436221-60b1-4a94-b4f1-a85d2b7bf037",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"delete",
+												"90436221-60b1-4a94-b4f1-a85d2b7bf037"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Получение всех заявок",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/get/all",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"get",
+												"all"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create order (оборудование магазин)",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"OrderType\": \"Installation\",\r\n  \"InstallationDate\": \"2025-03-20T10:00:00Z\",\r\n  \"InstallationAddress\": \"32/1, улица Николая Зелинского\",\r\n  \"Notes\": \"Установка кондиционера\",\r\n  \"Equipment\": {\r\n    \"ModelName\": \"Samsung AR5000\",\r\n    \"ModelSource\": \"Store\",\r\n    \"ModelUrl\": \"https://store.example.com/samsung-ar5000\",\r\n    \"BTU\": 24000,\r\n    \"ServiceArea\": 30,\r\n    \"Price\": 87500,\r\n    \"Quantity\": 1\r\n  },\r\n  \"FullName\": \"Иван Петров\",\r\n  \"PhoneNumber\": \"+37360000000\",\r\n  \"Email\": \"ivan.petrov@test.com\",\r\n  \"FulfillmentStatus\": \"New\",\r\n  \"PaymentStatus\": \"UnPaid\",\r\n  \"PaymentMethod\": \"Visa\",\r\n  \"WorkCost\": 500.00,\r\n  \"ManagerId\": \"0195b34e-8321-715a-a525-6e1678c88593\"\r\n}\r\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/create",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"create"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Update",
+							"item": [
+								{
+									"name": "Update заявки (основных полей)",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"orderId\": \"204c8895-9495-4926-9869-9e72b0f2f293\",\r\n  \"managerId\": \"0195b34e-8321-715a-a525-6e1678c88593\",\r\n  \"notes\": \"Обновлено менеджером\"\r\n//   \"workCost\": 350.00,\r\n//   \"clientName\": \"Иван Петров\",\r\n//   \"clientPhone\": \"+37312345678\",\r\n//   \"clientEmail\": \"ivan.petrov@example.com\",\r\n//   \"paymentStatus\": \"Paid\",\r\n//   \"paymentMethod\": \"Visa\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/update/e756a0ab-8564-43c3-bec8-a33432de2118",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"update",
+												"e756a0ab-8564-43c3-bec8-a33432de2118"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update статуса",
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"OrderId\": \"ea4ddb19-e77a-4d57-92f2-afae8bbd9d6e\",\r\n    \"NewStatus\": \"InProgress\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/update-status",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"update-status"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Get",
+							"item": [
+								{
+									"name": "Получение всех заявок",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/get/all",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"get",
+												"all"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Получение конкретной заявки",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/manager/orders/get/20b6ba8b-2825-4221-a18a-dd6da38024d1",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"manager",
+												"orders",
+												"get",
+												"20b6ba8b-2825-4221-a18a-dd6da38024d1"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Live tracking",
+							"item": [
+								{
+									"name": "Остановка симуляции всех техников",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/simulation/orders/6c799721-39df-4505-b2e6-cb5ff19e73dd/stop",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"simulation",
+												"orders",
+												"6c799721-39df-4505-b2e6-cb5ff19e73dd",
+												"stop"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Симулирование движения всех техников",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"TechnicianId\": \"f6a8a0e0-4c4b-4b25-a3f9-d16e2f964b9b\",\r\n  \"OrderId\": \"8b8b7e65-b2c5-4d88-bb58-efc61504c44a\",\r\n  \"IntervalSeconds\": 2\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:5002/simulation/orders/6c799721-39df-4505-b2e6-cb5ff19e73dd/start",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"simulation",
+												"orders",
+												"6c799721-39df-4505-b2e6-cb5ff19e73dd",
+												"start"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Technicians",
+							"item": [
+								{
+									"name": "Получение всех доступных техников за сегодня",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:5002/technicians/availability/today",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "5002",
+											"path": [
+												"technicians",
+												"availability",
+												"today"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Equipment",
+					"item": [
+						{
+							"name": "Получение всего оборудования со всех складов",
 							"request": {
 								"method": "GET",
 								"header": []

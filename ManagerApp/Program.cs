@@ -2,7 +2,6 @@
 using ManagerApp.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.IO;
 using System.Net.WebSockets;
 using System.Text.Json.Serialization;
 
@@ -51,11 +50,14 @@ builder.Services.AddHttpClient<WarehouseServiceClient>(client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
-
 builder.Services.AddHttpClient<OrderServiceClient>(client =>
 {
     client.BaseAddress = new Uri(orderServiceBaseUrl);
 });
+//builder.Services.AddHttpClient<IOrderServiceClient, OrderServiceClient>(client =>
+//{
+//    client.BaseAddress = new Uri(orderServiceBaseUrl);
+//});
 
 var app = builder.Build();
 

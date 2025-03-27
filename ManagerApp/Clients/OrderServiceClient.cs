@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 
 namespace ManagerApp.Clients
 {
-    public class OrderServiceClient : IOrderServiceClient
+    public class OrderServiceClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<OrderServiceClient> _logger;

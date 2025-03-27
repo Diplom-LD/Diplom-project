@@ -392,18 +392,13 @@ namespace OrderService.Services.Orders
                 if (currentStatus == FulfillmentStatus.New && newStatus == FulfillmentStatus.InProgress)
                 {
                     order.FulfillmentStatus = FulfillmentStatus.InProgress;
-                    order.WorkProgress = WorkProgress.OrderProcessed;
-                    _logger.LogInformation("📌 Заявка {OrderId} обработана менеджером. Статус -> InProgress", orderId);
-                }
-                else if (currentStatus == FulfillmentStatus.InProgress && currentProgress == WorkProgress.OrderProcessed)
-                {
                     order.WorkProgress = WorkProgress.WorkersOnTheRoad;
-                    _logger.LogInformation("🚗 Техники направляются к клиенту!");
+                    _logger.LogInformation("📌 Заявка {OrderId} обработана менеджером. Техники в пути!", orderId);
                 }
                 else if (currentStatus == FulfillmentStatus.InProgress && currentProgress == WorkProgress.WorkersOnTheRoad)
                 {
                     order.WorkProgress = WorkProgress.InstallationStarted;
-                    _logger.LogInformation("🔧 Техники прибыли на место. Началась установка...");
+                    _logger.LogInformation("🔧 Техники прибыли. Установка началась!");
                 }
                 else if (newStatus == FulfillmentStatus.Completed && currentStatus == FulfillmentStatus.InProgress)
                 {
@@ -439,6 +434,7 @@ namespace OrderService.Services.Orders
                 return false;
             }
         }
+
 
 
 

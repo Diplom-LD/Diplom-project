@@ -2,8 +2,11 @@
     let activeDropdownMenu = null;
     let currentPage = 1;
     let ordersPerPage = 10;
+    let currentFulfillmentStatusFilter = "";
+    let currentPaymentStatusFilter = "";
+    let searchQuery = "";
     let lastOrdersHash = "";
-    let currentStatusFilter = ""; 
+    let allOrders = [];
 
     document.addEventListener("click", function (e) {
         if (activeDropdownMenu && !e.target.closest(".dropdown")) {
@@ -14,7 +17,6 @@
 
         if (e.target.closest(".dropdown-toggle")) {
             e.preventDefault();
-
             const dropdown = e.target.closest(".dropdown");
             const dropdownMenu = dropdown.querySelector(".dropdown-menu");
             if (!dropdownMenu) return;
@@ -24,154 +26,125 @@
                 activeDropdownMenu.closest(".dropdown").classList.remove("active");
             }
 
-            const isActive = dropdown.classList.contains("active");
-
-            if (isActive) {
-                dropdown.classList.remove("active");
-                dropdownMenu.style.display = "none";
-                activeDropdownMenu = null;
-            } else {
-                dropdown.classList.add("active");
-                dropdownMenu.style.display = "block";
-                activeDropdownMenu = dropdownMenu;
-            }
+            dropdown.classList.toggle("active");
+            dropdownMenu.style.display = dropdown.classList.contains("active") ? "block" : "none";
+            activeDropdownMenu = dropdownMenu;
         }
 
         if (e.target.classList.contains("order-number")) {
             const orderId = e.target.dataset.id;
-            if (orderId) {
-                window.location.href = `/Orders/Details/${orderId}`;
-            }
-        }
-
-        if (e.target.classList.contains("view-order-link")) {
-            e.preventDefault();
-            const orderId = e.target.dataset.id;
-            if (orderId) {
-                window.location.href = `/Orders/Details/${orderId}`;
-            }
-        }
-
-        if (e.target.classList.contains("edit-order-link")) {
-            e.preventDefault();
-            const orderId = e.target.dataset.id;
-            if (orderId) {
-                window.location.href = `/Orders/Edit/${orderId}`;
-            }
+            if (orderId) window.location.href = `/Orders/Details/${orderId}`;
         }
 
         if (e.target.classList.contains("filter-btn")) {
             document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
             e.target.classList.add("active");
 
-            currentStatusFilter = e.target.dataset.status || ""; 
+            const filterType = e.target.dataset.filterType;
+            const filterValue = e.target.dataset.status || "";
 
-            currentPage = 1; 
-            loadOrders(currentPage, ordersPerPage, false, currentStatusFilter);
+            if (filterType === "all") {
+                currentFulfillmentStatusFilter = "";
+                currentPaymentStatusFilter = "";
+            } else if (filterType === "fulfillmentStatus") {
+                currentFulfillmentStatusFilter = filterValue;
+                currentPaymentStatusFilter = "";
+            } else if (filterType === "paymentStatus") {
+                currentPaymentStatusFilter = filterValue;
+                currentFulfillmentStatusFilter = "";
+            }
+
+            console.log(`📌 Установлен фильтр: выполнение = ${currentFulfillmentStatusFilter}, оплата = ${currentPaymentStatusFilter}`);
+            currentPage = 1;
+            applyFiltersAndRenderOrders();
         }
     });
-
-    document.getElementById("ordersPerPage").addEventListener("change", function () {
-        ordersPerPage = parseInt(this.value);
-        currentPage = 1;
-        loadOrders(currentPage, ordersPerPage, false, currentStatusFilter);
-    });
-
-    document.querySelector(".prev-btn").addEventListener("click", function () {
-        if (currentPage > 1) {
-            currentPage--;
-            loadOrders(currentPage, ordersPerPage, false, currentStatusFilter);
-        }
-    });
-
-    document.querySelector(".next-btn").addEventListener("click", function () {
-        currentPage++;
-        loadOrders(currentPage, ordersPerPage, false, currentStatusFilter);
-    });
-
 
     document.getElementById("searchOrders").addEventListener("input", function () {
-        searchQuery = this.value.trim();
+        searchQuery = this.value.trim().toLowerCase();
         currentPage = 1;
-        loadOrders(currentPage, ordersPerPage, false, currentStatusFilter, searchQuery);
+        applyFiltersAndRenderOrders();
     });
 
-
-
-    async function loadOrders(page = 1, size = 10, isAutoUpdate = false, statusFilter = "", searchQuery = "") {
+    async function loadOrders() {
         try {
-            let url = `/Orders/GetOrders?page=${page}&size=${size}`;
-            if (statusFilter) url += `&status=${statusFilter}`;
-            if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`;
+            let url = `/Orders/GetOrders`;
+            console.log("🔗 Запрос к API:", url);
 
-            let response = await fetch(url, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) throw new Error(`Failed to load orders. Status: ${response.status}`);
+            let response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            if (!response.ok) throw new Error(`Ошибка загрузки заказов. Статус: ${response.status}`);
 
             let data = await response.json();
-            let orders = Array.isArray(data.orders) ? data.orders : (Array.isArray(data) ? data : []);
+            allOrders = Array.isArray(data) ? data : data.orders;
 
-            if (!Array.isArray(orders)) {
-                console.error("❌ Некорректный формат данных:", data);
+            if (!Array.isArray(allOrders)) {
+                console.warn("⚠ Некорректный ответ от сервера. Ожидался массив заказов, получено:", data);
                 showNoOrdersMessage();
                 return;
             }
 
-            let newOrdersHash = JSON.stringify(orders);
-            if (isAutoUpdate && newOrdersHash === lastOrdersHash) {
-                console.log("✅ Заказы не изменились. Пропускаем обновление.");
+            let newOrdersHash = JSON.stringify(allOrders);
+            if (newOrdersHash === lastOrdersHash) {
+                console.log("✅ Данные не изменились. Пропускаем обновление.");
                 return;
             }
 
             lastOrdersHash = newOrdersHash;
-
-            updateOrdersCount(data.totalCount || orders.length);
-            transitionOrders(orders);
-            updatePagination(data.totalCount || orders.length, page, size);
+            applyFiltersAndRenderOrders();
         } catch (error) {
-            console.error("❌ Ошибка загрузки заявок:", error);
+            console.error("❌ Ошибка загрузки заказов:", error);
             showNoOrdersMessage();
         }
+    }
+
+    function applyFiltersAndRenderOrders() {
+        let filteredOrders = allOrders;
+
+        if (currentFulfillmentStatusFilter) {
+            filteredOrders = filteredOrders.filter(order => order.fulfillmentStatus.toLowerCase() === currentFulfillmentStatusFilter.toLowerCase());
+        }
+
+        if (currentPaymentStatusFilter) {
+            filteredOrders = filteredOrders.filter(order => order.paymentStatus.toLowerCase() === currentPaymentStatusFilter.toLowerCase());
+        }
+
+        if (searchQuery) {
+            filteredOrders = filteredOrders.filter(order =>
+                order.id.toLowerCase().includes(searchQuery) ||
+                order.clientName?.toLowerCase().includes(searchQuery) ||
+                order.paymentMethod?.toLowerCase().includes(searchQuery) ||
+                new Date(order.installationDate).toLocaleString().toLowerCase().includes(searchQuery)
+            );
+        }
+
+        if (filteredOrders.length === 0) {
+            showNoOrdersMessage();
+            return;
+        }
+
+        updateOrdersCount(filteredOrders.length);
+        renderOrders(filteredOrders.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage));
+        updatePagination(filteredOrders.length);
     }
 
     function updateOrdersCount(totalOrders) {
         document.querySelector(".orders-count").textContent = totalOrders;
     }
 
-    function transitionOrders(orders) {
-        const tableBody = document.querySelector(".orders-table tbody");
-        const noOrdersContainer = document.querySelector(".no-orders-container");
-
-        if (orders.length === 0) {
-            showNoOrdersMessage();
-            return;
-        }
-
-        if (noOrdersContainer) {
-            noOrdersContainer.classList.add("fade-out");
-            setTimeout(() => {
-                renderOrders(orders);
-            }, 500);
-        } else {
-            renderOrders(orders);
-        }
-    }
-
     function renderOrders(orders) {
+        console.log("🖌 Отрисовка заказов...");
         const tableBody = document.querySelector(".orders-table tbody");
         tableBody.innerHTML = "";
 
         orders.forEach((order, index) => {
             const rowNumber = (currentPage - 1) * ordersPerPage + index + 1;
+            const orderIdShort = order.id.substring(0, 8);
 
             const row = document.createElement("tr");
             row.classList.add("fade-in");
 
             row.innerHTML = `
-                <td><span class="order-number" data-id="${order.id}">#${rowNumber}</span></td>
+                <td><span class="order-number link" data-id="${order.id}">#${orderIdShort}</span></td>
                 <td>${new Date(order.installationDate).toLocaleString()}</td>
                 <td>${order.clientName || "Unknown"}</td>
                 <td><span class="status ${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span></td>
@@ -183,8 +156,8 @@
                             Actions <span class="arrow-down">&#9662;</span>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="#" class="view-order-link" data-id="${order.id}">View Order</a>
-                            <a href="#" class="edit-order-link" data-id="${order.id}">Edit Order</a>
+                            <a href="/Orders/Details/${order.id}" class="view-order-link">👁 View Order</a>
+                            <a href="/Orders/Edit/${order.id}" class="edit-order-link">✏ Edit Order</a>
                         </div>
                     </div>
                 </td>
@@ -192,19 +165,19 @@
 
             tableBody.appendChild(row);
         });
+
+        console.log("✅ Отрисовано", orders.length, "заказов.");
     }
 
-    function updatePagination(totalOrders, currentPage, ordersPerPage) {
+    function updatePagination(totalOrders) {
         const totalPages = Math.ceil(totalOrders / ordersPerPage);
-
         document.getElementById("totalOrders").textContent = totalOrders;
         document.querySelector(".prev-btn").disabled = currentPage === 1;
         document.querySelector(".next-btn").disabled = currentPage >= totalPages;
     }
 
     function showNoOrdersMessage() {
-        const tableBody = document.querySelector(".orders-table tbody");
-        tableBody.innerHTML = `
+        document.querySelector(".orders-table tbody").innerHTML = `
             <tr>
                 <td colspan="7" class="no-orders-container">
                     <div class="no-orders-content">
@@ -216,9 +189,9 @@
     }
 
     setInterval(() => {
-        console.log("🔄 Проверка новых заказов...");
-        loadOrders(currentPage, ordersPerPage, true, currentStatusFilter);
+        console.log("🔄 Автообновление заказов...");
+        loadOrders();
     }, 5000);
 
-    loadOrders(currentPage, ordersPerPage, false, currentStatusFilter);
+    loadOrders();
 });

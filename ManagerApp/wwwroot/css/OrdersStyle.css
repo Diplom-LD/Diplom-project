@@ -189,6 +189,10 @@
     .status.completed {
         background: #8de02c;
         color: white;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
     }
 
 

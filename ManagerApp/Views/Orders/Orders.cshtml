@@ -13,10 +13,10 @@
 
     <div class="filters-wrapper">
         <div class="filters">
-            <button class="filter-btn active">All</button>
-            <button class="filter-btn" data-status="New">New</button>
-            <button class="filter-btn" data-status="InProgress">In Progress</button>
-            <button class="filter-btn" data-status="Unpaid">Unpaid</button>
+            <button class="filter-btn active" data-filter-type="all">All</button>
+            <button class="filter-btn" data-filter-type="fulfillmentStatus" data-status="new">New</button>
+            <button class="filter-btn" data-filter-type="fulfillmentStatus" data-status="inprogress">In Progress</button>
+            <button class="filter-btn" data-filter-type="paymentStatus" data-status="unpaid">Unpaid</button>
         </div>
 
         <a asp-controller="Orders" asp-action="NewOrder" class="new-order-btn">

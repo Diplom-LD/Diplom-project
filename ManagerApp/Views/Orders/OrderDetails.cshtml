@@ -1,7 +1,6 @@
 ﻿@using ManagerApp.Models.Orders
 @model OrderResponse
 @section Styles {
-    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/OrderDetailsStyle.css" />
 }
 
@@ -74,6 +73,7 @@
         }
 
         <!-- Клиент -->
+        <!-- Клиент -->
         <div class="order-card order-card--client">
             <h3 class="order-card__title">Client Info</h3>
             <p><strong>Name:</strong> @Model.ClientName</p>
@@ -92,48 +92,32 @@
             WorkProgress.InstallationStarted,
             WorkProgress.InstallationCompleted
             };
-
-                bool currentReached = false;
             }
 
             <ul class="order-card__timeline" data-current="@Model.WorkProgress">
                 @foreach (var step in steps)
                 {
-                    string cssClass;
-                    string status;
+                    string cssClass = "upcoming-step";
+                    string status = "upcoming";
 
-                    if (!currentReached && step == Model.WorkProgress)
-                    {
-                        cssClass = "current-step";
-                        status = "current";
-                        currentReached = true;
-                    }
-                    else if (!currentReached)
+                    if (step < Model.WorkProgress)
                     {
                         cssClass = "completed-step";
                         status = "completed";
                     }
-                    else
+                    else if (step == Model.WorkProgress)
                     {
-                        cssClass = "upcoming-step";
-                        status = "upcoming";
-                    }
-
-                    var isInstallationCompleted = (step == WorkProgress.InstallationCompleted && (status == "current" || status == "completed"));
-                    if (isInstallationCompleted)
-                    {
-                        cssClass += " completed-installation";
+                        cssClass = (step == WorkProgress.InstallationCompleted) ? "completed-step" : "current-step";
+                        status = (step == WorkProgress.InstallationCompleted) ? "completed" : "current";
                     }
 
                     <li class="@cssClass timeline-step" data-step="@step.ToString()" data-status="@status">
                         @step.ToString()
                     </li>
                 }
-
             </ul>
-
-
         </div>
+
 
         @if (Model.RequiredMaterials.Any() || Model.RequiredTools.Any())
         {
@@ -225,5 +209,5 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-<script src="~/js/Orders/OrderDetails.js"></script>
+<script src="~/js/Orders/OrderDetails.js" defer></script>
+

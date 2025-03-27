@@ -132,14 +132,15 @@ namespace OrderService.Services.Orders
 
                 if (await HaveAllTechniciansArrivedAsync(order.Id))
                 {
-                    _logger.LogInformation("✅ Все техники прибыли! Меняем статус заявки {OrderId} на 'InstallationStarted'", order.Id);
+                    if (order.WorkProgress == WorkProgress.InstallationCompleted)
+                    {
+                        _logger.LogWarning("⚠️ Попытка сменить статус на 'InstallationStarted', но заявка {OrderId} уже завершена!", order.Id);
+                        return true;
+                    }
 
+                    _logger.LogInformation("✅ Все техники прибыли! Меняем статус заявки {OrderId} на 'InstallationStarted'", order.Id);
                     order.WorkProgress = WorkProgress.InstallationStarted;
                     await orderRepository.UpdateOrderAsync(order);
-
-                    _logger.LogInformation("✅ Статус заявки {OrderId} успешно обновлен на 'InstallationStarted'", order.Id);
-
-                    await CloseWebSocketForOrderAsync(order.Id);
                 }
             }
 
@@ -372,8 +373,12 @@ namespace OrderService.Services.Orders
                 _logger.LogError("❌ Ошибка: техник {TechnicianId} не найден!", technicianId);
                 return;
             }
+            if (order.WorkProgress == WorkProgress.InstallationCompleted)
+            {
+                _logger.LogWarning("⚠️ Техник {TechnicianId} прибыл, но заявка {OrderId} уже завершена! Статус не меняем.", technicianId, orderId);
+                return;
+            }
 
-            // Обновляем статус работы заявки
             order.WorkProgress = WorkProgress.InstallationStarted;
             await scopedOrderRepository.UpdateOrderAsync(order);
 

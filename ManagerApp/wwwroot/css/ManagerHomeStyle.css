@@ -345,6 +345,8 @@ body {
     }
 
 .status.completed {
+    display: block;
+    text-align: center;
     padding: 2px 4px;
     background: #8de02c;
     color: var(--white);
@@ -354,6 +356,8 @@ body {
 }
 
 .status.processing {
+    display: block;
+    text-align: center;
     padding: 2px 4px;
     background: #e9b10a;
     color: var(--white);
@@ -363,6 +367,8 @@ body {
 }
 
 .status.cancel {
+    display: block;
+    text-align: center;
     padding: 2px 4px;
     background: #f00;
     color: var(--white);
@@ -372,6 +378,8 @@ body {
 }
 
 .status.inProgress {
+    display: block;
+    text-align: center;
     padding: 2px 4px;
     background: #1795ce;
     color: var(--white);

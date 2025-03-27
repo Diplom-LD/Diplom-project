@@ -318,18 +318,27 @@
         if (orderType === "Installation") {
             if (equipmentSource === "Warehouse") {
                 const selectedOption = warehouseModel.options[warehouseModel.selectedIndex];
-                equipment = {
-                    modelName: selectedOption.value,
-                    modelSource: "Warehouse",
-                    btu: parseInt(selectedOption.dataset.btu),
-                    serviceArea: parseFloat(selectedOption.dataset.serviceArea),
-                    price: parseFloat(selectedOption.dataset.price),
-                    quantity: parseInt(document.getElementById("RequestedQuantity").value)
-                };
+
+                if (selectedOption && selectedOption.value) {
+                    equipment = {
+                        modelName: selectedOption.value,
+                        modelSource: "Warehouse",
+                        btu: parseInt(selectedOption.dataset.btu),
+                        serviceArea: parseFloat(selectedOption.dataset.serviceArea),
+                        price: parseFloat(selectedOption.dataset.price),
+                        quantity: parseInt(document.getElementById("RequestedQuantity").value)
+                    };
+                }
             } else if (equipmentSource === "Store") {
+                if (!storeModelName.value || !modelUrl.value) {
+                    alert("❌ Укажите модель и ссылку на товар для магазина.");
+                    return;
+                }
+
                 equipment = {
                     modelName: storeModelName.value,
                     modelSource: "Store",
+                    modelUrl: modelUrl.value,  
                     btu: parseInt(btuField.value),
                     serviceArea: parseFloat(serviceAreaField.value),
                     price: parseFloat(storePriceField.value),
@@ -362,6 +371,8 @@
             email: client.email,
             technicianIds: technicianMode === "manual" ? selectedTechnicians : []
         };
+        console.log("📦 Payload перед отправкой:", JSON.stringify(payload, null, 2));
+
 
         try {
             const response = await fetch("/manager/orders/create", {

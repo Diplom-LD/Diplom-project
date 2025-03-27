@@ -33,7 +33,8 @@
 
             <div class="date-input-group">
                 <label for="InstallationDate">Installation Date</label>
-                <input type="datetime-local" id="InstallationDate" name="InstallationDate" required>
+                <input type="datetime-local" id="InstallationDate" name="InstallationDate" required
+                       min="@DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm")">
             </div>
 
             <label for="AddressInstallation">Installation Address</label>

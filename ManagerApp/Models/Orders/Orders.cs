@@ -58,6 +58,7 @@ namespace ManagerApp.Models.Orders
 
             [Required(ErrorMessage = "Источник модели обязателен.")]
             public string ModelSource { get; set; } = null!;
+            public string? ModelUrl { get; set; }  
 
             [Required(ErrorMessage = "BTU обязателен.")]
             [Range(1000, 300000, ErrorMessage = "BTU должен быть в диапазоне 1000-300000.")]
