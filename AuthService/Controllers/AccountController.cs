@@ -10,6 +10,7 @@ using System.Security.Claims;
 
 namespace AuthService.Controllers
 {
+    [Authorize]
     [Route("auth/account")]
     [ApiController]
     [Authorize]
@@ -29,6 +30,8 @@ namespace AuthService.Controllers
                 return Unauthorized(new { message = "User ID is missing or invalid in the token" });
             }
 
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
             var user = await _dbContext.Users
                 .Where(u => u.Id == userId)
                 .Select(u => new
@@ -42,7 +45,8 @@ namespace AuthService.Controllers
                     u.PhoneNumber,
                     u.Address,
                     u.Latitude,
-                    u.Longitude
+                    u.Longitude,
+                    u.SecurityStamp 
                 })
                 .FirstOrDefaultAsync();
 
@@ -52,7 +56,25 @@ namespace AuthService.Controllers
                 return NotFound(new { message = "User not found" });
             }
 
-            return Ok(user);
+            if (user.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch for user {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please re-authenticate." });
+            }
+
+            return Ok(new
+            {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.Role,
+                user.FirstName,
+                user.LastName,
+                user.PhoneNumber,
+                user.Address,
+                user.Latitude,
+                user.Longitude
+            });
         }
 
         [HttpGet("get-profile/{loginOrEmail}")]
@@ -62,6 +84,25 @@ namespace AuthService.Controllers
             if (string.IsNullOrWhiteSpace(loginOrEmail))
             {
                 return BadRequest(new { message = "Login or Email must not be empty" });
+            }
+
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+            {
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
+            }
+
+            var currentUser = await _dbContext.Users
+                .Where(u => u.Id == currentUserId)
+                .Select(u => new { u.SecurityStamp })
+                .FirstOrDefaultAsync();
+
+            if (currentUser == null || currentUser.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch or user not found: {UserId}", currentUserId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
             }
 
             var user = await _dbContext.Users
@@ -99,6 +140,8 @@ namespace AuthService.Controllers
             }
 
             string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
             if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
                 return Unauthorized(new { message = "User ID is missing or invalid in the token" });
@@ -109,6 +152,12 @@ namespace AuthService.Controllers
             {
                 _logger.LogWarning("UpdateProfile: User {UserId} not found", userId);
                 return NotFound(new { message = "User not found" });
+            }
+
+            if (user.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch for user {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
             }
 
             _logger.LogInformation("User {UserId} is updating their profile", userId);
@@ -166,6 +215,7 @@ namespace AuthService.Controllers
             return Ok(new { message = "Profile updated successfully" });
         }
 
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
@@ -175,6 +225,8 @@ namespace AuthService.Controllers
             }
 
             string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
             if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
                 return Unauthorized(new { message = "User ID is missing or invalid in the token" });
@@ -185,6 +237,12 @@ namespace AuthService.Controllers
             {
                 _logger.LogWarning("ChangePassword: User {UserId} not found", userId);
                 return NotFound(new { message = "User not found" });
+            }
+
+            if (user.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch for user {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
             }
 
             var passwordHasher = new PasswordHasher<User>();
@@ -201,16 +259,25 @@ namespace AuthService.Controllers
             }
 
             user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+
+            if (HttpContext.RequestServices.GetService<UserManager<User>>() is { } userManager)
+            {
+                await userManager.UpdateSecurityStampAsync(user);
+            }
+
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation("User {UserId} changed password successfully", userId);
             return Ok(new { message = "Password changed successfully" });
         }
 
+
         [HttpDelete("delete-account")]
         public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request)
         {
             string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
             if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
                 return Unauthorized(new { message = "User ID is missing or invalid in the token" });
@@ -221,6 +288,13 @@ namespace AuthService.Controllers
             {
                 _logger.LogWarning("DeleteAccount: User {UserId} not found", userId);
                 return NotFound(new { message = "User not found" });
+            }
+
+            // 🔐 Проверка актуальности токена
+            if (user.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch for user {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
             }
 
             var passwordHasher = new PasswordHasher<User>();
@@ -242,6 +316,7 @@ namespace AuthService.Controllers
             }
 
             Response.Cookies.Delete("refreshToken");
+
             _logger.LogInformation("User {UserId} is deleting their account", userId);
             try
             {
@@ -258,10 +333,30 @@ namespace AuthService.Controllers
             return Ok(new { message = "Account deleted successfully" });
         }
 
+
         [HttpGet("get-all-clients")]
         [Authorize(Roles = "manager")]
         public async Task<IActionResult> GetAllClients()
         {
+            string? userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
+            {
+                return Unauthorized(new { message = "User ID is missing or invalid in the token" });
+            }
+
+            var manager = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new { u.SecurityStamp })
+                .FirstOrDefaultAsync();
+
+            if (manager == null || manager.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("SecurityStamp mismatch or manager not found: {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
+            }
+
             _logger.LogInformation("🟡 Fetching all clients from database...");
 
             var clients = await _dbContext.Users
@@ -289,6 +384,7 @@ namespace AuthService.Controllers
 
             return Ok(clients);
         }
+
 
     }
 }

@@ -7,15 +7,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AuthService.Controllers
 {
+    [Authorize]
     [Route("auth")]
     [ApiController]
     public class AuthController(AuthDbContext _dbContext, TokenService _tokenService, ILogger<AuthController> _logger) : ControllerBase
     {
         private readonly PasswordHasher<User> _passwordHasher = new();
 
+        [AllowAnonymous]
         [HttpPost("sign-in")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -53,6 +56,7 @@ namespace AuthService.Controllers
             return Ok(new { accessToken });
         }
 
+        [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
@@ -87,44 +91,40 @@ namespace AuthService.Controllers
         [HttpGet("get-token")]
         public async Task<IActionResult> ValidateToken()
         {
-            if (string.IsNullOrEmpty(Request.Headers.Authorization))
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var tokenStamp = User.FindFirst("SecurityStamp")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
             {
-                _logger.LogWarning("Token validation failed: No token provided");
-                return Unauthorized(new { message = "No token provided" });
-            }
-
-            var authHeader = Request.Headers.Authorization.ToString();
-
-            if (!authHeader.StartsWith("Bearer "))
-            {
-                _logger.LogWarning("Token validation failed: No valid token provided");
-                return Unauthorized(new { message = "Invalid token format" });
-            }
-
-            var token = authHeader["Bearer ".Length..].Trim();
-            var principal = _tokenService.ValidateAccessToken(token);
-
-            if (principal == null)
-            {
-                _logger.LogWarning("Token validation failed: Invalid token");
+                _logger.LogWarning("Token validation failed: Invalid or missing user ID in token");
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var userId = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("Token validation failed: No user ID found in token");
-                return Unauthorized(new { message = "Invalid token" });
-            }
+            var user = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new
+                {
+                    u.UserName,
+                    u.Email,
+                    u.Role,
+                    u.SecurityStamp
+                })
+                .FirstOrDefaultAsync();
 
-            var user = await _dbContext.Users.FindAsync(Guid.Parse(userId));
             if (user == null)
             {
                 _logger.LogWarning("Token validation failed: User not found for ID {UserId}", userId);
                 return Unauthorized(new { message = "Invalid token" });
             }
 
+            if (user.SecurityStamp != tokenStamp)
+            {
+                _logger.LogWarning("Token validation failed: SecurityStamp mismatch for user {UserId}", userId);
+                return Unauthorized(new { message = "Session is no longer valid. Please log in again." });
+            }
+
             _logger.LogInformation("Token validation successful for user {UserId}", userId);
+
             return Ok(new
             {
                 message = "Token is valid",
@@ -135,7 +135,7 @@ namespace AuthService.Controllers
             });
         }
 
-
+        [AllowAnonymous]
         [HttpPost("sign-out")]
         public async Task<IActionResult> Logout()
         {

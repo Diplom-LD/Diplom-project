@@ -52,7 +52,8 @@ namespace AuthService.Controllers
                 FirstName = request.FirstName?.Trim(),
                 LastName = request.LastName?.Trim(),
                 PhoneNumber = request.Phone?.Trim(),
-                Address = request.Address?.Trim()
+                Address = request.Address?.Trim(),
+                SecurityStamp = Guid.NewGuid().ToString()
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
