@@ -62,60 +62,33 @@
 
             <label for="EquipmentSource">Select Equipment Source</label>
             <select name="EquipmentSource" id="EquipmentSource" required>
+                <option value="Store" selected>Store</option>
                 <option value="Warehouse">Warehouse</option>
-                <option value="Store">Store</option>
             </select>
 
-            <!-- Поля для Warehouse -->
-            <div id="warehouseFields">
-                <label for="Filter">Filter by</label>
-                <div class="filters-container">
-                    <select id="Filter">
-                        <option value="">All</option>
-                        <option value="BTU">BTU</option>
-                        <option value="ServiceArea">Service Area (m²)</option>
-                        <option value="Price">Price (MDL)</option>
-                    </select>
+            <!-- Универсальные поля -->
+            <div id="equipmentFields">
+                <label for="ModelName">Model Name</label>
+                <input type="text" name="ModelName" id="ModelName" readonly required>
 
-                    <select id="SortOrder">
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </div>
-
-                <label for="WarehouseModel">Select Model</label>
-                <select name="WarehouseModel" id="WarehouseModel" data-required>
-                    <option value="">Select Model</option>
-                </select>
-
-                <label for="RequestedQuantity">Requested Quantity</label>
-                <input type="number" name="RequestedQuantity" id="RequestedQuantity" data-required min="1">
-            </div>
-
-            <!-- Поля для Store -->
-            <div id="storeFields" class="hidden">
-                <label for="StoreModelName">Model Name</label>
-                <input type="text" name="StoreModelName" id="StoreModelName" data-required>
-
-                <label for="StoreName">Store Name</label>
-                <input type="text" name="StoreName" id="StoreName" data-required>
+                <label for="SourceName">Source</label>
+                <input type="text" name="SourceName" id="SourceName" readonly required>
 
                 <label for="ModelUrl">Product URL</label>
-                <input type="url" name="ModelUrl" id="ModelUrl" data-required>
+                <input type="url" name="ModelUrl" id="ModelUrl" readonly>
 
                 <label for="BTU">BTU</label>
-                <input type="number" name="BTU" id="BTU" data-required>
+                <input type="number" name="BTU" id="BTU" readonly required>
 
                 <label for="ServiceArea">Service Area (m²)</label>
-                <input type="number" name="ServiceArea" id="ServiceArea" data-required>
+                <input type="number" name="ServiceArea" id="ServiceArea" readonly required>
 
-                <label for="StorePrice">Price (MDL)</label>
-                <input type="number" name="StorePrice" id="StorePrice" data-required>
+                <label for="Price">Price (MDL)</label>
+                <input type="number" name="Price" id="Price" readonly required>
 
-                <label for="StoreQuantity">Quantity</label>
-                <input type="number" name="StoreQuantity" id="StoreQuantity" data-required min="1">
+                <label for="Quantity">Quantity</label>
+                <input type="number" name="Quantity" id="Quantity" required min="1">
             </div>
-
         </fieldset>
 
         <fieldset>

@@ -124,6 +124,7 @@ builder.Services.AddScoped<ToolsStockService>();
 builder.Services.AddScoped<WarehouseService>();
 
 // Отслеживание техников
+builder.Services.AddScoped<TechnicianServiceClient>();
 builder.Services.AddSingleton<TechnicianSimulationService>();
 builder.Services.AddSingleton<TechnicianTrackingService>();
 

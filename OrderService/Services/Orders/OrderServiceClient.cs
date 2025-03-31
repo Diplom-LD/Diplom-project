@@ -5,6 +5,7 @@ using OrderService.Repositories.Users;
 using OrderService.Models.Users;
 using OrderService.Services.GeoLocation.GeoCodingClient;
 using OrderService.DTO.Orders.CreateOrders;
+using OrderService.DTO.Orders;
 
 namespace OrderService.Services.Orders
 {
@@ -47,17 +48,14 @@ namespace OrderService.Services.Orders
         /// 🔄 Внутренняя логика создания заявки клиентом
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> CreateOrderInternalAsync(
-    CreateOrderRequestForClient request,
-    OrderType orderType,
-    Guid clientId,
-    string clientName,
-    string clientPhone,
-    string clientEmail)
+        CreateOrderRequestForClient request,
+        OrderType _,
+        Guid clientId,
+        string clientName,
+        string clientPhone,
+        string clientEmail)
         {
-            if (request is null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
+            ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrEmpty(clientName))
             {
@@ -153,6 +151,35 @@ namespace OrderService.Services.Orders
                 await transaction.RollbackAsync();
                 return null;
             }
+        }
+
+
+        /// <summary>
+        /// 📜 Получение всех заявок клиента.
+        /// </summary>
+        public async Task<List<OrderDTO>> GetAllOrdersByClientAsync(Guid clientId)
+        {
+            var orders = await _orderRepository.GetOrdersByClientIdAsync(clientId);
+            return [.. orders.Select(o => new OrderDTO(o))];
+        }
+
+        /// <summary>
+        /// 🔍 Получение заявки по ID.
+        /// </summary>
+        public async Task<OrderDTO?> GetOrderByIdAsync(Guid orderId)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            return order == null ? null : new OrderDTO(order);
+        }
+
+
+        /// <summary>
+        /// 🗑️ Удаление заявки.
+        /// </summary>
+        public async Task<bool> DeleteOrderAsync(Guid orderId)
+        {
+            _logger.LogInformation("🗑️ Удаление заявки {OrderId}", orderId);
+            return await _orderRepository.DeleteOrderAsync(orderId);
         }
 
     }

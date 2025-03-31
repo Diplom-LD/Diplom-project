@@ -193,8 +193,6 @@ namespace OrderService.Repositories.Orders
             return technicians;
         }
 
-
-
         /// <summary>
         /// 🔄 Обновляет существующую заявку в базе данных.
         /// </summary>
@@ -222,6 +220,42 @@ namespace OrderService.Repositories.Orders
             }
         }
 
+        /// <summary>
+        /// 📜 Получение всех заявок конкретного клиента
+        /// </summary>
+        public async Task<List<Order>> GetOrdersByClientIdAsync(Guid clientId)
+        {
+            _logger.LogInformation("📜 Получение всех заявок для клиента {ClientId}", clientId);
+
+            return await _context.Orders
+                .Where(o => o.ClientID == clientId)
+                .Include(o => o.Equipment)
+                .Include(o => o.RequiredMaterials)
+                .Include(o => o.RequiredTools)
+                .Include(o => o.AssignedTechnicians)
+                .Include(o => o.Manager)
+                .AsSplitQuery()
+                .ToListAsync();
+        }
+
+
+        /// <summary>
+        /// 📦 Получение всех заявок, в которых задействован техник.
+        /// </summary>
+        public async Task<List<Order>> GetOrdersByTechnicianIdAsync(Guid technicianId)
+        {
+            _logger.LogInformation("📦 Получение заявок для техника {TechnicianId}", technicianId);
+
+            return await _context.Orders
+                .Where(o => o.AssignedTechnicians.Any(t => t.TechnicianID == technicianId))
+                .Include(o => o.Client)
+                .Include(o => o.Equipment)
+                .Include(o => o.RequiredMaterials)
+                .Include(o => o.RequiredTools)
+                .Include(o => o.Manager)
+                .AsSplitQuery()
+                .ToListAsync();
+        }
 
     }
 }
