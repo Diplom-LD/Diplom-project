@@ -1,4 +1,4 @@
-html, body {
+﻿html, body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -30,7 +30,7 @@ html, body {
     background: #dfe6ee;
 }
 
-/* ������� */
+/* Легенда */
 .map-legend {
     position: fixed;
     bottom: 1.5rem;
@@ -42,7 +42,6 @@ html, body {
     font-size: 0.95rem;
     z-index: 10;
     max-width: 240px;
-    transition: all 0.3s ease;
     border: 1px solid #ddd;
 }
 
@@ -107,15 +106,29 @@ html, body {
         background-color: #0074D9;
     }
 
+.maplibregl-popup-close-button {
+    padding: 3px 3px;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: transparent;
+    border: none;
+}
+
+    .maplibregl-popup-close-button:hover {
+        border-radius: 0 12px 0 0;
+    }
+
+    .maplibregl-popup-close-button:focus,
+    .maplibregl-popup-close-button:hover {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
 .map-legend.hidden .map-legend__content {
     display: none;
 }
 
-.maplibregl-popup-close-button{
-    right: 3px;
-}
-
-/* ������ */
+/* Попапы */
 .popup-card {
     font-size: 14px;
     padding: 15px 15px;
@@ -183,10 +196,89 @@ html, body {
     padding: 0.5rem 0.5rem;
 }
 
-
 .legend-icon.draw-icon {
     background-color: orange;
 }
+
+.delete-marker-btn {
+    margin-top: 8px;
+    padding: 5px 10px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+    .delete-marker-btn:hover {
+        background-color: #c0392b;
+    }
+
+/* Анимация перехода */
+
+
+/* Модальное окно: */
+.modal {
+    position: fixed;
+    z-index: 999;
+    transition: opacity 0.3s ease;
+}
+
+    .modal.hidden {
+        display: none;
+    }
+
+.modal-content {
+    background: #fff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+    .modal-content label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .modal-content input[type="text"] {
+        width: 100%;
+        padding: 8px 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+.modal-buttons {
+    margin-top: 12px;
+    text-align: right;
+}
+
+    .modal-buttons button {
+        padding: 6px 14px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 8px;
+    }
+
+        .modal-buttons button:first-child {
+            background-color: #ccc;
+        }
+
+        .modal-buttons button:last-child {
+            background-color: #0074D9;
+            color: white;
+        }
+
 
     @media (max-width: 768px) {
         .main.active .toggle {
