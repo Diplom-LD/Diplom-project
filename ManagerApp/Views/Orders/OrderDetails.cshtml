@@ -73,7 +73,6 @@
         }
 
         <!-- Клиент -->
-        <!-- Клиент -->
         <div class="order-card order-card--client">
             <h3 class="order-card__title">Client Info</h3>
             <p><strong>Name:</strong> @Model.ClientName</p>
@@ -92,6 +91,8 @@
             WorkProgress.InstallationStarted,
             WorkProgress.InstallationCompleted
             };
+
+                var lastStep = steps.Last();
             }
 
             <ul class="order-card__timeline" data-current="@Model.WorkProgress">
@@ -107,11 +108,20 @@
                     }
                     else if (step == Model.WorkProgress)
                     {
-                        cssClass = (step == WorkProgress.InstallationCompleted) ? "completed-step" : "current-step";
-                        status = (step == WorkProgress.InstallationCompleted) ? "completed" : "current";
+                        bool isLastStep = step == lastStep;
+                        if (isLastStep)
+                        {
+                            cssClass = "completed-step";
+                            status = "completed";
+                        }
+                        else
+                        {
+                            cssClass = "current-step";
+                            status = "current";
+                        }
                     }
 
-                    <li class="@cssClass timeline-step" data-step="@step.ToString()" data-status="@status">
+                    <li class="@cssClass timeline-step @(step == lastStep ? "last-visible" : "")" data-step="@step.ToString()" data-status="@status">
                         @step.ToString()
                     </li>
                 }

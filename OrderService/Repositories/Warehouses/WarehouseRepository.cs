@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using OrderService.Data.Warehouses;
 using OrderService.Models.Warehouses;
+using OrderService.DTO.GeoLocation;
 
 namespace OrderService.Repositories.Warehouses
 {
@@ -30,5 +31,33 @@ namespace OrderService.Repositories.Warehouses
                 throw;
             }
         }
+
+        public async Task<List<WarehouseCoordinateDTO>> GetWarehouseCoordinatesAsync()
+        {
+            try
+            {
+                var warehouses = await _collection.Find(_ => true).ToListAsync();
+
+                var result = warehouses.Select(w => new WarehouseCoordinateDTO
+                {
+                    WarehouseId = w.ID,
+                    Name = w.Name,
+                    Address = w.Address,
+                    ContactPerson = w.ContactPerson,
+                    PhoneNumber = w.PhoneNumber,
+                    Latitude = w.Latitude,
+                    Longitude = w.Longitude
+                }).ToList();
+
+                _logger.LogInformation("📦 Получены координаты {Count} складов.", result.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Ошибка при получении координат складов.");
+                return [];
+            }
+        }
+
     }
 }

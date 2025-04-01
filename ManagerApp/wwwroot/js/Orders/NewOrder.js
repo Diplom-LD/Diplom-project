@@ -1,144 +1,262 @@
-﻿document.addEventListener("DOMContentLoaded", async function () {
-    const equipmentSource = document.getElementById("EquipmentSource");
-    const warehouseFields = document.getElementById("warehouseFields");
-    const storeFields = document.getElementById("storeFields");
+﻿document.addEventListener("DOMContentLoaded", function () {
+    const sourceSelect = document.getElementById("EquipmentSource");
+    const openPopupBtn = document.getElementById("openPopupBtn");
+    const popupIcon = openPopupBtn.querySelector("ion-icon");
 
-    const warehouseModel = document.getElementById("WarehouseModel");
-    const filterSelect = document.getElementById("Filter");
-    const sortOrderSelect = document.getElementById("SortOrder");
-
-    const storeModelName = document.getElementById("StoreModelName");
-    const storeName = document.getElementById("StoreName");
-    const modelUrl = document.getElementById("ModelUrl");
-    const btuField = document.getElementById("BTU");
-    const serviceAreaField = document.getElementById("ServiceArea");
-    const storePriceField = document.getElementById("StorePrice");
-    const storeQuantity = document.getElementById("StoreQuantity");
-    const quantityField = document.getElementById("RequestedQuantity");
+    const btuPopup = document.getElementById("btuPopup");
+    const warehousePopup = document.getElementById("warehousePopup");
 
     const conditionersTableBody = document.getElementById("conditionersTableBody");
-    const equipmentSourceSelect = document.getElementById("EquipmentSource");
+    const warehouseTableBody = document.getElementById("conditionersTableWarehouseBody");
 
-    let fullEquipmentList = [];
+    const modelNameField = document.getElementById("ModelName");
+    const sourceField = document.getElementById("SourceName");
+    const modelUrlField = document.getElementById("ModelUrl");
+    const btuField = document.getElementById("BTU");
+    const serviceAreaField = document.getElementById("ServiceArea");
+    const priceField = document.getElementById("Price");
+    const quantityField = document.getElementById("Quantity");
 
-    async function loadEquipment() {
+    let warehouseEquipmentList = [];
+    let warehouseSortingInitialized = false;
+    let selectedWarehouseModel = null;
+    let maxWarehouseQuantity = null;
+
+    /* Проверка на количество warehouse */
+    quantityField.addEventListener("input", () => {
+        const current = parseInt(quantityField.value);
+        if (maxWarehouseQuantity !== null && current > maxWarehouseQuantity) {
+            quantityField.value = maxWarehouseQuantity;
+        }
+    });
+
+    async function fetchWarehouseEquipment() {
         try {
-            const response = await fetch("/equipment/all-warehouses");
-            if (!response.ok) throw new Error(`Ошибка загрузки данных. Код: ${response.status}`);
-
-            fullEquipmentList = await response.json();
-
-            applySortAndFilter();
-        } catch (error) {
-            console.error("❌ Ошибка загрузки оборудования:", error);
-            warehouseModel.innerHTML = `<option value="">Ошибка загрузки</option>`;
+            const res = await fetch("/equipment/all-warehouses");
+            if (!res.ok) throw new Error("Failed to load equipment");
+            warehouseEquipmentList = await res.json();
+        } catch (err) {
+            console.error("❌ Ошибка загрузки склада:", err);
+            warehouseEquipmentList = [];
         }
     }
 
-    function toggleFields() {
-        const storeInputs = storeFields.querySelectorAll("[data-required]");
-        const warehouseInputs = warehouseFields.querySelectorAll("[data-required]");
-
-        if (equipmentSource.value === "Warehouse") {
-            warehouseFields.classList.remove("hidden");
-            storeFields.classList.add("hidden");
-            storeInputs.forEach(input => input.removeAttribute("required"));
-            warehouseInputs.forEach(input => input.setAttribute("required", "required"));
-
-            storeModelName.value = "";
-            storeName.value = "";
-            modelUrl.value = "";
-            storePriceField.value = "";
-            storeQuantity.value = "";
-            btuField.value = "";
-            serviceAreaField.value = "";
-            applySortAndFilter();
-        } else {
-            warehouseFields.classList.add("hidden");
-            storeFields.classList.remove("hidden");
-            warehouseInputs.forEach(input => input.removeAttribute("required"));
-            storeInputs.forEach(input => input.setAttribute("required", "required"));
-
-            warehouseModel.selectedIndex = 0;
-            quantityField.value = "";
-            btuField.value = "";
-            serviceAreaField.value = "";
-        }
+    function updateButtonIcon() {
+        const source = sourceSelect.value;
+        popupIcon.setAttribute("name", source === "Store" ? "calculator-outline" : "cube-outline");
     }
 
+    async function togglePopup() {
+        const source = sourceSelect.value;
 
-
-    function updateModelOptions(list) {
-        warehouseModel.innerHTML = `<option value="">Select Model</option>`;
-        list.forEach(item => {
-            const option = document.createElement("option");
-            option.value = item.modelName;
-            option.textContent = `${item.modelName} - BTU: ${item.btu} - Area: ${item.serviceArea}m² - Price: ${item.price} MDL - Available: ${item.totalQuantity}`;
-            option.dataset.btu = item.btu;
-            option.dataset.serviceArea = item.serviceArea;
-            option.dataset.price = item.price;
-            option.dataset.totalQuantity = item.totalQuantity;
-            warehouseModel.appendChild(option);
-        });
-    }
-
-    function applySortAndFilter() {
-        const sortType = filterSelect.value;
-        const sortOrder = sortOrderSelect.value;
-
-        let sortedList = [...fullEquipmentList];
-
-        if (sortType === "" || sortType === "All") {
-            sortedList.sort((a, b) => sortOrder === "asc"
-                ? a.modelName.localeCompare(b.modelName, undefined, { sensitivity: 'base' })
-                : b.modelName.localeCompare(a.modelName, undefined, { sensitivity: 'base' })
-            );
-        } else if (sortType === "BTU") {
-            sortedList.sort((a, b) => sortOrder === "asc" ? a.btu - b.btu : b.btu - a.btu);
-        } else if (sortType === "ServiceArea") {
-            sortedList.sort((a, b) => sortOrder === "asc" ? a.serviceArea - b.serviceArea : b.serviceArea - a.serviceArea);
-        } else if (sortType === "Price") {
-            sortedList.sort((a, b) => sortOrder === "asc" ? a.price - b.price : b.price - a.price);
-        }
-
-        updateModelOptions(sortedList);
-    }
-
-    warehouseModel.addEventListener("change", function () {
-        const selectedOption = warehouseModel.options[warehouseModel.selectedIndex];
-
-        if (!selectedOption.value) {
-            quantityField.value = "";
+        if (!btuPopup.classList.contains("hidden") || !warehousePopup.classList.contains("hidden")) {
+            closeAllPopups();
             return;
         }
 
-        quantityField.max = selectedOption.dataset.totalQuantity;
+        if (source === "Store") {
+            btuPopup.classList.remove("hidden");
+        } else if (source === "Warehouse") {
+            await fetchWarehouseEquipment();
+            updateWarehouseTable(warehouseEquipmentList);
+
+            if (!warehouseSortingInitialized) {
+                setupWarehouseTableSorting();
+                warehouseSortingInitialized = true;
+            }
+
+            warehousePopup.classList.remove("hidden");
+        }
+
+        popupIcon.setAttribute("name", "close-outline");
+        openPopupBtn.style.backgroundColor = "#dc3545";
+    }
+
+
+    function closeAllPopups() {
+        btuPopup.classList.add("hidden");
+        warehousePopup.classList.add("hidden");
+        updateButtonIcon();
+        openPopupBtn.style.backgroundColor = "#2a2185";
+
+        warehouseSortingInitialized = false; 
+    }
+
+
+    function fillEquipmentFields({ modelName, sourceName, url, price, btu, area, maxQuantity = null }) {
+        modelNameField.value = modelName;
+        sourceField.value = sourceName;
+        modelUrlField.value = url && url.trim() !== "" ? url : "-";
+        priceField.value = price;
+        btuField.value = btu;
+        serviceAreaField.value = area;
+        quantityField.value = "1";
+
+        if (sourceName === "Warehouse" && maxQuantity !== null) {
+            maxWarehouseQuantity = maxQuantity;
+            quantityField.setAttribute("max", maxWarehouseQuantity);
+        } else {
+            maxWarehouseQuantity = null;
+            quantityField.removeAttribute("max");
+        }
+
+        closeAllPopups();
+    }
+
+
+    function handleStoreSelection(event) {
+        const row = event.target.closest("tr");
+        if (!row) return;
+
+        conditionersTableBody.querySelectorAll("tr").forEach(r => r.classList.remove("selected-row"));
+        row.classList.add("selected-row");
+
+        const [modelCell, priceCell, btuCell, areaCell, storeCell] = row.children;
+        const link = modelCell.querySelector("a");
+
+        fillEquipmentFields({
+            modelName: link?.innerText.trim() || modelCell.innerText.trim(),
+            sourceName: storeCell.innerText.trim(),
+            url: link?.href || "",
+            price: priceCell.innerText.trim().replace(/[^\d]/g, ""),
+            btu: btuCell.innerText.trim().replace(/[^\d]/g, ""),
+            area: areaCell.innerText.trim().replace(/[^\d]/g, "")
+        });
+    }
+
+    function handleWarehouseSelection(event) {
+        const row = event.target.closest("tr");
+        if (!row) return;
+
+        warehouseTableBody.querySelectorAll("tr").forEach(r => r.classList.remove("selected-row"));
+        row.classList.add("selected-row");
+
+        const [modelCell, priceCell, btuCell, areaCell, quantityCell] = row.children;
+        selectedWarehouseModel = modelCell.innerText.trim(); 
+
+        fillEquipmentFields({
+            modelName: selectedWarehouseModel,
+            sourceName: "Warehouse",
+            url: "",
+            price: priceCell.innerText.trim().replace(/[^\d]/g, ""),
+            btu: btuCell.innerText.trim().replace(/[^\d]/g, ""),
+            area: areaCell.innerText.trim().replace(/[^\d]/g, ""),
+            maxQuantity: parseInt(quantityCell.innerText.trim())
+        });
+    }
+    function updateWarehouseTable(products) {
+        warehouseTableBody.innerHTML = "";
+        products.forEach(product => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>${product.modelName}</td>
+            <td>${product.price}</td>
+            <td>${product.btu}</td>
+            <td>${product.serviceArea}</td>
+            <td>${product.totalQuantity}</td>
+        `;
+
+            if (product.modelName === selectedWarehouseModel) {
+                row.classList.add("selected-row");
+            }
+
+            warehouseTableBody.appendChild(row);
+        });
+    }
+
+    function setupWarehouseTableSorting() {
+        const table = document.getElementById("conditionersTableWarehouse");
+        const headers = table.querySelectorAll("thead th");
+
+        const fields = ["modelName", "price", "btu", "serviceArea", "totalQuantity"];
+        let originalData = [...warehouseEquipmentList]; 
+
+        headers.forEach((header, index) => {
+            header.style.cursor = "pointer";
+
+            if (!header.querySelector(".sort-icon")) {
+                header.innerHTML += ` <span class="sort-icon">⬍</span>`;
+            }
+
+            header.replaceWith(header.cloneNode(true)); 
+        });
+
+        const newHeaders = table.querySelectorAll("thead th");
+
+        newHeaders.forEach((header, index) => {
+            header.dataset.sortOrder = "none"; 
+            header.addEventListener("click", () => {
+                let current = header.dataset.sortOrder;
+                let next = current === "none" ? "asc" : current === "asc" ? "desc" : "none";
+
+                newHeaders.forEach(h => {
+                    h.dataset.sortOrder = "none";
+                    const icon = h.querySelector(".sort-icon");
+                    if (icon) icon.textContent = "⬍";
+                });
+
+                header.dataset.sortOrder = next;
+                const icon = header.querySelector(".sort-icon");
+                if (icon) icon.textContent = next === "asc" ? "⬆️" : next === "desc" ? "⬇️" : "⬍";
+
+                const field = fields[index];
+
+                if (next === "none") {
+                    warehouseEquipmentList = [...originalData]; 
+                } else {
+                    const isAsc = next === "asc";
+                    warehouseEquipmentList.sort((a, b) => {
+                        if (typeof a[field] === "number") {
+                            return isAsc ? a[field] - b[field] : b[field] - a[field];
+                        } else {
+                            return isAsc
+                                ? a[field].localeCompare(b[field])
+                                : b[field].localeCompare(a[field]);
+                        }
+                    });
+                }
+
+                updateWarehouseTable(warehouseEquipmentList);
+            });
+        });
+    }
+
+    function handleEquipmentSourceChange() {
+        modelNameField.value = "";
+        sourceField.value = "";
+        modelUrlField.value = "";
+        btuField.value = "";
+        serviceAreaField.value = "";
+        priceField.value = "";
         quantityField.value = "";
-    });
 
+        document.querySelectorAll("#conditionersTableBody tr.selected-row, #conditionersTableWarehouseBody tr.selected-row")
+            .forEach(row => row.classList.remove("selected-row"));
 
-    quantityField.addEventListener("input", function () {
-        const maxQuantity = parseInt(quantityField.max, 10);
-        if (quantityField.value > maxQuantity) {
-            quantityField.value = maxQuantity;
+        maxWarehouseQuantity = null;
+        selectedWarehouseModel = null;
+        quantityField.removeAttribute("max");
+
+        if (sourceSelect.value === "Warehouse") {
+            modelUrlField.value = "-";
         }
-    });
 
-    storeQuantity.addEventListener("input", function () {
-        if (storeQuantity.value < 1) {
-            storeQuantity.value = 1;
-        }
-    });
+        updateButtonIcon();
+        closeAllPopups();
+    }
 
-    filterSelect.addEventListener("change", applySortAndFilter);
-    sortOrderSelect.addEventListener("change", applySortAndFilter);
 
-    equipmentSource.addEventListener("change", toggleFields);
+    sourceSelect.addEventListener("change", handleEquipmentSourceChange);
+    sourceSelect.addEventListener("change", updateButtonIcon);
+    openPopupBtn.addEventListener("click", async () => await togglePopup());
+    btuPopup.addEventListener("click", e => { if (e.target === btuPopup) closeAllPopups(); });
+    warehousePopup.addEventListener("click", e => { if (e.target === warehousePopup) closeAllPopups(); });
+    conditionersTableBody.addEventListener("click", handleStoreSelection);
+    warehouseTableBody.addEventListener("click", handleWarehouseSelection);
 
-    toggleFields();
-    await loadEquipment();
+    updateButtonIcon();
 
-    /* Technician selection */
+    // ---- Создание заявки ----
     const technicianSelect = document.getElementById("Technicians");
     const technicianMode = document.getElementById("TechnicianSelection");
     const manualBlock = document.getElementById("manualTechnicianSelection");
@@ -156,19 +274,11 @@
 
     async function loadTechnicians() {
         try {
-            console.log("🔄 Загружаем список техников...");
             const response = await fetch("/technicians/available-today");
-            if (!response.ok) throw new Error(`Ошибка загрузки. Код: ${response.status}`);
+            if (!response.ok) throw new Error("Ошибка загрузки техников");
 
             const technicians = await response.json();
-
-            technicianSelect.innerHTML = ""; 
-
-            if (technicians.length === 0) {
-                technicianSelect.innerHTML = `<option disabled>Нет доступных техников</option>`;
-                console.warn("⚠️ Нет доступных техников!");
-                return;
-            }
+            technicianSelect.innerHTML = "";
 
             technicians.forEach(t => {
                 const option = document.createElement("option");
@@ -177,14 +287,9 @@
                 technicianSelect.appendChild(option);
             });
 
-            console.log(`✅ Загружено техников: ${technicians.length}`);
-
-            if (technicianSelect) {
-                setupMultiSelect(); 
-            }
+            setupMultiSelect();
         } catch (err) {
             console.error("❌ Ошибка загрузки техников:", err);
-            technicianSelect.innerHTML = `<option disabled>Ошибка загрузки</option>`;
         }
     }
 
@@ -195,191 +300,88 @@
 
     function setupMultiSelect() {
         selectedTechniciansContainer.innerHTML = "";
-
         technicianSelect.addEventListener("change", updateTags);
         updateTags();
     }
 
     function updateTags() {
         selectedTechniciansContainer.innerHTML = "";
-
         Array.from(technicianSelect.selectedOptions).forEach(option => {
-            const tag = createTag(option);
+            const tag = document.createElement("div");
+            tag.classList.add("technician-tag");
+            tag.textContent = option.textContent;
+
+            const removeBtn = document.createElement("span");
+            removeBtn.classList.add("remove-technician");
+            removeBtn.textContent = "×";
+            removeBtn.addEventListener("click", () => {
+                option.selected = false;
+                updateTags();
+            });
+
+            tag.appendChild(removeBtn);
             selectedTechniciansContainer.appendChild(tag);
         });
     }
 
-    function createTag(option) {
-        const tag = document.createElement("div");
-        tag.classList.add("technician-tag");
-        tag.textContent = option.textContent;
-
-        const removeBtn = document.createElement("span");
-        removeBtn.classList.add("remove-technician");
-        removeBtn.textContent = "×";
-        removeBtn.addEventListener("click", () => {
-            option.selected = false;
-            updateTags();
-        });
-
-        tag.appendChild(removeBtn);
-        return tag;
-    }
-
-
-    /*BTU Calculator*/
-    const openPopupBtn = document.getElementById('openPopupBtn');
-    const popupIcon = openPopupBtn.querySelector('ion-icon');
-    const btuPopup = document.getElementById('btuPopup');
-
-    function togglePopup() {
-        const isHidden = btuPopup.classList.contains('hidden');
-        btuPopup.classList.toggle('hidden');
-        popupIcon.setAttribute('name', isHidden ? 'close-outline' : 'calculator-outline');
-        openPopupBtn.style.backgroundColor = isHidden ? '#dc3545' : '#2a2185';
-    }
-
-    function closePopup() {
-        btuPopup.classList.add('hidden');
-        popupIcon.setAttribute('name', 'calculator-outline');
-        openPopupBtn.style.backgroundColor = '#2a2185';
-    }
-
-    openPopupBtn.addEventListener('click', togglePopup);
-
-    btuPopup.addEventListener('click', (e) => {
-        if (e.target === btuPopup) closePopup();
-    });
-
-
-    /*Выбор кондиционера*/
-    function handleConditionerSelection(event) {
-        const selectedRow = event.target.closest("tr");
-        if (!selectedRow) return;
-
-        const columns = selectedRow.children;
-        if (columns.length < 5) return;
-
-        let modelLinkElement = columns[0].querySelector("a");
-        let selectedModel = modelLinkElement ? modelLinkElement.innerText.trim() : columns[0].innerText.trim();
-        let selectedUrl = modelLinkElement ? modelLinkElement.href : "";
-
-        let selectedPrice = columns[1].innerText.trim().replace(/[^\d]/g, "");
-        let selectedBTU = columns[2].innerText.trim().replace(/[^\d]/g, "");
-        let selectedServiceArea = columns[3].innerText.trim().replace(/[^\d]/g, "");
-        let selectedStore = columns[4].innerText.trim();
-
-        if (equipmentSourceSelect.value === "Store") {
-            storeModelName.value = selectedModel;
-            storeName.value = selectedStore;
-            modelUrl.value = selectedUrl;
-            btuField.value = selectedBTU;
-            serviceAreaField.value = selectedServiceArea;
-            storePriceField.value = selectedPrice;
-            storeQuantity.value = "1";
-
-            closePopup();
-        }
-    }
-
-    conditionersTableBody.addEventListener("click", handleConditionerSelection);
-
-
-    const orderTypeSelect = document.getElementById("OrderType");
-    const equipmentSection = document.getElementById("equipmentSection");
-    function toggleEquipmentSection() {
-        const selected = orderTypeSelect.value;
-        if (selected === "Maintenance") {
-            equipmentSection.classList.add("hidden");
-        } else {
-            equipmentSection.classList.remove("hidden");
-        }
-    }
-    orderTypeSelect.addEventListener("change", toggleEquipmentSection);
-    toggleEquipmentSection();
-
-
-    /* Сreate Order */
     const orderForm = document.getElementById("orderForm");
 
     orderForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
-        const orderType = document.getElementById("OrderType").value;
-        const workCost = parseFloat(document.getElementById("WorkCost").value);
-        const paymentMethod = document.getElementById("PaymentMethod").value;
-        const installationDate = new Date(document.getElementById("InstallationDate").value).toISOString();
-        const addressInstallation = document.getElementById("AddressInstallation").value;
-        const notes = document.getElementById("Notes").value;
-
-        const equipmentSource = equipmentSourceSelect.value;
-        let equipment = null;
-
-        if (orderType === "Installation") {
-            if (equipmentSource === "Warehouse") {
-                const selectedOption = warehouseModel.options[warehouseModel.selectedIndex];
-
-                if (selectedOption && selectedOption.value) {
-                    equipment = {
-                        modelName: selectedOption.value,
-                        modelSource: "Warehouse",
-                        btu: parseInt(selectedOption.dataset.btu),
-                        serviceArea: parseFloat(selectedOption.dataset.serviceArea),
-                        price: parseFloat(selectedOption.dataset.price),
-                        quantity: parseInt(document.getElementById("RequestedQuantity").value)
-                    };
-                }
-            } else if (equipmentSource === "Store") {
-                if (!storeModelName.value || !modelUrl.value) {
-                    alert("❌ Укажите модель и ссылку на товар для магазина.");
-                    return;
-                }
-
-                equipment = {
-                    modelName: storeModelName.value,
-                    modelSource: "Store",
-                    modelUrl: modelUrl.value,  
-                    btu: parseInt(btuField.value),
-                    serviceArea: parseFloat(serviceAreaField.value),
-                    price: parseFloat(storePriceField.value),
-                    quantity: parseInt(storeQuantity.value)
-                };
-            }
-        }
-
-        const client = {
-            fullName: document.getElementById("FullName")?.value,
-            phoneNumber: document.getElementById("PhoneNumber")?.value,
-            email: document.getElementById("Email")?.value
-        };
-
-        const technicianMode = document.getElementById("TechnicianSelection").value;
-        const selectedTechnicians = Array.from(technicianSelect.selectedOptions).map(opt => opt.value);
+        console.log("📋 Notes value before payload:", document.getElementById("Notes").value);
 
         const payload = {
-            orderType,
-            installationDate,
-            installationAddress: addressInstallation,
-            notes,
-            workCost,
-            paymentMethod,
+            orderType: document.getElementById("OrderType").value,
+            installationDate: new Date(document.getElementById("InstallationDate").value).toISOString(),
+            installationAddress: document.getElementById("AddressInstallation").value,
+            notes: document.getElementById("Notes").value,
+            workCost: parseFloat(document.getElementById("WorkCost").value),
+            paymentMethod: document.getElementById("PaymentMethod").value,
             paymentStatus: "UnPaid",
             fulfillmentStatus: "New",
-            equipment,
-            fullName: client.fullName,
-            phoneNumber: client.phoneNumber,
-            email: client.email,
-            technicianIds: technicianMode === "manual" ? selectedTechnicians : []
+            fullName: document.getElementById("FullName").value,
+            phoneNumber: document.getElementById("PhoneNumber").value,
+            email: document.getElementById("Email").value,
+            technicianIds: technicianMode.value === "manual" ? Array.from(technicianSelect.selectedOptions).map(opt => opt.value) : []
         };
-        console.log("📦 Payload перед отправкой:", JSON.stringify(payload, null, 2));
 
+        if (payload.orderType === "Installation") {
+            const modelName = document.getElementById("ModelName").value;
+            const source = sourceSelect.value;
+            const modelUrl = document.getElementById("ModelUrl").value;
+            const btu = parseInt(document.getElementById("BTU").value);
+            const serviceArea = parseFloat(document.getElementById("ServiceArea").value);
+            const price = parseFloat(document.getElementById("Price").value);
+            const quantity = parseInt(document.getElementById("Quantity").value);
+
+            if (!modelName || !price || !btu || !serviceArea || !quantity) {
+                alert("❌ Заполните все поля оборудования.");
+                return;
+            }
+
+            if (source === "Store" && !modelUrl) {
+                alert("❌ Укажите ссылку на модель из магазина.");
+                return;
+            }
+
+            payload.equipment = {
+                modelName,
+                modelSource: source,
+                modelUrl: source === "Store" ? modelUrl : null,
+                btu,
+                serviceArea,
+                price,
+                quantity
+            };
+        }
 
         try {
             const response = await fetch("/manager/orders/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']")?.value ?? ""
+                    "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']")?.value || ""
                 },
                 body: JSON.stringify(payload)
             });
@@ -398,5 +400,4 @@
             alert("Сетевая ошибка при создании заявки.");
         }
     });
-
 });

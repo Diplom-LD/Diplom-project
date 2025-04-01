@@ -1,0 +1,215 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    width: 100%;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    overflow-x: hidden;
+}
+
+.container,
+.main,
+.content {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+#map {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    z-index: 0;
+    pointer-events: auto;
+    background: #dfe6ee;
+}
+
+/* Легенда */
+.map-legend {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: #ffffff;
+    padding: 1.2rem 1.4rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    font-size: 0.95rem;
+    z-index: 10;
+    max-width: 240px;
+    transition: all 0.3s ease;
+    border: 1px solid #ddd;
+}
+
+.map-legend__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+    .map-legend__header h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+.legend-toggle-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+    .legend-toggle-btn:hover {
+        color: #000;
+    }
+
+.map-legend__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+    .legend-item input[type="checkbox"] {
+        margin-right: 8px;
+        accent-color: #2a2185;
+    }
+
+.legend-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+    .legend-icon.warehouse-icon {
+        background-color: saddlebrown;
+    }
+
+    .legend-icon.technician-icon {
+        background-color: #0074D9;
+    }
+
+.map-legend.hidden .map-legend__content {
+    display: none;
+}
+
+.maplibregl-popup-close-button{
+    right: 3px;
+}
+
+/* Попапы */
+.popup-card {
+    font-size: 14px;
+    padding: 15px 15px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    min-width: 160px;
+    line-height: 1.4;
+}
+
+.maplibregl-popup-content {
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+.popup-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.popup-address,
+.popup-phone,
+.popup-contact,
+.popup-email {
+    color: #333;
+    font-size: 13px;
+}
+
+.maplibregl-ctrl-bottom-right {
+    display: none !important;
+}
+
+.maplibregl-ctrl-top-right {
+    margin: 60px 15px 0 0 !important;
+}
+
+    .maplibregl-ctrl-top-right .maplibregl-ctrl {
+        margin: 10px 0 0 0;
+    }
+
+.map-title {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    padding: 10px 20px;
+    background-color: #ffffff;
+    color: #2a2185;
+    font-size: 1.6rem;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.map-legend.hidden .map-legend__header {
+    margin-bottom: 0;
+}
+
+.map-legend.hidden {
+    padding: 0.5rem 0.5rem;
+}
+
+
+.legend-icon.draw-icon {
+    background-color: orange;
+}
+
+    @media (max-width: 768px) {
+        .main.active .toggle {
+            position: unset;
+            color: rgb(0, 0, 0);
+        }
+
+        .map-legend {
+            bottom: 1rem;
+            right: 1rem;
+            max-width: 90%;
+            padding: 1rem;
+        }
+
+    .map-legend__header h4 {
+        font-size: 0.95rem;
+    }
+
+    .legend-item {
+        font-size: 0.9rem;
+    }
+
+    .legend-toggle-btn {
+        font-size: 1rem;
+    }
+}

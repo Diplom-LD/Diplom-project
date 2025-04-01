@@ -15,7 +15,7 @@ namespace ManagerApp.Models.Orders
         [Required(ErrorMessage = "Адрес установки обязателен.")]
         [StringLength(255, MinimumLength = 5, ErrorMessage = "Адрес должен содержать от 5 до 255 символов.")]
         public string InstallationAddress { get; set; } = null!;
-
+        public string? Notes { get; set; }
         [Required(ErrorMessage = "Менеджер обязателен.")]
         public Guid ManagerId { get; set; }
 

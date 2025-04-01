@@ -231,5 +231,31 @@ namespace ManagerApp.Clients
             }
         }
 
+        public async Task<AllLocationsResponseDTO?> GetAllLocationsAsync(string accessToken)
+        {
+            try
+            {
+                SetAuthorizationHeader(accessToken);
+                var response = await _httpClient.GetAsync("location/all-locations");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("⚠️ [OrderService] Не удалось получить локации: {StatusCode}, Body: {Body}",
+                        response.StatusCode, error);
+                    return null;
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<AllLocationsResponseDTO>(content, _jsonOptions);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [OrderServiceClient] Ошибка при получении всех локаций.");
+                return null;
+            }
+        }
+
     }
 }

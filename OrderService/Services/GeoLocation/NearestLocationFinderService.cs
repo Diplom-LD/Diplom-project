@@ -6,6 +6,7 @@ using OrderService.Models.Users;
 using OrderService.DTO.Orders;
 using OrderService.Services.Orders;
 using OrderService.DTO.Warehouses;
+using OrderService.Repositories.Warehouses;
 
 namespace OrderService.Services.GeoLocation
 {
@@ -13,12 +14,14 @@ namespace OrderService.Services.GeoLocation
         WarehouseAvailabilityService warehouseAvailabilityService,
         UserPostgreRepository userPostgreRepository,
         UserRedisRepository userRedisRepository,
+        WarehouseRepository warehouseRepository,
         IOptimizedRouteService optimizedRouteService,
         ILogger<NearestLocationFinderService> logger)
     {
         private readonly WarehouseAvailabilityService _warehouseAvailabilityService = warehouseAvailabilityService;
         private readonly UserPostgreRepository _userPostgreRepository = userPostgreRepository;
         private readonly UserRedisRepository _userRedisRepository = userRedisRepository;
+        private readonly WarehouseRepository _warehouseRepository = warehouseRepository;
         private readonly IOptimizedRouteService _optimizedRouteService = optimizedRouteService;
         private readonly ILogger<NearestLocationFinderService> _logger = logger;
 
@@ -169,5 +172,18 @@ namespace OrderService.Services.GeoLocation
                 CurrentOrderId = technician.CurrentOrderId
             };
         }
+
+        /// <summary>
+        /// 🔄 Получение данных про техников и складов.
+        /// </summary>
+        public async Task<List<TechnicianCoordinateDTO>> GetAllTechnicianHomeLocationsAsync()
+        {
+            return await _userPostgreRepository.GetTechnicianCoordinatesAsync();
+        }
+        public async Task<List<WarehouseCoordinateDTO>> GetAllWarehouseLocationsAsync()
+        {
+            return await _warehouseRepository.GetWarehouseCoordinatesAsync();
+        }
+
     }
 }

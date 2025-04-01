@@ -93,6 +93,7 @@ builder.Services.AddScoped<UserRedisRepository>();
 builder.Services.AddScoped<IStockRepository<EquipmentStock>, EquipmentStockRepository>();
 builder.Services.AddScoped<IStockRepository<MaterialsStock>, MaterialsStockRepository>();
 builder.Services.AddScoped<IStockRepository<ToolsStock>, ToolsStockRepository>();
+builder.Services.AddScoped<WarehouseRepository>();
 builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
 
 // Инициализация тестовых данных

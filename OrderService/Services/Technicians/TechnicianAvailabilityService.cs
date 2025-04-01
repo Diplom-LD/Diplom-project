@@ -44,31 +44,6 @@ namespace OrderService.Services.Technicians
         }
 
         /// <summary>
-        /// 🔍 Проверка занятости техника на конкретную дату.
-        /// </summary>
-        private async Task<bool> IsTechnicianAvailableAsync(Guid technicianId, DateTime date)
-        {
-            // Попробуем загрузить техников из Redis
-            var technician = await _userRedisRepository.GetTechnicianByIdAsync(technicianId);
-
-            if (technician == null)
-            {
-                _logger.LogWarning("⚠️ [Redis] Техник {TechnicianId} не найден. Загружаем из PostgreSQL...", technicianId);
-                var user = await _userPostgreRepository.GetUserByIdAsync(technicianId);
-                technician = user as Technician;
-            }
-
-            if (technician == null)
-            {
-                _logger.LogWarning("❌ Техник с ID {TechnicianId} не найден!", technicianId);
-                return false;
-            }
-
-            return !technician.Appointments.Any(a => a.Date.Date == date.Date);
-        }
-
-
-        /// <summary>
         /// 🔍 Получение доступных техников на конкретную дату.
         /// </summary>
         public async Task<List<Technician>> GetAvailableTechniciansAsync(DateTime date)

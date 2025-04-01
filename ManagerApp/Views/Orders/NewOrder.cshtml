@@ -69,22 +69,22 @@
             <!-- Универсальные поля -->
             <div id="equipmentFields">
                 <label for="ModelName">Model Name</label>
-                <input type="text" name="ModelName" id="ModelName" readonly required>
+                <input type="text" name="ModelName" id="ModelName" class="readonly-field" readonly required>
 
                 <label for="SourceName">Source</label>
-                <input type="text" name="SourceName" id="SourceName" readonly required>
+                <input type="text" name="SourceName" id="SourceName" class="readonly-field" readonly required>
 
                 <label for="ModelUrl">Product URL</label>
-                <input type="url" name="ModelUrl" id="ModelUrl" readonly>
+                <input type="url" name="ModelUrl" id="ModelUrl" class="readonly-field" readonly>
 
                 <label for="BTU">BTU</label>
-                <input type="number" name="BTU" id="BTU" readonly required>
+                <input type="number" name="BTU" id="BTU" class="readonly-field" readonly required>
 
                 <label for="ServiceArea">Service Area (m²)</label>
-                <input type="number" name="ServiceArea" id="ServiceArea" readonly required>
+                <input type="number" name="ServiceArea" id="ServiceArea" class="readonly-field" readonly required>
 
                 <label for="Price">Price (MDL)</label>
-                <input type="number" name="Price" id="Price" readonly required>
+                <input type="number" name="Price" id="Price" class="readonly-field" readonly required>
 
                 <label for="Quantity">Quantity</label>
                 <input type="number" name="Quantity" id="Quantity" required min="1">
@@ -258,40 +258,63 @@
 
     </div>
 
-    <!-- Conditioners List Section -->
-    <div class="conditionersBTU">
-        <div class="cardHeader">
-            <h2>Conditioners</h2>
-            <button type="button" class="btu-find-btn">Find</button>
-        </div>
+                <!-- Conditioners List Section -->
+                <div class="conditionersBTU">
+                    <div class="cardHeader">
+                        <h2>Conditioners</h2>
+                        <button type="button" class="btu-find-btn">Find</button>
+                    </div>
 
-        <div class="conditioner-form">
-            <div id="conditionersMessage" class="conditioners-message">
-                ⚠️ Do the BTU calculation first!
+                    <div class="conditioner-form">
+                        <div id="conditionersMessage" class="conditioners-message">
+                            ⚠️ Do the BTU calculation first!
+                        </div>
+
+                        <table id="conditionersTable" class="full-width-table" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <td>Name</td>
+                                    <td>Price</td>
+                                    <td>BTU</td>
+                                    <td>Service Area</td>
+                                    <td>Store</td>
+                                </tr>
+                            </thead>
+                            <tbody id="conditionersTableBody" style="font-size: 0.8rem;"></tbody>
+                        </table>
+
+                        <div id="rangeMessageContainer" class="range-message" >
+                            ⚠️ Air conditioners with minimum BTU values are shown.
+                        </div>
+                    </div>
+                </div>
+
             </div>
+        </div>
+    </div>
 
-            <table id="conditionersTable" class="full-width-table" style="display: none;">
+    <!-- Warehouse Popup -->
+    <div id="warehousePopup" class="popup hidden">
+        <div class="popup-content">
+            <h2>Select Equipment from Warehouse</h2>
+
+            <table id="conditionersTableWarehouse" class="warehouse-table">
                 <thead>
                     <tr>
-                        <td>Name</td>
-                        <td>Price</td>
-                        <td>BTU</td>
-                        <td>Service Area</td>
-                        <td>Store</td>
+                        <th>Model</th>
+                        <th>Price</th>
+                        <th>BTU</th>
+                        <th>Area</th>
+                        <th>Available</th>
                     </tr>
                 </thead>
-                <tbody id="conditionersTableBody" style="font-size: 0.8rem;"></tbody>
+                <tbody id="conditionersTableWarehouseBody"></tbody>
             </table>
 
-            <div id="rangeMessageContainer" class="range-message" >
-                ⚠️ Air conditioners with minimum BTU values are shown.
-            </div>
+            <p class="warehouse-hint">Click on a row to select an item.</p>
         </div>
     </div>
 
-            </div>
-        </div>
-    </div>
 </div>
 
 <script src="~/js/BTU/BTUCalculator.js"></script>

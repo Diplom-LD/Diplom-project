@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OrderService.Data.Orders;
+using OrderService.DTO.GeoLocation;
 using OrderService.Models.Users;
 
 namespace OrderService.Repositories.Users
@@ -72,31 +74,7 @@ namespace OrderService.Repositories.Users
             }
         }
 
-        public async Task<Manager?> GetManagerByIdAsync(Guid managerId)
-        {
-            try
-            {
-                var manager = await _context.Users
-                    .OfType<Manager>()
-                    .FirstOrDefaultAsync(m => m.Id == managerId);
-
-                if (manager == null)
-                {
-                    _logger.LogWarning("⚠️ [PostgreSQL] Менеджер с ID: {ManagerId} не найден.", managerId);
-                }
-                else
-                {
-                    _logger.LogInformation("✅ [PostgreSQL] Менеджер с ID: {ManagerId} загружен.", managerId);
-                }
-                return manager;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при получении менеджера с ID: {ManagerId}.", managerId);
-                return null;
-            }
-        }
-
+       
         public async Task SaveUserAsync(User user)
         {
             try
@@ -141,28 +119,6 @@ namespace OrderService.Repositories.Users
             }
         }
 
-        public async Task DeleteUserAsync(Guid userId)
-        {
-            try
-            {
-                var user = await GetUserByIdAsync(userId);
-                if (user == null)
-                {
-                    _logger.LogWarning("❌ Пользователь с ID: {UserId} не найден", userId);
-                    return;
-                }
-
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("🗑️ [PostgreSQL] Пользователь удалён с ID: {UserId}", userId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Ошибка при удалении данных из PostgreSQL.");
-            }
-        }
-
         public async Task<Technician?> GetTechnicianByIdAsync(Guid technicianId)
         {
             return await _context.Technicians
@@ -170,55 +126,29 @@ namespace OrderService.Repositories.Users
                 .FirstOrDefaultAsync(t => t.Id == technicianId);
         }
 
-        public async Task<List<Technician>> GetTechniciansByIdsAsync(List<string> technicianIds)
-        {
-            if (technicianIds == null || technicianIds.Count == 0)
-            {
-                return [];
-            }
-
-            var guidTechnicianIds = technicianIds.Select(Guid.Parse).ToList();
-
-            try
-            {
-                var technicians = await _context.Technicians
-                    .Where(t => guidTechnicianIds.Contains(t.Id))
-                    .ToListAsync();
-
-                _logger.LogInformation("✅ [PostgreSQL] Загружено {Count} техников по ID.", technicians.Count);
-                return technicians;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при загрузке техников по ID.");
-                return [];
-            }
-        }
-
-        public async Task<List<Technician>> GetNearestAvailableTechniciansAsync(double latitude, double longitude, int count = 2)
+        public async Task<List<TechnicianCoordinateDTO>> GetTechnicianCoordinatesAsync()
         {
             try
             {
-                var technicians = await _context.Technicians
-                    .Where(t => t.IsAvailable) 
-                    .OrderBy(t => Math.Sqrt(Math.Pow(t.Latitude - latitude, 2) + Math.Pow(t.Longitude - longitude, 2))) 
-                    .Take(count)
-                    .ToListAsync();
+                var technicians = await _context.Technicians.AsNoTracking().ToListAsync();
 
-                if (technicians.Count == 0)
+                var result = technicians.Select(t => new TechnicianCoordinateDTO
                 {
-                    _logger.LogWarning("⚠️ [PostgreSQL] Не найдено свободных техников поблизости.");
-                }
-                else
-                {
-                    _logger.LogInformation("✅ [PostgreSQL] Найдено {Count} ближайших свободных техников.", technicians.Count);
-                }
+                    TechnicianId = t.Id,
+                    FullName = t.FullName,
+                    Email = t.Email,
+                    Address = t.Address,
+                    PhoneNumber = t.PhoneNumber,
+                    Latitude = t.Latitude,
+                    Longitude = t.Longitude
+                }).ToList();
 
-                return technicians;
+                _logger.LogInformation("📍 [PostgreSQL] Получены координаты {Count} техников.", result.Count);
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при поиске ближайших свободных техников.");
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при получении координат техников.");
                 return [];
             }
         }

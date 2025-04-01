@@ -1,0 +1,51 @@
+﻿@model ManagerApp.DTO.Orders.AllLocationsResponseDTO
+
+@{
+    ViewData["Title"] = "Map of Locations";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Map.css" />
+}
+
+<div class="map-wrapper">
+    <div class="map-title">🗺️ Map of Technicians and Warehouses</div>
+    <div id="map" data-locations='@Html.Raw(Json.Serialize(Model))'></div>
+
+    <div class="map-legend fancy-box">
+        <div class="map-legend__header">
+            <h4>
+                <span class="legend-title-text">📌 Map Legend</span>
+            </h4>
+            <button id="toggle-legend-btn" class="legend-toggle-btn" title="Hide Legend">✖</button>
+        </div>
+
+        <div class="map-legend__content">
+            <div class="legend-item">
+                <input type="checkbox" id="toggle-warehouse" checked>
+                <span class="legend-icon warehouse-icon"></span> Warehouse
+            </div>
+
+            <div class="legend-item">
+                <input type="checkbox" id="toggle-technician" checked>
+                <span class="legend-icon technician-icon"></span> Technician Home
+            </div>
+
+            <div class="legend-item">
+                <input type="checkbox" id="toggle-draw-mode">
+                <span class="legend-icon draw-icon"></span> Markers Mode
+            </div>
+
+            <div class="legend-item">
+                <input type="checkbox" id="toggle-ruler-mode">
+                <span class="legend-icon draw-icon" style="background-color: purple;"></span> Ruler Mode
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="~/js/Map/Map.js"></script>
+}

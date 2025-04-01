@@ -9,16 +9,10 @@ using System.Text.Json;
 namespace ManagerApp.Controllers.Orders
 {
     [Authorize]
-    public class OrdersController : Controller
+    public class OrdersController(OrderServiceClient orderServiceClient, ILogger<OrdersController> logger) : Controller
     {
-        private readonly OrderServiceClient _orderServiceClient;
-        private readonly ILogger<OrdersController> _logger;
-
-        public OrdersController(OrderServiceClient orderServiceClient, ILogger<OrdersController> logger)
-        {
-            _orderServiceClient = orderServiceClient;
-            _logger = logger;
-        }
+        private readonly OrderServiceClient _orderServiceClient = orderServiceClient;
+        private readonly ILogger<OrdersController> _logger = logger;
 
         public IActionResult Orders()
         {

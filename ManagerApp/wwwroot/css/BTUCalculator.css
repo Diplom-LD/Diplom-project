@@ -452,8 +452,8 @@ button:active {
 }
 
 .btu-select {
-    text-align: center;
-    text-align-last: center;
+    text-align: left;
+    text-align-last: left;
 }
 
 .range-message {

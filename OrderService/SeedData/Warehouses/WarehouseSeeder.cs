@@ -79,7 +79,8 @@ namespace OrderService.SeedData.Warehouses
 
             try
             {
-                var (Latitude, Longitude, DisplayName) = await geoCodingService.GetBestCoordinateAsync(address) ?? (Latitude: 0.0, Longitude: 0.0, DisplayName: "Unknown");
+                var (Latitude, Longitude, DisplayName) = await geoCodingService.GetBestCoordinateAsync(address)
+                                                          ?? (Latitude: 0.0, Longitude: 0.0, DisplayName: "Unknown");
 
                 _logger.LogInformation("✅ Координаты найдены: {Latitude}, {Longitude} для {Address}", Latitude, Longitude, address);
 
@@ -88,6 +89,8 @@ namespace OrderService.SeedData.Warehouses
                     ID = Guid.NewGuid(),
                     Name = name,
                     Address = DisplayName == "Unknown" ? "Неизвестный адрес" : address,
+                    ContactPerson = GenerateRandomContactPerson(),
+                    PhoneNumber = GenerateRandomPhoneNumber(),
                     Latitude = Latitude,
                     Longitude = Longitude
                 };
@@ -100,10 +103,36 @@ namespace OrderService.SeedData.Warehouses
                     ID = Guid.NewGuid(),
                     Name = name,
                     Address = "Ошибка геолокации",
+                    ContactPerson = "Нет данных",
+                    PhoneNumber = "+000000000",
                     Latitude = 0,
                     Longitude = 0
                 };
             }
+        }
+
+        private string GenerateRandomContactPerson()
+        {
+            var names = new[]
+            {
+                "Иван Иванов",
+                "Мария Смирнова",
+                "Петр Сидоров",
+                "Ольга Кузнецова",
+                "Александр Николаев",
+                "Елена Федорова",
+                "Дмитрий Орлов",
+                "Татьяна Морозова",
+                "Сергей Волков",
+                "Анна Крылова"
+            };
+            return names[new Random().Next(names.Length)];
+        }
+
+        private string GenerateRandomPhoneNumber()
+        {
+            var rnd = new Random();
+            return $"+37378{rnd.Next(100000, 999999)}"; 
         }
 
         private async Task<List<string>> GetWarehouseIds()

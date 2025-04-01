@@ -25,30 +25,47 @@ namespace AuthService.Services
 
             _logger.LogInformation("⏳ Подключение к RabbitMQ...");
 
-            try
+            const int maxAttempts = 5;
+            const int delayMs = 3000;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                _connection = Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult();
-                _channel = Task.Run(() => _connection.CreateChannelAsync()).GetAwaiter().GetResult();
+                try
+                {
+                    _connection = Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult();
+                    _channel = Task.Run(() => _connection.CreateChannelAsync()).GetAwaiter().GetResult();
 
-                _channel.QueueDeclareAsync(queue: "users_registered",
-                                           durable: true,
-                                           exclusive: false,
-                                           autoDelete: false,
-                                           arguments: null).GetAwaiter().GetResult();
+                    _channel.QueueDeclareAsync(queue: "users_registered",
+                                               durable: true,
+                                               exclusive: false,
+                                               autoDelete: false,
+                                               arguments: null).GetAwaiter().GetResult();
 
-                _channel.QueueDeclareAsync(queue: "users_updated",
-                                           durable: true,
-                                           exclusive: false,
-                                           autoDelete: false,
-                                           arguments: null).GetAwaiter().GetResult();
+                    _channel.QueueDeclareAsync(queue: "users_updated",
+                                               durable: true,
+                                               exclusive: false,
+                                               autoDelete: false,
+                                               arguments: null).GetAwaiter().GetResult();
 
-                _logger.LogInformation("✅ [RabbitMQ] Подключение успешно установлено.");
+                    _logger.LogInformation("✅ [RabbitMQ] Подключение успешно установлено.");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "❌ [RabbitMQ] Попытка #{Attempt} не удалась.", attempt);
+
+                    if (attempt == maxAttempts)
+                    {
+                        _logger.LogError("❌ [RabbitMQ] Все попытки подключения исчерпаны. Сервис не будет работать.");
+                        throw;
+                    }
+
+                    Thread.Sleep(delayMs);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ [RabbitMQ] Ошибка подключения.");
-                throw;
-            }
+
+            _connection = null!;
+            _channel = null!;
         }
 
         public async Task PublishUserRegisteredAsync(User user, CancellationToken cancellationToken = default)

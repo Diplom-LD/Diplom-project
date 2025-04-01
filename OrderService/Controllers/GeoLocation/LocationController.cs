@@ -134,24 +134,47 @@ public class LocationController(
         return Ok(result);
     }
 
+
     /// <summary>
-    /// 📦 Получение ближайшего склада по координатам.
+    /// 📦 Получение полной информации о координатах всех складов и домашних адресах техников.
     /// </summary>
-    //[HttpGet("nearest-warehouse")]
-    //public async Task<IActionResult> GetNearestWarehouse([FromQuery] double latitude, [FromQuery] double longitude)
-    //{
-    //    if (latitude == 0 || longitude == 0)
-    //        return BadRequest(new { message = "Необходимо указать корректные координаты." });
+    [HttpGet("all-locations")]
+    public async Task<IActionResult> GetAllLocations()
+    {
+        try
+        {
+            var technicians = await _nearestLocationFinderService.GetAllTechnicianHomeLocationsAsync();
+            var warehouses = await _nearestLocationFinderService.GetAllWarehouseLocationsAsync();
 
-    //    _logger.LogInformation("📦 Поиск ближайшего склада для координат: {Latitude}, {Longitude}", latitude, longitude);
+            return Ok(new
+            {
+                technicians = technicians.Select(t => new
+                {
+                    id = t.TechnicianId,
+                    fullName = t.FullName,
+                    email = t.Email,
+                    address = t.Address,
+                    phoneNumber = t.PhoneNumber,
+                    latitude = t.Latitude,
+                    longitude = t.Longitude
+                }),
+                warehouses = warehouses.Select(w => new
+                {
+                    id = w.WarehouseId,
+                    name = w.Name,
+                    address = w.Address,
+                    contactPerson = w.ContactPerson,
+                    phoneNumber = w.PhoneNumber,
+                    latitude = w.Latitude,
+                    longitude = w.Longitude
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Ошибка при получении всех координат.");
+            return StatusCode(500, new { message = "Не удалось получить координаты." });
+        }
+    }
 
-    //    var nearestWarehouse = await _nearestLocationFinderService.FindNearestWarehouseAsync(latitude, longitude);
-    //    if (nearestWarehouse == null)
-    //    {
-    //        _logger.LogWarning("⚠️ Ближайший склад не найден для координат: {Latitude}, {Longitude}", latitude, longitude);
-    //        return NotFound(new { message = "Ближайший склад не найден." });
-    //    }
-
-    //    return Ok(nearestWarehouse);
-    //}
 }
