@@ -1,6 +1,10 @@
 @echo off
 docker-compose down
+
 docker volume rm diplom-project_postgre_data
+docker volume rm diplom-project_mongo_data
+docker volume rm diplom-project_redis_data
+
 docker-compose build
 docker-compose up -d
 
@@ -20,4 +24,5 @@ if exist "%folder%\" (
 dotnet ef migrations add InitialCreateOrderService --context OrderDbContext
 cd ..
 
-echo ✅ Готово!
+echo ✅ Ready
+pause
