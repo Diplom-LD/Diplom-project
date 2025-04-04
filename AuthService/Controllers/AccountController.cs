@@ -290,7 +290,6 @@ namespace AuthService.Controllers
                 return NotFound(new { message = "User not found" });
             }
 
-            // 🔐 Проверка актуальности токена
             if (user.SecurityStamp != tokenStamp)
             {
                 _logger.LogWarning("SecurityStamp mismatch for user {UserId}", userId);

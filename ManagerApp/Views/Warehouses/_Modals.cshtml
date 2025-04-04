@@ -1,0 +1,97 @@
+﻿<!-- Modal for editing equipment -->
+<div id="modalEquipment" class="modal hidden">
+    <div class="modal-content">
+        <h2>Edit Equipment</h2>
+        <input type="text" id="equipName" placeholder="Model Name" />
+        <input type="number" id="equipBTU" placeholder="BTU" />
+        <input type="text" id="equipArea" placeholder="Serves (m²)" />
+        <input type="number" id="equipPrice" placeholder="Price (MDL)" />
+        <input type="number" id="equipQty" placeholder="Quantity" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveEquipment()">Save</button>
+            <button class="cancel-button" data-modal="modalEquipment">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for editing material -->
+<div id="modalMaterial" class="modal hidden">
+    <div class="modal-content">
+        <h2>Edit Material</h2>
+        <input type="text" id="matName" placeholder="Name" />
+        <input type="number" id="matPrice" placeholder="Price (MDL)" />
+        <input type="number" id="matQty" placeholder="Quantity" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveMaterial()">Save</button>
+            <button class="cancel-button" data-modal="modalMaterial">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for editing tool -->
+<div id="modalTool" class="modal hidden">
+    <div class="modal-content">
+        <h2>Edit Tool</h2>
+        <input type="text" id="toolName" placeholder="Name" />
+        <input type="number" id="toolQty" placeholder="Quantity" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveTool()">Save</button>
+            <button class="cancel-button" data-modal="modalTool">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding new equipment -->
+<div id="modalAddEquipment" class="modal hidden">
+    <div class="modal-content">
+        <h2>Add Equipment</h2>
+        <input type="text" id="newEquipName" placeholder="Model Name" />
+        <input type="number" id="newEquipBTU" placeholder="BTU" />
+        <input type="text" id="newEquipArea" placeholder="Serves (m²)" />
+        <input type="number" id="newEquipPrice" placeholder="Price (MDL)" />
+        <input type="number" id="newEquipQty" placeholder="Quantity" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveNewEquipment()">Save</button>
+            <button class="cancel-button" data-modal="modalAddEquipment">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding new material -->
+<div id="modalAddMaterial" class="modal hidden">
+    <div class="modal-content">
+        <h2>Add Material</h2>
+        <input type="text" id="newMatName" placeholder="Name" />
+        <input type="number" id="newMatQty" placeholder="Quantity" />
+        <input type="number" id="newMatPrice" placeholder="Price (MDL)" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveNewMaterial()">Save</button>
+            <button class="cancel-button" data-modal="modalAddMaterial">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding new tool -->
+<div id="modalAddTool" class="modal hidden">
+    <div class="modal-content">
+        <h2>Add Tool</h2>
+        <input type="text" id="newToolName" placeholder="Name" />
+        <input type="number" id="newToolQty" placeholder="Quantity" />
+        <div class="modal-actions">
+            <button class="save-button" onclick="saveNewTool()">Save</button>
+            <button class="cancel-button" data-modal="modalAddTool">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="deleteConfirmModal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Delete Item</h2>
+        <p id="deleteConfirmText">Are you sure you want to delete this item?</p>
+        <div class="modal-actions">
+            <button class="save-button" id="confirmDeleteBtn">Delete</button>
+            <button class="cancel-button" data-modal="deleteConfirmModal">Cancel</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,437 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #ffffff;
+    color: #2b2b2b;
+    min-height: 100vh;
+}
+
+.page-container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 0rem 2rem 2rem;
+}
+
+.page-title {
+    text-align: center;
+    color: #2a2185;
+    font-size: 2.4rem;
+    font-weight: bold;
+    margin-bottom: 2.5rem;
+}
+
+/* Search Bar */
+.search-bar {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+    .search-bar input {
+        width: 100%;
+        max-width: 420px;
+        padding: 0.75rem 1.2rem;
+        border-radius: 10px;
+        border: 1px solid #d3d7f3;
+        font-size: 1rem;
+        background: #f9f9fc;
+        transition: 0.3s ease;
+    }
+
+        .search-bar input:focus {
+            border-color: #2a2185;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(42, 33, 133, 0.1);
+        }
+
+/* Category Section */
+.category-section {
+    margin-bottom: 3rem;
+    background: linear-gradient(to bottom right, #f8f9ff, #f0f3ff);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 12px 28px rgba(42, 33, 133, 0.06);
+    border: 1px solid #e2e6fa;
+    transition: background 0.3s ease;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+    .section-header h2 {
+        font-size: 1.5rem;
+        color: #1e1b6d;
+        margin: 0;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+        .section-header h2:hover {
+            color: #2a2185;
+        }
+
+.add-btn {
+    background-color: #2a2185;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+    .add-btn:hover {
+        background-color: #1c1a64;
+    }
+
+/* Grid Layout */
+.item-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+    .item-grid.hidden {
+        display: none;
+    }
+
+/* Item Cards */
+.item-card {
+    background: linear-gradient(135deg, #eef0fa, #ffffff);
+    padding: 1.3rem 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(42, 33, 133, 0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid #2a2185;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.item-card h3 {
+    margin: 0 0 0.5rem;
+    color: #2a2185;
+    font-size: 1.1rem;
+}
+
+.item-card p {
+    margin: 0.4rem 0;
+    font-size: 0.96rem;
+    color: #3a3a3a;
+}
+
+.item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Delete Button */
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    transition: background-color 0.3s;
+}
+
+    .delete-btn:hover {
+        background-color: #c0392b;
+    }
+
+/* Collapsible Arrow */
+.toggle-header::after {
+    content: ' ▶';
+    padding: 5px;
+    font-size: 1rem;
+    color: #aaa;
+    transition: transform 0.3s;
+}
+
+.category-section:not(.collapsed) .toggle-header::after {
+    content: '▼';
+}
+
+
+.stock-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.stock-btn {
+    padding: 0.3rem 0.7rem;
+    border: none;
+    background-color: #2a2185;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+    .stock-btn:hover {
+        background-color: #1d186a;
+    }
+
+.stock-amount {
+    min-width: 2ch;
+    text-align: center;
+    font-weight: 600;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.edit-btn {
+    background-color: #ffc107;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+    .edit-btn:hover {
+        background-color: #e0a800;
+    }
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+    .modal.hidden {
+        display: none;
+    }
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform: scale(0.96);
+    opacity: 0;
+    animation: modalFade 0.25s ease forwards;
+}
+
+@keyframes modalFade {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #2a2185;
+    text-align: center;
+}
+
+.modal-content input {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+    .modal-actions button {
+        padding: 0.6rem 1.2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+.save-button {
+    background: #2a2185;
+    color: white;
+}
+
+.cancel-button {
+    background: #ccc;
+    color: black;
+}
+
+#deleteConfirmModal .modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform: scale(0.96);
+    opacity: 0;
+    animation: modalFade 0.25s ease forwards;
+}
+
+#deleteConfirmModal h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #e74c3c;
+    text-align: center;
+}
+
+#deleteConfirmModal p {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #333;
+}
+
+#deleteConfirmModal .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+#deleteConfirmModal .save-button {
+    background: #e74c3c;
+    color: white;
+}
+
+#deleteConfirmModal .cancel-button {
+    background: #ccc;
+    color: black;
+}
+
+/* ===== Responsive: Планшеты и телефоны ===== */
+@media (max-width: 992px) {
+    .page-container {
+        padding: 1.5rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+
+    .add-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .card-actions {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .delete-btn,
+    .edit-btn {
+        position: static;
+        width: 100%;
+    }
+
+    .modal-content {
+        max-width: 90%;
+    }
+
+    .search-bar {
+        text-align: left;
+        padding: 0 1rem;
+    }
+
+        .search-bar input {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+}
+
+@media (max-width: 576px) {
+    .page-title {
+        font-size: 1.8rem;
+    }
+
+    .item-card {
+        padding: 1rem;
+    }
+
+        .item-card h3 {
+            font-size: 1rem;
+        }
+
+        .item-card p {
+            font-size: 0.9rem;
+        }
+
+    .stock-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.95rem;
+    }
+
+    .modal-content input {
+        padding: 0.6rem;
+        font-size: 0.95rem;
+    }
+
+    .modal-actions button {
+        font-size: 0.95rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .search-bar {
+        padding: 0 0.5rem;
+    }
+
+        .search-bar input {
+            width: 100%;
+            font-size: 0.95rem;
+            padding: 0.6rem 1rem;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+}

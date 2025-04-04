@@ -1,0 +1,50 @@
+﻿@{
+    ViewData["Title"] = "Warehouses";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Warehouses.css" />
+}
+
+<div class="page-container">
+    <h1 class="page-title">🏭 Warehouses</h1>
+
+    <div class="top-bar">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name, address, contact..." />
+        </div>
+        <div class="grid-control">
+            <select id="gridSelect"></select>
+        </div>
+    </div>
+
+    <div class="warehouse-grid" id="warehouseGrid"></div>
+
+    <div class="action-bar">
+        <button class="add-button">+ Add Warehouse</button>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="warehouseModal" class="modal hidden">
+    <div class="modal-content">
+        <h2 id="modalTitle">Add Warehouse</h2>
+        <form id="warehouseForm">
+            <input type="text" id="modalName" placeholder="Warehouse Name" required />
+            <input type="text" id="modalAddress" placeholder="Address" required />
+            <input type="text" id="modalContact" placeholder="Contact Person" required />
+            <input type="text" id="modalPhone" placeholder="Phone Number" required />
+            <input type="datetime-local" id="modalDateTime" required />
+            <div class="modal-actions">
+                <button type="submit" class="save-button">Save</button>
+                <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
+                <button type="button" id="deleteButton" class="delete-button hidden">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Warehouses/Warehouse.js"></script>
+}

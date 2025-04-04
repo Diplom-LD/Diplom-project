@@ -1,0 +1,50 @@
+﻿@{
+    ViewData["Title"] = "Warehouse Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/WarehouseDetails.css" />
+}
+
+<div class="page-container" data-warehouse-id="@ViewBag.WarehouseId">
+    <h1 class="page-title">🏠 Warehouse: @ViewBag.WarehouseName</h1>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Search by name, price, quantity..." />
+    </div>
+
+    <!-- Equipment -->
+    <section class="category-section">
+        <div class="section-header">
+            <h2 class="toggle-header">🛠️ Equipment</h2>
+            <button class="add-btn">+ Add</button>
+        </div>
+        <div class="item-grid" data-category="equipment"></div>
+    </section>
+
+    <!-- Materials -->
+    <section class="category-section">
+        <div class="section-header">
+            <h2 class="toggle-header">🧠 Materials</h2>
+            <button class="add-btn">+ Add</button>
+        </div>
+        <div class="item-grid" data-category="materials"></div>
+    </section>
+
+    <!-- Tools -->
+    <section class="category-section">
+        <div class="section-header">
+            <h2 class="toggle-header">🪓 Tools</h2>
+            <button class="add-btn">+ Add</button>
+        </div>
+        <div class="item-grid" data-category="tools"></div>
+    </section>
+</div>
+
+<!-- Include all modal windows -->
+@await Html.PartialAsync("_Modals")
+
+@section Scripts {
+    <script src="~/js/Warehouses/WarehouseDetails.js"></script>
+}

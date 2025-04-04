@@ -6,7 +6,7 @@ from services.mongodb_saver import MongoDBParserSaver
 
 
 class JaraParser:
-    base_url = "https://jara.md/ru/kondicionery-i-klimaticheskie-ustanovki/bytovye-kondicionery/p"
+    base_url = "https://jara.md/ru/bytovye-kondicionery/?page="
 
     async def fetch(self, session, url):
         try:
@@ -19,29 +19,61 @@ class JaraParser:
             print(f"[ОШИБКА] Ошибка запроса {url}: {e}")
             return None
 
+    async def get_last_page_number(self, html):
+        tree = HTMLParser(html)
+        pagination = tree.css_first("ul.pagination.df.ac")
+        if not pagination:
+            print("[ОШИБКА] Блок пагинации не найден")
+            return 1
+
+        page_links = pagination.css("li")
+        if len(page_links) < 2:
+            print("[ОШИБКА] Недостаточно ссылок в пагинации")
+            return 1
+
+        # Предпоследний <li> содержит номер последней страницы
+        last_page_li = page_links[-2]
+        link = last_page_li.css_first("a.pagelink")
+        if not link:
+            print("[ОШИБКА] Не удалось найти ссылку в предпоследнем элементе пагинации")
+            return 1
+
+        try:
+            last_page_number = int(link.text(strip=True))
+            return last_page_number
+        except ValueError:
+            print("[ОШИБКА] Не удалось распарсить номер последней страницы")
+            return 1
+
     async def parse_list_page(self, html):
         tree = HTMLParser(html)
         products = []
 
-        product_links = tree.css("div.list-prod-bloc-titlu a")
-        for link in product_links:
-            name = link.attributes.get("title")
-            url = link.attributes.get("href")
-            if name and url:
-                products.append({"name": name, "url": url})
+        product_cards = tree.css("div.prod_card")
+        for card in product_cards:
+            link_element = card.css_first("a.pcard_top")
+            title_element = card.css_first("span.pcard_title")
+            price_element = card.css_first("div.pcard_price")
 
-        # Определяем последнюю страницу
-        last_page_number = 1
-        last_page_element = tree.css("a.page_link")
-        for page_link in last_page_element:
+            url = link_element.attributes.get("href") if link_element else None
+            name = title_element.text(strip=True) if title_element else None
+            price_text = price_element.text(strip=True).replace("лей", "").replace(" ", "") if price_element else None
+
             try:
-                page_text = page_link.text(strip=True)
-                if page_text.isdigit():
-                    last_page_number = max(last_page_number, int(page_text))
+                price = int(price_text) if price_text and price_text.isdigit() else None
             except ValueError:
-                pass
+                price = None
 
-        return products, last_page_number
+            if name and url:
+                products.append({
+                    "name": name,
+                    "url": url if url.startswith("http") else f"https://jara.md{url}",
+                    "price": price,
+                    "currency": "MDL",
+                    "store": "jara"
+                })
+
+        return products
 
     async def parse_product_page(self, session, product):
         html = await self.fetch(session, product["url"])
@@ -52,51 +84,44 @@ class JaraParser:
         tree = HTMLParser(html)
 
         # Перепроверка имени
-        name_element = tree.css_first("h1.text-xl")
+        name_element = tree.css_first("h1.prod_title")
         if name_element:
             product["name"] = name_element.text(strip=True)
 
-        # Цена и валюта
-        price_element = tree.css_first("div.pret_final_prod_cur")
+        # Перепроверка цены
+        price_element = tree.css_first("div.pd_price")
         if price_element:
             price_text = price_element.text(strip=True).replace("лей", "").replace(" ", "").strip()
             try:
                 product["price"] = int(price_text) if price_text.isdigit() else None
             except ValueError:
                 product["price"] = None
-        else:
-            product["price"] = None
 
-        product["currency"] = "MDL"
-
-        # BTU
+        # BTU и площадь
+        param_blocks = tree.css("div.pd_params_row")
         product["btu"] = None
-        for p in tree.css("p"):
-            if "Мощность, BTU" in p.text():
-                strong_element = p.next
-                while strong_element and strong_element.tag != "strong":
-                    strong_element = strong_element.next
-                if strong_element and strong_element.tag == "strong":
-                    btu_text = strong_element.text(strip=True)
-                    if btu_text.isdigit():
-                        product["btu"] = int(btu_text)
-
-        # Площадь
         product["service_area"] = None
-        for p in tree.css("p"):
-            if "Площадь помещения, м²" in p.text():
-                strong_element = p.next
-                while strong_element and strong_element.tag != "strong":
-                    strong_element = strong_element.next
-                if strong_element and strong_element.tag == "strong":
-                    area_text = strong_element.text(strip=True)
-                    try:
-                        product["service_area"] = float(area_text.replace("м²", "").strip()) if area_text.replace(".", "", 1).isdigit() else None
-                    except ValueError:
-                        product["service_area"] = None
 
-        # Магазин
-        product["store"] = "jara"
+        for block in param_blocks:
+            title_el = block.css_first("div.pd_param_title")
+            value_el = block.css_first("div.pd_param_value")
+            if not title_el or not value_el:
+                continue
+
+            title = title_el.text(strip=True).lower().replace(" ", "").replace(" ", "")
+            value = value_el.text(strip=True).replace(" ", "").replace(" ", "")
+
+            if "мощность,btu" in title:
+                try:
+                    product["btu"] = int(value)
+                except ValueError:
+                    product["btu"] = None
+
+            if "площадьпомещения" in title:
+                try:
+                    product["service_area"] = float(value.replace(",", "."))
+                except ValueError:
+                    product["service_area"] = None
 
         return product
 
@@ -105,25 +130,28 @@ class JaraParser:
         products = []
 
         async with aiohttp.ClientSession() as session:
-            first_page_url = f"{self.base_url}/1"
-            print(f"Парсим страницу: {first_page_url}")
+            first_page_url = f"{self.base_url}1"
+            print(f"Парсим первую страницу: {first_page_url}")
             first_page_html = await self.fetch(session, first_page_url)
             if not first_page_html:
                 print("[ОШИБКА] Ошибка загрузки первой страницы")
                 return []
 
-            page_products, last_page_number = await self.parse_list_page(first_page_html)
-            products.extend(page_products)
+            last_page_number = await self.get_last_page_number(first_page_html)
+            print(f"Найдено страниц: {last_page_number}")
 
-            print(f"Определено страниц: {last_page_number}")
+            # Парсим первую страницу
+            first_page_products = await self.parse_list_page(first_page_html)
+            products.extend(first_page_products)
 
+            # Остальные страницы
             for page in range(2, last_page_number + 1):
-                url = f"{self.base_url}/{page}"
+                url = f"{self.base_url}{page}"
                 print(f"Парсим страницу: {url}")
                 html = await self.fetch(session, url)
                 if not html:
                     continue
-                page_products, _ = await self.parse_list_page(html)
+                page_products = await self.parse_list_page(html)
                 products.extend(page_products)
 
             print(f"Собрано {len(products)} товаров для детального парсинга.")

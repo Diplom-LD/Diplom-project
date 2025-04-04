@@ -24,5 +24,5 @@ if exist "%folder%\" (
 dotnet ef migrations add InitialCreateOrderService --context OrderDbContext
 cd ..
 
-echo ✅ Ready
+echo Ready
 pause

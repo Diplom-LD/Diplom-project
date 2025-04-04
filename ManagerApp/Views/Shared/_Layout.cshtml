@@ -63,7 +63,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a asp-controller="Warehouses" asp-action="Warehouse">
                         <span class="icon">
                             <ion-icon name="hammer"></ion-icon>
                         </span>
@@ -91,7 +91,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a asp-controller="Profile" asp-action="ViewProfile">
                         <span class="icon">
                             <ion-icon name="settings-outline"></ion-icon>
                         </span>
@@ -123,7 +123,9 @@
                 </div>
 
                 <div class="user">
-                    <img src="~/imgs/Home/customer02.jpg" alt="">
+                    <a asp-controller="Profile" asp-action="ViewProfile">
+                        <img src="~/imgs/Home/customer02.jpg" alt="User Profile">
+                    </a>
                 </div>
             </div>
 

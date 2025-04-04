@@ -746,8 +746,6 @@ body {
     }
 
     .main.active .toggle {
-        color: #fff;
-        position: fixed;
         right: 10px;
     }
 

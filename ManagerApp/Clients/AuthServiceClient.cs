@@ -1,14 +1,10 @@
-﻿namespace ManagerApp.Clients
-{
-    using System;
-    using System.Net.Http;
-    using System.Text;
-    using System.Text.Json;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
-    using ManagerApp.Models.Home;
+﻿using System.Text;
+using System.Text.Json;
+using ManagerApp.Models.Home;
+using ManagerApp.Models.AuthRequest;
 
+namespace ManagerApp.Clients
+{
     public class AuthServiceClient
     {
         private readonly HttpClient _httpClient;
@@ -165,7 +161,6 @@
             }
         }
 
-
         public async Task<UserProfile?> GetProfileAsync(string loginOrEmail, string accessToken)
         {
             _logger.LogInformation("Fetching profile for {LoginOrEmail}", loginOrEmail);
@@ -215,6 +210,37 @@
                 return null;
             }
         }
+
+        public async Task<bool> UpdateProfileAsync(UpdateProfileRequest request, string accessToken)
+        {
+            _logger.LogInformation("Updating user profile for: {Name}", request.FirstName);
+
+            try
+            {
+                var httpRequest = new HttpRequestMessage(HttpMethod.Put, "/auth/account/update-profile")
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(request, _jsonOptions), Encoding.UTF8, "application/json")
+                };
+                httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(httpRequest);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("UpdateProfileAsync failed: {StatusCode} - {Error}", response.StatusCode, errorMsg);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception in UpdateProfileAsync");
+                return false;
+            }
+        }
+
     }
 }
 

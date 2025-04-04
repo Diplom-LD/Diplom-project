@@ -74,7 +74,6 @@ namespace AuthService.Controllers
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            // ✅ Отправка информации о новом пользователе в RabbitMQ
             try
             {
                 await _rabbitMqProducer.PublishUserRegisteredAsync(user);

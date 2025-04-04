@@ -231,6 +231,7 @@ button:active {
 
 .main-content {
     display: flex;
+    margin: 10px 0;
 }
 
 .btu-calculator-card,
