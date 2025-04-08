@@ -1,0 +1,118 @@
+{
+	"info": {
+		"_postman_id": "ec1d78db-fcb1-4d8a-ab52-044786e52a37",
+		"name": "Leomir_diplom",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40136122"
+	},
+	"item": [
+		{
+			"name": "Создание заявки клиентом",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"clientId\": \"0196149b-422d-73bd-9610-1dc034a25c77\",\r\n  \"orderType\": \"Installation\",\r\n  \"paymentMethod\": \"Visa\",\r\n  \"installationDate\": \"2025-04-01T10:00:00Z\",\r\n  \"installationAddress\": \"205, улица Гренобля, Нунта\",\r\n  \"notes\": \"Установка кондиционера\",\r\n  \"clientCalculatedBTU\": 12000,\r\n  \"clientMinBTU\": 10000,\r\n  \"clientMaxBTU\": 14000\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5002/orders/client/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"orders",
+						"client",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Получение всех заявок клиентом",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5002/orders/client/get/all?clientId={{clientId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"orders",
+						"client",
+						"get",
+						"all"
+					],
+					"query": [
+						{
+							"key": "clientId",
+							"value": "{{clientId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Получение заявки по ID её",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5002/orders/client/get/{{orderId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"orders",
+						"client",
+						"get",
+						"{{orderId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Получение заявок техника",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5002/orders/technician/get/all?technicianId={{technicianId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"orders",
+						"technician",
+						"get",
+						"all"
+					],
+					"query": [
+						{
+							"key": "technicianId",
+							"value": "{{technicianId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
