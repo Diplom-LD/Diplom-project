@@ -98,36 +98,45 @@
             <ul class="order-card__timeline" data-current="@Model.WorkProgress">
                 @foreach (var step in steps)
                 {
-                    string cssClass = "upcoming-step";
-                    string status = "upcoming";
+                    string status;
+                    string cssStepClass;
+
+                    bool isLastStep = step == lastStep;
+                    bool isCompleted = step < Model.WorkProgress || step == Model.WorkProgress;
 
                     if (step < Model.WorkProgress)
                     {
-                        cssClass = "completed-step";
                         status = "completed";
+                        cssStepClass = "completed-step";
                     }
                     else if (step == Model.WorkProgress)
                     {
-                        bool isLastStep = step == lastStep;
                         if (isLastStep)
                         {
-                            cssClass = "completed-step";
                             status = "completed";
+                            cssStepClass = "completed-step";
                         }
                         else
                         {
-                            cssClass = "current-step";
                             status = "current";
+                            cssStepClass = "current-step";
                         }
                     }
+                    else
+                    {
+                        status = "upcoming";
+                        cssStepClass = "upcoming-step";
+                    }
 
-                    <li class="@cssClass timeline-step @(step == lastStep ? "last-visible" : "")" data-step="@step.ToString()" data-status="@status">
+                    var classList = new List<string> { "timeline-step", cssStepClass };
+                    if (isLastStep && isCompleted) classList.Add("last-visible");
+
+                    <li class="@string.Join(" ", classList)" data-step="@step.ToString()" data-status="@status">
                         @step.ToString()
                     </li>
                 }
             </ul>
         </div>
-
 
         @if (Model.RequiredMaterials.Any() || Model.RequiredTools.Any())
         {

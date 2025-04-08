@@ -1,8 +1,6 @@
 ﻿using OrderService.Models.Users;
 using OrderService.Repositories.Users;
 using OrderService.DTO.Users;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace OrderService.Services.RabbitMq
 {

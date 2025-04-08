@@ -1,7 +1,6 @@
 ﻿using StackExchange.Redis;
 using OrderService.Models.Users;
 using System.Globalization;
-using System.Text.Json;
 using OrderService.DTO.Orders.TechnicianLocation;
 
 namespace OrderService.Repositories.Users
