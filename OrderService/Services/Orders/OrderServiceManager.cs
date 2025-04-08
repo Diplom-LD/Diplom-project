@@ -228,7 +228,7 @@ namespace OrderService.Services.Orders
                 }
 
                 // 11 Сохраняем маршруты
-                await _technicianRouteSaveService.SaveInitialRoutesAsync(orderId, nearestLocationData.Routes);
+                await _technicianRouteSaveService.SaveInitialRoutesAsync(order, nearestLocationData.Routes);
 
                 // 12 Фиксация транзакции
                 await _orderRepository.SaveChangesAsync();
@@ -434,9 +434,6 @@ namespace OrderService.Services.Orders
                 return false;
             }
         }
-
-
-
 
         private async Task ReleaseTechniciansAsync(Guid orderId)
         {

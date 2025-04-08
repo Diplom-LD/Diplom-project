@@ -46,7 +46,7 @@ namespace AuthService.Controllers
                     u.Address,
                     u.Latitude,
                     u.Longitude,
-                    u.SecurityStamp 
+                    u.SecurityStamp
                 })
                 .FirstOrDefaultAsync();
 

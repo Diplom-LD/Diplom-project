@@ -1,0 +1,138 @@
+.help-container {
+    max-width: 1400px;
+    margin: 0px auto;
+    padding: 40px 30px;
+    background: linear-gradient(to right, #e2e6ea, #f1f3f5);
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', sans-serif;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+    .help-container h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1.2rem;
+        text-align: center;
+        color: #003366;
+    }
+
+.intro-text {
+    font-size: 1.1rem;
+    color: #444;
+    margin-bottom: 2rem;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.help-container section {
+    margin-top: 2.5rem;
+    border-left: 4px solid #0078d4;
+    padding-left: 1.2rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    background-color: #f4faff;
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+
+    .help-container section:hover {
+        background-color: #eaf4ff;
+    }
+
+.help-container h2 {
+    font-size: 1.5rem;
+    color: #005799;
+    margin-bottom: 0.6rem;
+}
+
+.help-container p {
+    font-size: 1.05rem;
+    color: #333;
+    line-height: 1.5;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 1500px) {
+    .help-container {
+        margin: 0px 30px 30px 30px;
+    }
+}
+
+    @media (max-width: 1024px) {
+        .help-container {
+            padding: 30px 20px;
+            margin: 0 20px 20px 20px;
+        }
+
+            .help-container h1 {
+                font-size: 2rem;
+            }
+
+            .help-container h2 {
+                font-size: 1.3rem;
+            }
+
+            .help-container p {
+                font-size: 1rem;
+            }
+
+        .intro-text {
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .help-container {
+            padding: 25px 15px;
+        }
+
+            .help-container h1 {
+                font-size: 1.8rem;
+            }
+
+            .help-container h2 {
+                font-size: 1.2rem;
+            }
+
+            .help-container p {
+                font-size: 0.95rem;
+            }
+
+        .intro-text {
+            font-size: 0.95rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .help-container {
+            padding: 20px 12px;
+            border-radius: 12px;
+        }
+
+            .help-container h1 {
+                font-size: 1.6rem;
+            }
+
+            .help-container h2 {
+                font-size: 1.1rem;
+            }
+
+            .help-container p {
+                font-size: 0.9rem;
+            }
+
+        .intro-text {
+            font-size: 0.9rem;
+        }
+    }

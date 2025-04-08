@@ -60,7 +60,7 @@ class ConditionereParser:
 
                         if "Мощность" in title_text and "BTU" in title_text:
                             try:
-                                btu = int(value_text.replace(' ', '').strip())  # Преобразуем в целое число
+                                btu = int(value_text.replace(' ', '').strip())  
                             except ValueError:
                                 btu = None
 

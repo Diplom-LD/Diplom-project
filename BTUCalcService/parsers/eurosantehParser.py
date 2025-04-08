@@ -51,7 +51,7 @@ class EurosantehParser:
 
                     if "Мощность" in title_text and "BTU" in title_text:
                         try:
-                            btu = int(value_text.replace(' ', '').strip())  # Преобразуем в целое число
+                            btu = int(value_text.replace(' ', '').strip())  
                         except ValueError:
                             btu = None
 
@@ -71,7 +71,7 @@ class EurosantehParser:
                     price_text = price_element.text(strip=True)
                     price_digits = "".join(filter(str.isdigit, price_text))
                     if price_digits.isdigit():
-                        price = int(price_digits)  # Преобразуем цену в целое число
+                        price = int(price_digits)  
 
                 products.append({
                     "name": name,

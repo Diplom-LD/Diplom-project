@@ -1,5 +1,6 @@
 ﻿using OrderService.Data.Orders;
 using OrderService.DTO.GeoLocation;
+using OrderService.Models.Orders;
 
 namespace OrderService.Services.Technicians
 {
@@ -9,19 +10,13 @@ namespace OrderService.Services.Technicians
         private readonly ILogger<TechnicianRouteSaveService> _logger = logger;
 
         /// 📌 Сохранение первоначальных маршрутов техников
-        public async Task SaveInitialRoutesAsync(Guid orderId, List<RouteDTO> routes)
+        public Task SaveInitialRoutesAsync(Order order, List<RouteDTO> routes)
         {
-            var order = await _dbContext.Orders.FindAsync(orderId);
-            if (order == null)
-            {
-                _logger.LogError("❌ Заявка {OrderId} не найдена. Невозможно сохранить маршрут.", orderId);
-                return;
-            }
-
             order.SetInitialRoutes(routes);
-            await _dbContext.SaveChangesAsync(); 
-            _logger.LogInformation("✅ Первоначальный маршрут для заявки {OrderId} сохранён в БД.", orderId);
+            _logger.LogInformation("✅ Первоначальный маршрут для заявки {OrderId} установлен.", order.Id);
+            return Task.CompletedTask;
         }
+
 
         /// 📌 Сохранение финальных маршрутов техников
         public async Task SaveFinalRoutesAsync(Guid orderId, List<RouteDTO> routes)

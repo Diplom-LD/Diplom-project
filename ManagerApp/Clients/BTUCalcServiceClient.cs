@@ -1,9 +1,4 @@
-﻿using System;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
 using ManagerApp.Models.BTU;
 using System.Net;
 
@@ -13,7 +8,6 @@ namespace ManagerApp.Clients
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<BTUCalcServiceClient> _logger;
-        private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
         private readonly string _apiUrl;
 
         public BTUCalcServiceClient(HttpClient httpClient, IConfiguration configuration, ILogger<BTUCalcServiceClient> logger)

@@ -6,7 +6,6 @@ using OrderService.Models.Enums;
 using OrderService.Repositories.Orders;
 using OrderService.DTO.Orders.TechnicianLocation;
 using OrderService.Services.GeoLocation;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace OrderService.Services.Orders
 {
@@ -26,7 +25,7 @@ namespace OrderService.Services.Orders
         /// </summary>
         public async Task TrackTechniciansAsync(Guid orderId, WebSocket webSocket, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("📡 Менеджер подключился к отслеживанию заявки {OrderId}", orderId);
+            _logger.LogInformation("📡 Новый подписчик подключился к отслеживанию заявки {OrderId}", orderId);
 
             lock (_connections)
             {
@@ -36,45 +35,61 @@ namespace OrderService.Services.Orders
                 _connections[orderId].Add(webSocket);
             }
 
+            var receiveBuffer = new byte[1]; 
+
             try
             {
-                while (webSocket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (webSocket.CloseStatus.HasValue)
+                    var receiveTask = webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
+                    var delayTask = Task.Delay(2000, cancellationToken); 
+
+                    var completedTask = await Task.WhenAny(receiveTask, delayTask);
+
+                    if (completedTask == receiveTask)
                     {
-                        _logger.LogInformation("🔌 WebSocket закрыт клиентом: {Status}", webSocket.CloseStatus);
-                        break;
+                        var result = await receiveTask;
+
+                        if (result.MessageType == WebSocketMessageType.Close || webSocket.State != WebSocketState.Open)
+                        {
+                            _logger.LogInformation("🔌 WebSocket-клиент разорвал соединение (receive). OrderId: {OrderId}", orderId);
+                            break;
+                        }
                     }
 
                     if (await ShouldCloseTrackingAsync(orderId))
                     {
-                        _logger.LogWarning("⚠️ Все техники прибыли, закрываем WebSocket для заявки {OrderId}.", orderId);
+                        _logger.LogInformation("✅ Все техники прибыли. Закрытие WebSocket для заявки {OrderId}", orderId);
+                        await CloseWebSocketForOrderAsync(orderId);
                         break;
                     }
 
-                    await NotifyManagerAsync(orderId);
-                    await Task.Delay(2000, cancellationToken);
+                    await NotifySubscribersAsync(orderId);
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("⛔ WebSocket-трекинг для заявки {OrderId} отменён через CancellationToken", orderId);
-            }
-            catch (WebSocketException ex)
-            {
-                _logger.LogError(ex, "❌ WebSocket исключение во время отслеживания заявки {OrderId}", orderId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Необработанная ошибка в WebSocket-трекинге заявки {OrderId}", orderId);
+                _logger.LogError(ex, "❌ Ошибка в WebSocket для заявки {OrderId}", orderId);
             }
             finally
             {
                 await RemoveWebSocketConnection(orderId, webSocket);
+
+                if (webSocket.State == WebSocketState.Open)
+                {
+                    try
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Закрыто сервером", CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "⚠️ Ошибка при закрытии WebSocket в finally для заявки {OrderId}", orderId);
+                    }
+                }
+
+                _logger.LogWarning("🔚 Соединение WebSocket закрыто для заявки {OrderId}", orderId);
             }
         }
-
-
 
         public async Task OpenWebSocketForOrderAsync(Guid orderId)
         {
@@ -90,7 +105,6 @@ namespace OrderService.Services.Orders
                 return;
             }
 
-            // Имитируем WebSocket-соединение (для вызова из OrderServiceManager)
             using var fakeWebSocket = WebSocket.CreateFromStream(Stream.Null, new WebSocketCreationOptions
             {
                 IsServer = true
@@ -119,36 +133,28 @@ namespace OrderService.Services.Orders
 
             await _userRedisRepository.SetTechnicianLocationAsync(technicianId, latitude, longitude, order.Id);
 
-            if (await ShouldCloseTrackingAsync(order.Id))
-            {
-                await CloseWebSocketForOrderAsync(order.Id);
-                return false;
-            }
-
             var distance = DistanceCalculator.CalculateDistance(latitude, longitude, order.InstallationLatitude, order.InstallationLongitude);
-            if (distance < 0.000045) 
+            if (distance < 0.000045)
             {
                 _logger.LogInformation("✅ Техник {TechnicianId} прибыл к заявке {OrderId}", technicianId, order.Id);
 
-                if (await HaveAllTechniciansArrivedAsync(order.Id))
+                if (order.WorkProgress != WorkProgress.InstallationStarted && order.WorkProgress != WorkProgress.InstallationCompleted)
                 {
-                    if (order.WorkProgress == WorkProgress.InstallationCompleted)
-                    {
-                        _logger.LogWarning("⚠️ Попытка сменить статус на 'InstallationStarted', но заявка {OrderId} уже завершена!", order.Id);
-                        return true;
-                    }
-
-                    _logger.LogInformation("✅ Все техники прибыли! Меняем статус заявки {OrderId} на 'InstallationStarted'", order.Id);
+                    _logger.LogInformation("🔄 Установка статуса заявки {OrderId} → InstallationStarted, т.к. техник {TechnicianId} прибыл", order.Id, technicianId);
                     order.WorkProgress = WorkProgress.InstallationStarted;
                     await orderRepository.UpdateOrderAsync(order);
                 }
+
+                if (await HaveAllTechniciansArrivedAsync(order.Id))
+                {
+                    _logger.LogInformation("✅ Все техники прибыли к заявке {OrderId}", order.Id);
+                    await CloseWebSocketForOrderAsync(order.Id);
+                }
             }
 
-
-            await NotifyManagerAsync(order.Id);
+            await NotifySubscribersAsync(order.Id);
             return true;
         }
-
 
         /// <summary>
         /// 🔍 Проверяет, нужно ли закрыть WebSocket для заявки.
@@ -229,7 +235,7 @@ namespace OrderService.Services.Orders
         /// <summary>
         /// 📡 Отправляет обновленные координаты техников менеджерам.
         /// </summary>
-        public async Task NotifyManagerAsync(Guid orderId)
+        public async Task NotifySubscribersAsync(Guid orderId)
         {
             if (!_connections.TryGetValue(orderId, out var activeConnections) || activeConnections.Count == 0) return;
 
@@ -385,6 +391,53 @@ namespace OrderService.Services.Orders
             _logger.LogInformation("🔄 Статус заявки {OrderId} обновлен на 'InstallationStarted' после прибытия техника {TechnicianId}", orderId, technicianId);
         }
 
+
+        public async Task ReceiveTechnicianCoordinatesAsync(Guid technicianId, WebSocket socket)
+        {
+            var buffer = new byte[1024 * 4];
+
+            while (socket.State == WebSocketState.Open)
+            {
+                var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Техник закрыл соединение", CancellationToken.None);
+                    return;
+                }
+
+                var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+
+                    if (!doc.RootElement.TryGetProperty("latitude", out var latProp) ||
+                        !doc.RootElement.TryGetProperty("longitude", out var lonProp))
+                    {
+                        _logger.LogWarning("⚠️ Получены некорректные координаты от техника {TechnicianId}: {Json}", technicianId, json);
+                        continue;
+                    }
+
+                    double latitude = latProp.GetDouble();
+                    double longitude = lonProp.GetDouble();
+
+                    _logger.LogInformation("📡 Получены координаты от техника {TechnicianId}: lat={Latitude}, lon={Longitude}", technicianId, latitude, longitude);
+
+                    await UpdateTechnicianLocationAsync(technicianId, latitude, longitude);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Ошибка обработки сообщения от техника {TechnicianId}: {Json}", technicianId, json);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 📍 Получить координаты техника из Redis.
+        /// </summary>
+        public async Task<TechnicianLocationDTO?> GetTechnicianLocationAsync(Guid technicianId)
+        {
+            return await _userRedisRepository.GetTechnicianLocationAsync(technicianId);
+        }
 
     }
 }

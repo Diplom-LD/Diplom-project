@@ -153,5 +153,31 @@ namespace OrderService.Repositories.Users
             }
         }
 
+        public async Task<Manager?> GetDefaultManagerAsync()
+        {
+            try
+            {
+                var manager = await _context.Users
+                    .OfType<Manager>()
+                    .FirstOrDefaultAsync();
+
+                if (manager == null)
+                {
+                    _logger.LogWarning("⚠️ [PostgreSQL] В системе не найдено ни одного менеджера.");
+                }
+                else
+                {
+                    _logger.LogInformation("✅ [PostgreSQL] Менеджер выбран: {ManagerId}", manager.Id);
+                }
+
+                return manager;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [PostgreSQL] Ошибка при поиске менеджера.");
+                return null;
+            }
+        }
+
     }
 }

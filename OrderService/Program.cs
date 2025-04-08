@@ -94,6 +94,7 @@ builder.Services.AddScoped<IStockRepository<EquipmentStock>, EquipmentStockRepos
 builder.Services.AddScoped<IStockRepository<MaterialsStock>, MaterialsStockRepository>();
 builder.Services.AddScoped<IStockRepository<ToolsStock>, ToolsStockRepository>();
 builder.Services.AddScoped<WarehouseRepository>();
+builder.Services.AddScoped<EquipmentStockRepository>(); 
 builder.Services.AddScoped<IStockRepository<Warehouse>, WarehouseRepository>();
 
 // Инициализация тестовых данных

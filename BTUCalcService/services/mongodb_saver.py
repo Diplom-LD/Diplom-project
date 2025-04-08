@@ -62,8 +62,8 @@ class MongoDBParserSaver:
         bulk_operations = []
         bulk_operations_all = []
 
-        updated_count = 0  # Считаем обновленные товары
-        inserted_count = 0  # Считаем добавленные товары
+        updated_count = 0  
+        inserted_count = 0  
 
         # Подготовка операций для массовой записи
         for product in products:
@@ -72,11 +72,9 @@ class MongoDBParserSaver:
 
             existing_product = collection.find_one({"_id": product["_id"]})
 
-            # Если товар уже существует, увеличиваем счетчик обновлений
             if existing_product:
                 updated_count += 1
             else:
-                # Если товар новый, увеличиваем счетчик добавлений
                 inserted_count += 1
 
             bulk_operations.append(
@@ -109,7 +107,6 @@ class MongoDBParserSaver:
             # Очищаем старые товары для данного парсера в общей коллекции
             if bulk_operations_all:
                 all_products_collection.delete_many({"source": parser_name})  # Удаляем все товары от конкретного парсера
-                result_all = all_products_collection.bulk_write(bulk_operations_all)
                 print(f"[all_products] Добавлено/обновлено {inserted_count + updated_count} / {len(bulk_operations_all)} товаров из {parser_name}.")
 
         except BulkWriteError as e:

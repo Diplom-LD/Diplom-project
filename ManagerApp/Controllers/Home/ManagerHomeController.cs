@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using ManagerApp.Clients;
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
-using System.Net.Http;
 
 namespace ManagerApp.Controllers.Home
 {
@@ -14,6 +10,12 @@ namespace ManagerApp.Controllers.Home
     public class ManagerHomeController(AuthServiceClient _authServiceClient, ILogger<ManagerHomeController> _logger) : Controller
     {
         public IActionResult Home()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult Help()
         {
             return View();
         }

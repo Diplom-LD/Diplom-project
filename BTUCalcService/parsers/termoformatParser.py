@@ -114,12 +114,12 @@ class TermoformatParser:
 
             # Преобразуем все числовые значения
             if product["price"]:
-                product["price"] = int(product["price"])  # Преобразуем цену в int
+                product["price"] = int(product["price"])  
             if product["btu"]:
-                product["btu"] = int(product["btu"])  # Преобразуем BTU в int
+                product["btu"] = int(product["btu"])  
             if product["service_area"]:
                 try:
-                    product["service_area"] = float(product["service_area"].replace("м²", "").strip())  # Преобразуем площадь в float
+                    product["service_area"] = float(product["service_area"].replace("м²", "").strip()) 
                 except ValueError:
                     product["service_area"] = None
 

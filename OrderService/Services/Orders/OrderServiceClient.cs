@@ -6,18 +6,29 @@ using OrderService.Models.Users;
 using OrderService.Services.GeoLocation.GeoCodingClient;
 using OrderService.DTO.Orders.CreateOrders;
 using OrderService.DTO.Orders;
+using OrderService.Services.GeoLocation;
+using OrderService.Repositories.Warehouses;
+using OrderService.Services.Technicians;
 
 namespace OrderService.Services.Orders
 {
     public class OrderServiceClient(
         OrderRepository orderRepository,
         GeoCodingService geoCodingService,
+        NearestLocationFinderService nearestLocationFinderService,
+        TechnicianRouteSaveService technicianRouteSaveService,
+        EquipmentStockRepository equipmentStockRepository,
         UserPostgreRepository userPostgreRepository,
+        UserRedisRepository userRedisRepository,
         ILogger<OrderServiceClient> logger)
     {
         private readonly OrderRepository _orderRepository = orderRepository;
         private readonly GeoCodingService _geoCodingService = geoCodingService;
         private readonly UserPostgreRepository _userPostgreRepository = userPostgreRepository;
+        private readonly NearestLocationFinderService _nearestLocationFinderService = nearestLocationFinderService;
+        private readonly EquipmentStockRepository _equipmentStockRepository = equipmentStockRepository;
+        private readonly UserRedisRepository _userRedisRepository = userRedisRepository;
+        private readonly TechnicianRouteSaveService _technicianRouteSaveService = technicianRouteSaveService;
         private readonly ILogger<OrderServiceClient> _logger = logger;
 
         /// <summary>
@@ -36,7 +47,7 @@ namespace OrderService.Services.Orders
 
             return await CreateOrderInternalAsync(
                 request,
-                request.OrderType, 
+                request.OrderType,
                 client.Id,
                 client.FullName,
                 client.PhoneNumber,
@@ -48,55 +59,44 @@ namespace OrderService.Services.Orders
         /// 🔄 Внутренняя логика создания заявки клиентом
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> CreateOrderInternalAsync(
-        CreateOrderRequestForClient request,
-        OrderType _,
-        Guid clientId,
-        string clientName,
-        string clientPhone,
-        string clientEmail)
+            CreateOrderRequestForClient request,
+            OrderType _,
+            Guid clientId,
+            string clientName,
+            string clientPhone,
+            string clientEmail)
         {
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrEmpty(clientName))
-            {
-                throw new ArgumentException($"'{nameof(clientName)}' cannot be null or empty.", nameof(clientName));
-            }
-
+                throw new ArgumentException("Client name is required", nameof(clientName));
             if (string.IsNullOrEmpty(clientPhone))
-            {
-                throw new ArgumentException($"'{nameof(clientPhone)}' cannot be null or empty.", nameof(clientPhone));
-            }
-
+                throw new ArgumentException("Client phone is required", nameof(clientPhone));
             if (string.IsNullOrEmpty(clientEmail))
-            {
-                throw new ArgumentException($"'{nameof(clientEmail)}' cannot be null or empty.", nameof(clientEmail));
-            }
+                throw new ArgumentException("Client email is required", nameof(clientEmail));
 
-            _logger.LogInformation("🔄 Создание заявки клиентом...");
+            _logger.LogInformation("🔄 Создание и автоматическая обработка заявки клиентом...");
 
             await using var transaction = await _orderRepository.BeginTransactionAsync();
 
             try
             {
-                // 1️⃣ Определение координат установки
+                // 🔍 Геолокация
                 if (string.IsNullOrWhiteSpace(request.InstallationAddress))
                 {
-                    _logger.LogError("❌ Ошибка: Адрес установки не указан!");
+                    _logger.LogError("❌ Адрес установки не указан");
                     return null;
                 }
 
                 var location = await _geoCodingService.GetCoordinatesAsync(request.InstallationAddress);
                 if (location == null)
                 {
-                    _logger.LogError("❌ Ошибка: Невозможно определить координаты для {Address}", request.InstallationAddress);
+                    _logger.LogError("❌ Невозможно определить координаты для адреса {Address}", request.InstallationAddress);
                     return null;
                 }
 
-                // 2️⃣ Создание заявки
+                // Создание заявки
                 var orderId = Guid.NewGuid();
-                _logger.LogInformation("📌 Создаётся заявка {OrderId} от клиента {ClientName} ({ClientPhone})",
-                    orderId, clientName, clientPhone);
-
                 var order = new Order
                 {
                     Id = orderId,
@@ -110,48 +110,127 @@ namespace OrderService.Services.Orders
                     InstallationAddress = request.InstallationAddress,
                     InstallationLatitude = location.Value.Latitude,
                     InstallationLongitude = location.Value.Longitude,
-                    Notes = request.Notes ?? string.Empty,
-                    WorkCost = 0,
+                    Notes = request.Notes ?? "",
+                    WorkCost = 800,
                     ClientID = clientId,
                     ClientName = clientName,
                     ClientPhone = clientPhone,
                     ClientEmail = clientEmail,
+                    ClientCalculatedBTU = request.ClientCalculatedBTU,
+                    ClientMinBTU = request.ClientMinBTU,
+                    ClientMaxBTU = request.ClientMaxBTU,
                     ManagerId = null,
-                    Manager = null,
                     Equipment = [],
                     RequiredMaterials = [],
                     RequiredTools = [],
-                    AssignedTechnicians = [],
-                    ClientCalculatedBTU = request.ClientCalculatedBTU,
-                    ClientMinBTU = request.ClientMinBTU,
-                    ClientMaxBTU = request.ClientMaxBTU
+                    AssignedTechnicians = []
                 };
 
-                // 3️⃣ Сохранение заявки в БД
                 var created = await _orderRepository.CreateOrderAsync(order);
                 if (!created)
                 {
-                    _logger.LogError("❌ Ошибка при создании заявки {OrderId}!", orderId);
+                    _logger.LogError("❌ Ошибка при создании заявки {OrderId}", orderId);
                     await transaction.RollbackAsync();
                     return null;
                 }
 
-                _logger.LogInformation("✅ Заявка {OrderId} успешно создана.", orderId);
+                // Подбор оборудования
+                var allEquipment = await _equipmentStockRepository.GetAllAsync();
+                var bestEquipment = allEquipment
+                    .Where(e => e.BTU >= request.ClientMinBTU && e.BTU <= request.ClientMaxBTU && e.Quantity > 0)
+                    .OrderBy(e => e.Price)
+                    .FirstOrDefault();
 
-                // 4️⃣ Фиксация транзакции
+                if (bestEquipment == null)
+                {
+                    _logger.LogWarning("⚠️ Подходящее оборудование не найдено");
+                    await transaction.RollbackAsync();
+                    return null;
+                }
+
+                // Поиск ресурсов и техников
+                var nearestData = await _nearestLocationFinderService.FindNearestLocationsAsync(
+                    location.Value.Latitude,
+                    location.Value.Longitude,
+                    request.OrderType,
+                    bestEquipment.ModelName,
+                    null);
+
+                if (nearestData.NearestWarehouses.Count == 0)
+                {
+                    _logger.LogWarning("⚠️ Нет складов с нужными ресурсами");
+                    await transaction.RollbackAsync();
+                    return null;
+                }
+
+                // Назначение менеджера
+                var defaultManager = await _userPostgreRepository.GetDefaultManagerAsync();
+                if (defaultManager != null)
+                {
+                    order.ManagerId = defaultManager.Id;
+                    _logger.LogInformation("✅ Менеджер {ManagerName} назначен для заявки {OrderId}", defaultManager.FullName, orderId);
+                }
+
+                // Добавление ресурсов
+                order.Equipment.Add(new OrderEquipment
+                {
+                    ModelName = bestEquipment.ModelName,
+                    ModelBTU = bestEquipment.BTU,
+                    ServiceArea = bestEquipment.ServiceArea,
+                    ModelPrice = bestEquipment.Price,
+                    Quantity = bestEquipment.Quantity,
+                    ModelSource = "Warehouse",
+                    OrderID = order.Id
+                });
+
+                order.RequiredMaterials.AddRange(nearestData.AvailableMaterials.Select(m => new OrderRequiredMaterial
+                {
+                    MaterialName = m.MaterialName,
+                    Quantity = m.Quantity,
+                    MaterialPrice = m.MaterialPrice,
+                    OrderId = order.Id
+                }));
+
+                order.RequiredTools.AddRange(nearestData.AvailableTools.Select(t => new OrderRequiredTool
+                {
+                    ToolName = t.ToolName,
+                    Quantity = t.Quantity,
+                    OrderId = order.Id
+                }));
+
+                order.AssignedTechnicians.AddRange(nearestData.SelectedTechnicians.Select(t => new OrderTechnician
+                {
+                    TechnicianID = t.Id,
+                    OrderID = order.Id
+                }));
+
+                // Обновление Redis-локаций
+                foreach (var tech in nearestData.SelectedTechnicians)
+                {
+                    await _userRedisRepository.SetTechnicianLocationAsync(
+                        tech.Id, tech.Latitude, tech.Longitude, order.Id);
+                }
+
+                // Маршруты
+                order.SetInitialRoutes(nearestData.Routes);
+                await _technicianRouteSaveService.SaveInitialRoutesAsync(order, nearestData.Routes);
+
+                // Финальное сохранение
                 await _orderRepository.SaveChangesAsync();
                 await transaction.CommitAsync();
-                _logger.LogInformation("✅ Заявка {OrderId} сохранена в БД.", orderId);
 
-                return new CreatedOrderResponseDTO(order, null);
+                _logger.LogInformation("✅ Заявка {OrderId} создана и обработана автоматически", orderId);
+
+                return new CreatedOrderResponseDTO(order, nearestData.Routes);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ошибка при создании заявки клиентом. Откат транзакции...");
+                _logger.LogError(ex, "❌ Ошибка при создании и обработке заявки. Откат транзакции...");
                 await transaction.RollbackAsync();
                 return null;
             }
         }
+
 
 
         /// <summary>
@@ -164,14 +243,13 @@ namespace OrderService.Services.Orders
         }
 
         /// <summary>
-        /// 🔍 Получение заявки по ID.
+        /// 🔍 Получение заявки по ID (с деталями).
         /// </summary>
         public async Task<OrderDTO?> GetOrderByIdAsync(Guid orderId)
         {
-            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            var order = await _orderRepository.GetOrderByIdAsync(orderId, includeDetails: true);
             return order == null ? null : new OrderDTO(order);
         }
-
 
         /// <summary>
         /// 🗑️ Удаление заявки.
@@ -181,6 +259,8 @@ namespace OrderService.Services.Orders
             _logger.LogInformation("🗑️ Удаление заявки {OrderId}", orderId);
             return await _orderRepository.DeleteOrderAsync(orderId);
         }
+
+
 
     }
 }

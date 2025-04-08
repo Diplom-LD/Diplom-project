@@ -627,6 +627,29 @@
     }
 }
 
+@media (max-width: 768px) {
+    .orders-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .filters-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .filters {
+        flex-wrap: wrap;
+    }
+
+    .new-order-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 @media (max-width: 480px) {
     .orders-header h2 {
         font-size: 1rem;

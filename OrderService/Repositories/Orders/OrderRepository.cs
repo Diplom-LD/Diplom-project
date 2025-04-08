@@ -12,6 +12,7 @@ namespace OrderService.Repositories.Orders
     {
         private readonly OrderDbContext _context = context;
         private readonly ILogger<OrderRepository> _logger = logger;
+        public OrderDbContext Context => _context;
 
         /// <summary>
         /// 📌 Создание новой заявки (с проверкой на существование)
@@ -115,11 +116,13 @@ namespace OrderService.Repositories.Orders
                              .Include(o => o.RequiredMaterials)
                              .Include(o => o.RequiredTools)
                              .Include(o => o.AssignedTechnicians)
-                             .Include(o => o.Manager); 
+                             .Include(o => o.Manager)
+                             .AsTracking(); 
             }
 
             return await query.FirstOrDefaultAsync(o => o.Id == orderId);
         }
+
 
         /// <summary>
         /// 📋 Получение всех заявок
@@ -252,6 +255,7 @@ namespace OrderService.Repositories.Orders
                 .Include(o => o.Equipment)
                 .Include(o => o.RequiredMaterials)
                 .Include(o => o.RequiredTools)
+                .Include(o => o.AssignedTechnicians)
                 .Include(o => o.Manager)
                 .AsSplitQuery()
                 .ToListAsync();

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OrderService.Services.Orders;
 using OrderService.DTO.Orders.CreateOrders;
-using OrderService.DTO.Orders.UpdateOrders;
 
 namespace OrderService.Controllers.Orders
 {
