@@ -14,7 +14,7 @@ namespace OrderService.Services.Orders
         private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
         private readonly ILogger<TechnicianSimulationService> _logger = logger;
 
-        // 🔴 Храним токены отмены для каждого техника
+        // Храним токены отмены для каждого техника
         private static readonly ConcurrentDictionary<Guid, CancellationTokenSource> _activeSimulations = new();
 
         /// <summary>
@@ -188,43 +188,57 @@ namespace OrderService.Services.Orders
 
 
         private async Task MoveSmoothlyBetweenPoints(
-    Guid technicianId,
-    double startLat,
-    double startLng,
-    double endLat,
-    double endLng,
-    int totalDurationSeconds,
-    CancellationToken token)
+        Guid technicianId,
+        double startLat,
+        double startLng,
+        double endLat,
+        double endLng,
+        int totalDurationSeconds,
+        CancellationToken token)
         {
             double distanceKm = CalculateDistance(startLat, startLng, endLat, endLng);
-
             int steps = Math.Clamp((int)(distanceKm * 40), 60, 120);
-
             double baseDelay = (totalDurationSeconds * 1000.0) / steps;
             var random = new Random();
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var orderRepository = scope.ServiceProvider.GetRequiredService<OrderRepository>();
 
             for (int i = 1; i <= steps; i++)
             {
                 if (token.IsCancellationRequested)
                 {
-                    _logger.LogWarning("⛔ Движение техника {TechnicianId} остановлено.", technicianId);
+                    _logger.LogWarning("⛔ Движение техника {TechnicianId} остановлено (по токену).", technicianId);
+                    return;
+                }
+
+                var order = await orderRepository.GetOrderByTechnicianIdAsync(technicianId);
+                if (order == null || order.FulfillmentStatus is FulfillmentStatus.Cancelled or FulfillmentStatus.Completed)
+                {
+                    _logger.LogWarning("🛑 Заявка отменена или завершена. Остановка движения техника {TechnicianId}", technicianId);
                     return;
                 }
 
                 double lat = Interpolate(startLat, endLat, i / (double)steps);
                 double lng = Interpolate(startLng, endLng, i / (double)steps);
 
-                await _technicianTrackingService.UpdateTechnicianLocationAsync(technicianId, lat, lng);
+                var locationUpdated = await _technicianTrackingService.UpdateTechnicianLocationAsync(technicianId, lat, lng);
+
+                if (!locationUpdated)
+                {
+                    _logger.LogWarning("⚠️ Техник {TechnicianId} более не привязан к заявке. Прерываем симуляцию.", technicianId);
+                    return;
+                }
 
                 try
                 {
-                    double speedFactor = random.NextDouble() * 0.2 + 0.9; 
+                    double speedFactor = random.NextDouble() * 0.2 + 0.9;
                     int delay = (int)(baseDelay * speedFactor);
 
                     if (random.NextDouble() < 0.07)
                     {
                         int microPause = random.Next(100, 300);
-                        _logger.LogInformation("🕒 Техник {TechnicianId} ненадолго притормозил на {PauseMs} мс", technicianId, microPause);
+                        _logger.LogInformation("🕒 Техник {TechnicianId} притормозил на {PauseMs} мс", technicianId, microPause);
                         delay += microPause;
                     }
 
@@ -232,7 +246,7 @@ namespace OrderService.Services.Orders
                 }
                 catch (TaskCanceledException)
                 {
-                    _logger.LogWarning("⛔ Движение техника {TechnicianId} прервано.", technicianId);
+                    _logger.LogWarning("⛔ Движение техника {TechnicianId} прервано TaskCancelled.", technicianId);
                     return;
                 }
             }
@@ -258,8 +272,6 @@ namespace OrderService.Services.Orders
         {
             return start + (end - start) * fraction;
         }
-
-
 
     }
 }

@@ -67,16 +67,16 @@ namespace OrderService.Services.Orders
         /// 🔄 Логика создания заявки менеджером
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> ProcessManagerOrderCreationAsync(
-     CreateOrderRequestManager request,
-     OrderType orderType,
-     Guid? clientId,
-     string clientName,
-     string clientPhone,
-     string clientEmail,
-     Guid managerId,
-     Manager manager,
-     string? equipmentModel,
-     List<string>? technicianIds)
+         CreateOrderRequestManager request,
+         OrderType orderType,
+         Guid? clientId,
+         string clientName,
+         string clientPhone,
+         string clientEmail,
+         Guid managerId,
+         Manager manager,
+         string? equipmentModel,
+         List<string>? technicianIds)
         {
             _logger.LogInformation("🔄 Создание заявки менеджером...");
 

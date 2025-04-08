@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using OrderService.Data.Orders;
 using OrderService.DTO.GeoLocation;
 using OrderService.Models.Users;

@@ -59,12 +59,12 @@ namespace OrderService.Services.Orders
         /// 🔄 Внутренняя логика создания заявки клиентом
         /// </summary>
         private async Task<CreatedOrderResponseDTO?> CreateOrderInternalAsync(
-            CreateOrderRequestForClient request,
-            OrderType _,
-            Guid clientId,
-            string clientName,
-            string clientPhone,
-            string clientEmail)
+        CreateOrderRequestForClient request,
+        OrderType _,
+        Guid clientId,
+        string clientName,
+        string clientPhone,
+        string clientEmail)
         {
             ArgumentNullException.ThrowIfNull(request);
 

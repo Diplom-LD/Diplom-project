@@ -3,7 +3,6 @@ using OrderService.Models.Orders;
 using OrderService.Data.Orders;
 using OrderService.Models.Enums;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Logging;
 using OrderService.DTO.Users;
 
 namespace OrderService.Repositories.Orders

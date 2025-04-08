@@ -92,7 +92,6 @@ public class LocationController(
 
         _logger.LogInformation("👷 Поиск ближайших {Count} техников для координат: {Latitude}, {Longitude}", count, latitude, longitude);
 
-        // Вызов метода, а не ссылка на метод
         var technicians = await _nearestLocationFinderService.FindTechniciansAsync(latitude, longitude, technicianIds);
 
         if (technicians == null || technicians.Count == 0)

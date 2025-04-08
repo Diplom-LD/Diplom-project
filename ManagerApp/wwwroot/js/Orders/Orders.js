@@ -149,7 +149,7 @@
                 <td>${order.clientName || "Unknown"}</td>
                 <td><span class="status ${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span></td>
                 <td><span class="status ${order.fulfillmentStatus.toLowerCase()}">${order.fulfillmentStatus}</span></td>
-                <td>${order.paymentMethod}</td>
+                <td> <span class="payment-method-badge payment-method-${order.paymentMethod.toLowerCase()}">${order.paymentMethod}</span></td>
                 <td>
                     <div class="dropdown">
                         <button class="action-btn dropdown-toggle">

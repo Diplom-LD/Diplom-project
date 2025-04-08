@@ -35,14 +35,14 @@ namespace OrderService.Services.Orders
                 _connections[orderId].Add(webSocket);
             }
 
-            var receiveBuffer = new byte[1]; 
+            var receiveBuffer = new byte[1];
 
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var receiveTask = webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
-                    var delayTask = Task.Delay(2000, cancellationToken); 
+                    var delayTask = Task.Delay(2000, cancellationToken);
 
                     var completedTask = await Task.WhenAny(receiveTask, delayTask);
 
@@ -59,7 +59,7 @@ namespace OrderService.Services.Orders
 
                     if (await ShouldCloseTrackingAsync(orderId))
                     {
-                        _logger.LogInformation("✅ Все техники прибыли. Закрытие WebSocket для заявки {OrderId}", orderId);
+                        _logger.LogWarning("⚠️ [WebSocket] Заявка {OrderId} завершена или отменена. Закрываем соединение.", orderId);
                         await CloseWebSocketForOrderAsync(orderId);
                         break;
                     }
@@ -90,6 +90,7 @@ namespace OrderService.Services.Orders
                 _logger.LogWarning("🔚 Соединение WebSocket закрыто для заявки {OrderId}", orderId);
             }
         }
+
 
         public async Task OpenWebSocketForOrderAsync(Guid orderId)
         {
@@ -165,9 +166,9 @@ namespace OrderService.Services.Orders
             var orderRepository = scope.ServiceProvider.GetRequiredService<OrderRepository>();
 
             var order = await orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null || order.FulfillmentStatus is FulfillmentStatus.Cancelled)
+            if (order == null || order.FulfillmentStatus is FulfillmentStatus.Completed or FulfillmentStatus.Cancelled)
             {
-                _logger.LogWarning("⚠️ [WebSocket] Заявка {OrderId} закрыта или отменена.", orderId);
+                _logger.LogWarning("⚠️ [WebSocket] Заявка {OrderId} завершена или отменена.", orderId);
                 return true;
             }
 
