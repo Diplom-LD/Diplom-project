@@ -262,15 +262,32 @@
     window.saveEquipment = async function () {
         if (!currentCard) return;
         const id = currentCard.dataset.id;
-        const payload = {
-            id,
-            warehouseId,
-            modelName: document.getElementById('equipName').value,
-            btu: parseInt(document.getElementById('equipBTU').value),
-            serviceArea: parseInt(document.getElementById('equipArea').value),
-            price: parseFloat(document.getElementById('equipPrice').value),
-            quantity: parseInt(document.getElementById('equipQty').value)
-        };
+
+        const existingName = currentCard.querySelector('h3')?.textContent.replace('Model: ', '') || '';
+        const existingBTU = parseInt(currentCard.querySelector('p:nth-of-type(1)')?.textContent.replace('BTU: ', '') || 0);
+        const existingArea = parseInt(currentCard.querySelector('p:nth-of-type(2)')?.textContent.replace('Covers: ', '') || 0);
+        const existingPrice = parseFloat(currentCard.querySelector('p:nth-of-type(3)')?.textContent.replace('Price: ', '').replace('MDL', '') || 0);
+        const existingQty = parseInt(currentCard.querySelector('.stock-amount')?.textContent || 0);
+
+        const name = document.getElementById('equipName').value.trim();
+        const btu = parseInt(document.getElementById('equipBTU').value);
+        const area = parseInt(document.getElementById('equipArea').value);
+        const price = parseFloat(document.getElementById('equipPrice').value);
+        const quantity = parseInt(document.getElementById('equipQty').value);
+
+        const unchanged =
+            existingName === name &&
+            existingBTU === btu &&
+            existingArea === area &&
+            existingPrice === price &&
+            existingQty === quantity;
+
+        if (unchanged) {
+            closeModal('modalEquipment');
+            return;
+        }
+
+        const payload = { id, warehouseId, modelName: name, btu, serviceArea: area, price, quantity };
 
         try {
             const res = await fetch(`/Warehouses/UpdateEquipment?id=${id}`, {
@@ -294,13 +311,26 @@
     window.saveMaterial = async function () {
         if (!currentCard) return;
         const id = currentCard.dataset.id;
-        const payload = {
-            id,
-            warehouseId,
-            materialName: document.getElementById('matName').value,
-            price: parseFloat(document.getElementById('matPrice').value),
-            quantity: parseInt(document.getElementById('matQty').value)
-        };
+
+        const existingName = currentCard.querySelector('h3')?.textContent || '';
+        const existingPrice = parseFloat(currentCard.querySelector('.material-price')?.textContent.replace('Price: ', '').replace('MDL', '') || 0);
+        const existingQty = parseInt(currentCard.querySelector('.stock-amount')?.textContent || 0);
+
+        const name = document.getElementById('matName').value.trim();
+        const price = parseFloat(document.getElementById('matPrice').value);
+        const quantity = parseInt(document.getElementById('matQty').value);
+
+        const unchanged =
+            existingName === name &&
+            existingPrice === price &&
+            existingQty === quantity;
+
+        if (unchanged) {
+            closeModal('modalMaterial');
+            return;
+        }
+
+        const payload = { id, warehouseId, materialName: name, price, quantity };
 
         try {
             const res = await fetch(`/Warehouses/UpdateMaterial?id=${id}`, {
@@ -324,12 +354,23 @@
     window.saveTool = async function () {
         if (!currentCard) return;
         const id = currentCard.dataset.id;
-        const payload = {
-            id,
-            warehouseId,
-            toolName: document.getElementById('toolName').value,
-            quantity: parseInt(document.getElementById('toolQty').value),
-        };
+
+        const existingName = currentCard.querySelector('h3')?.textContent || '';
+        const existingQty = parseInt(currentCard.querySelector('.stock-amount')?.textContent || 0);
+
+        const name = document.getElementById('toolName').value.trim();
+        const quantity = parseInt(document.getElementById('toolQty').value);
+
+        const unchanged =
+            existingName === name &&
+            existingQty === quantity;
+
+        if (unchanged) {
+            closeModal('modalTool');
+            return;
+        }
+
+        const payload = { id, warehouseId, toolName: name, quantity };
 
         try {
             const res = await fetch(`/Warehouses/UpdateTool?id=${id}`, {

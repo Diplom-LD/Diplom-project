@@ -277,6 +277,13 @@ body {
     display: none;
 }
 
+.warehouse-grid:has(.empty-state) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
 .empty-state {
     text-align: center;
     font-size: 1.2rem;

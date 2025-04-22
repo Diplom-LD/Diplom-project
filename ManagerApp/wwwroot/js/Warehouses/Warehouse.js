@@ -142,30 +142,11 @@
         const lastInventoryCheck = document.getElementById("modalDateTime").value;
         const phoneRegex = /^\+?[1-9]\d{7,14}$/;
 
-        if (!name || name.length > 100) {
-            alert("Название обязательно и не должно превышать 100 символов.");
-            return;
-        }
-
-        if (!address || address.length > 200) {
-            alert("Адрес обязателен и не должен превышать 200 символов.");
-            return;
-        }
-
-        if (!contactPerson || contactPerson.length > 50) {
-            alert("Контактное лицо обязательно и не должно превышать 50 символов.");
-            return;
-        }
-
-        if (!phoneRegex.test(phoneNumber)) {
-            alert("Номер телефона должен быть в международном формате (пример: +37360000000).");
-            return;
-        }
-
-        if (!lastInventoryCheck) {
-            alert("Дата последней инвентаризации обязательна.");
-            return;
-        }
+        if (!name || name.length > 100) return;
+        if (!address || address.length > 200) return;
+        if (!contactPerson || contactPerson.length > 50) return;
+        if (!phoneRegex.test(phoneNumber)) return;
+        if (!lastInventoryCheck) return;
 
         const warehouse = {
             name,
@@ -176,6 +157,25 @@
             latitude: 0,
             longitude: 0
         };
+
+        const isEditing = !!editingId;
+
+        if (isEditing) {
+            const existingWarehouse = warehouses.find(w => w.id === editingId);
+            if (existingWarehouse) {
+                const unchanged =
+                    existingWarehouse.name === warehouse.name &&
+                    existingWarehouse.address === warehouse.address &&
+                    existingWarehouse.contactPerson === warehouse.contactPerson &&
+                    existingWarehouse.phoneNumber === warehouse.phoneNumber &&
+                    new Date(existingWarehouse.lastInventoryCheck).toISOString().slice(0, 16) === new Date(lastInventoryCheck).toISOString().slice(0, 16);
+
+                if (unchanged) {
+                    closeModal();
+                    return;
+                }
+            }
+        }
 
         const url = editingId
             ? `/Warehouses/UpdateWarehouse?id=${editingId}`
