@@ -22,6 +22,29 @@
     let selectedWarehouseModel = null;
     let maxWarehouseQuantity = null;
 
+    filterValue.addEventListener("input", () => {
+        const field = filterField.value;
+        const value = parseFloat(filterValue.value);
+
+        if (isNaN(value)) {
+            updateWarehouseTable(warehouseEquipmentList);
+            return;
+        }
+
+        const filtered = warehouseEquipmentList.filter(item => {
+            const itemValue = parseFloat(item[field]);
+            return !isNaN(itemValue) && itemValue >= value;
+        });
+
+        updateWarehouseTable(filtered);
+    });
+
+    filterField.addEventListener("change", () => {
+        const event = new Event('input');
+        filterValue.dispatchEvent(event);
+    });
+
+
     /* Проверка на количество warehouse */
     quantityField.addEventListener("input", () => {
         const current = parseInt(quantityField.value);
@@ -164,6 +187,21 @@
         });
     }
 
+    function getFilteredProducts() {
+        const field = filterField.value;
+        const value = parseFloat(filterValue.value);
+
+        if (isNaN(value)) {
+            return [...warehouseEquipmentList];
+        }
+
+        return warehouseEquipmentList.filter(item => {
+            const itemValue = parseFloat(item[field]);
+            return !isNaN(itemValue) && itemValue >= value;
+        });
+    }
+
+
     function setupWarehouseTableSorting() {
         const table = document.getElementById("conditionersTableWarehouse");
         const headers = table.querySelectorAll("thead th");
@@ -184,7 +222,7 @@
         const newHeaders = table.querySelectorAll("thead th");
 
         newHeaders.forEach((header, index) => {
-            header.dataset.sortOrder = "none"; 
+            header.dataset.sortOrder = "none";
             header.addEventListener("click", () => {
                 let current = header.dataset.sortOrder;
                 let next = current === "none" ? "asc" : current === "asc" ? "desc" : "none";
@@ -201,22 +239,23 @@
 
                 const field = fields[index];
 
+                let filteredProducts = getFilteredProducts();
+
                 if (next === "none") {
-                    warehouseEquipmentList = [...originalData]; 
+                    updateWarehouseTable(filteredProducts);
                 } else {
                     const isAsc = next === "asc";
-                    warehouseEquipmentList.sort((a, b) => {
+                    filteredProducts.sort((a, b) => {
                         if (typeof a[field] === "number") {
                             return isAsc ? a[field] - b[field] : b[field] - a[field];
                         } else {
                             return isAsc
-                                ? a[field].localeCompare(b[field])
-                                : b[field].localeCompare(a[field]);
+                                ? String(a[field]).localeCompare(String(b[field]))
+                                : String(b[field]).localeCompare(String(a[field]));
                         }
                     });
+                    updateWarehouseTable(filteredProducts);
                 }
-
-                updateWarehouseTable(warehouseEquipmentList);
             });
         });
     }

@@ -9,10 +9,10 @@ namespace OrderService.DTO.GeoLocation
         public long PlaceId { get; set; }
 
         [JsonPropertyName("lat")]
-        public required string Lat { get; set; }
+        public string LatitudeRaw { get; set; } = "0";
 
         [JsonPropertyName("lon")]
-        public required string Lon { get; set; }
+        public string LongitudeRaw { get; set; } = "0";
 
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; } = "Unknown";
@@ -29,9 +29,9 @@ namespace OrderService.DTO.GeoLocation
         public string? Type { get; set; }
 
         [JsonIgnore]
-        public double Latitude => double.TryParse(Lat, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat) ? lat : 0.0;
+        public double Latitude => double.TryParse(LatitudeRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat) ? lat : 0;
 
         [JsonIgnore]
-        public double Longitude => double.TryParse(Lon, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon) ? lon : 0.0;
+        public double Longitude => double.TryParse(LongitudeRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon) ? lon : 0;
     }
 }

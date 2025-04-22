@@ -539,3 +539,34 @@ input:checked + .slider {
 .hidden {
     display: none;
 }
+
+/* ===== Warehouse Filter Section ===== */
+.warehouse-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+    .warehouse-filter label {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+    }
+
+#filterField,
+#filterValue {
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+#filterField {
+    width: 150px;
+}
+
+#filterValue {
+    flex: 1;
+}

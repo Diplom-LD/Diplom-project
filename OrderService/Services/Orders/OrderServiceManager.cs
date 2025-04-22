@@ -104,7 +104,7 @@ namespace OrderService.Services.Orders
 
                 if (isWarehouseSource)
                 {
-                    // 2.1️⃣ Оборудование со склада — находим всё сразу
+                    // 2.1️ Оборудование со склада — находим всё сразу
                     nearestLocationData = await _nearestLocationFinderService.FindNearestLocationsAsync(
                         location.Value.Latitude, location.Value.Longitude,
                         orderType, equipmentModel, technicianIds);

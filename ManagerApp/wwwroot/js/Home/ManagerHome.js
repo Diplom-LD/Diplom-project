@@ -10,22 +10,26 @@
             if (!response.ok) throw new Error("Failed to fetch clients.");
             let data = await response.json();
 
-            customersTable.innerHTML = data.length === 0
+            let lastClients = Array.isArray(data)
+                ? data.slice(-10) 
+                : [];
+
+            customersTable.innerHTML = lastClients.length === 0
                 ? "<tr><td colspan='2'>No customers found</td></tr>"
-                : data.map(client => `
-                    <tr>
-                        <td width="60px">
-                            <div class="imgBx">
-                                <img src="${client.avatarUrl ? `/imgs/Home/${client.avatarUrl}` : "/imgs/Home/customer01.jpg"}"
-                                    onerror="this.onerror=null;this.src='/imgs/Home/customer01.jpg';">
-                            </div>
-                        </td>
-                        <td>
-                            <h4>${client.firstName} ${client.lastName} <br> 
-                                <span>${client.address || "No address"}</span>
-                            </h4>
-                        </td>
-                    </tr>`).join("");
+                : lastClients.map(client => `
+                <tr>
+                    <td width="60px">
+                        <div class="imgBx">
+                            <img src="${client.avatarUrl ? `/imgs/Home/${client.avatarUrl}` : "/imgs/Home/customer01.jpg"}"
+                                onerror="this.onerror=null;this.src='/imgs/Home/customer01.jpg';">
+                        </div>
+                    </td>
+                    <td>
+                        <h4>${client.firstName} ${client.lastName} <br> 
+                            <span>${client.address || "No address"}</span>
+                        </h4>
+                    </td>
+                </tr>`).join("");
         } catch {
             customersTable.innerHTML = "<tr><td colspan='2'>Failed to load customers</td></tr>";
         }
@@ -56,22 +60,36 @@
     }
 
     function updateActiveOrders(orders) {
-        document.querySelector(".cardBox .card:nth-child(1) .numbers").textContent = orders.length;
+        const activeOrders = orders.filter(order =>
+            order.fulfillmentStatus !== "Completed" &&
+            order.fulfillmentStatus !== "Cancelled" &&
+            order.fulfillmentStatus !== "Cancel"
+        );
 
-        let totalEarnings = orders
+        document.querySelector(".cardBox .card:nth-child(1) .numbers").textContent = activeOrders.length;
+
+        const totalEarnings = orders
             .filter(order => order.paymentStatus === "Paid")
             .reduce((sum, order) => sum + (order.totalCost || 0), 0);
 
         document.querySelector(".cardBox .card:nth-child(4) .numbers").textContent = `${totalEarnings.toFixed(2)} MDL`;
     }
 
+
     function renderRecentOrders(orders) {
         let ordersContainer = document.querySelector("#ordersContainer");
-        if (orders.length === 0) {
+
+        const activeOrders = orders.filter(order =>
+            order.fulfillmentStatus !== "Completed" &&
+            order.fulfillmentStatus !== "Cancelled" &&
+            order.fulfillmentStatus !== "Cancel"
+        );
+
+        if (activeOrders.length === 0) {
             ordersContainer.innerHTML = `
             <div class="no-orders-message">
                 <div class="no-orders-icon">&#128721;</div>
-                <p>No recent orders available.</p>
+                <p>No recent active orders available.</p>
             </div>`;
             return;
         }
@@ -91,7 +109,7 @@
 
         const ordersTable = document.querySelector("#ordersBody");
 
-        orders.forEach(order => {
+        activeOrders.forEach(order => {
             let statusClass = mapStatusToClass(order.fulfillmentStatus);
             let orderIcon = getOrderIcon(order.orderType);
 
