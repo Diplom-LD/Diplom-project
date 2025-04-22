@@ -298,6 +298,17 @@
         <div class="popup-content">
             <h2>Select Equipment from Warehouse</h2>
 
+            <div class="warehouse-filter">
+                <label for="filterField">Filter by:</label>
+                <select id="filterField">
+                    <option value="price">Price</option>
+                    <option value="btu">BTU</option>
+                    <option value="serviceArea">Service Area</option>
+                </select>
+
+                <input type="number" id="filterValue" placeholder="Enter minimum value..." min="0" />
+            </div>
+
             <table id="conditionersTableWarehouse" class="warehouse-table">
                 <thead>
                     <tr>
@@ -314,6 +325,7 @@
             <p class="warehouse-hint">Click on a row to select an item.</p>
         </div>
     </div>
+
 
 </div>
 

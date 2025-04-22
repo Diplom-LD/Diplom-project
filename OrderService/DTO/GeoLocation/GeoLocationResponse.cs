@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace OrderService.DTO.GeoLocation
 {
@@ -8,10 +9,10 @@ namespace OrderService.DTO.GeoLocation
         public long PlaceId { get; set; }
 
         [JsonPropertyName("lat")]
-        public double Latitude { get; set; }
+        public string LatitudeRaw { get; set; } = "0";
 
         [JsonPropertyName("lon")]
-        public double Longitude { get; set; }
+        public string LongitudeRaw { get; set; } = "0";
 
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; } = "Unknown";
@@ -26,5 +27,11 @@ namespace OrderService.DTO.GeoLocation
         [JsonPropertyName("type")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Type { get; set; }
+
+        [JsonIgnore]
+        public double Latitude => double.TryParse(LatitudeRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat) ? lat : 0;
+
+        [JsonIgnore]
+        public double Longitude => double.TryParse(LongitudeRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon) ? lon : 0;
     }
 }
