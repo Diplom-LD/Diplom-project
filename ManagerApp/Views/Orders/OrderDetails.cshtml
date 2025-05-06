@@ -39,8 +39,8 @@
                 }
             </select>
 
-            <span class="order-details__date">Created: @Model.CreationOrderDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
-            <span class="order-details__date">Installation: @Model.InstallationDate.ToLocalTime().ToString("MMM dd, yyyy, HH:mm")</span>
+            <span class="order-details__date" id="created-time" data-datetime="@Model.CreationOrderDate.ToString("o")"></span>
+            <span class="order-details__date" id="install-time" data-datetime="@Model.InstallationDate.ToString("o")"></span>
         </div>
 
         <div class="order-details__actions">

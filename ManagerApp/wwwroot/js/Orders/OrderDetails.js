@@ -355,6 +355,7 @@
 
             updateTimeline(newContent);
             initializeFulfillmentStatusDropdown(); 
+            reapplyDateFormatting();
         } catch (error) {
             console.error("❌ Error updating order details:", error);
         }
@@ -683,5 +684,29 @@
         console.log(`✅ Обновлён маршрут и позиция для техника ${data.TechnicianId}`);
     }
 
+    function formatDateTimeUtcToLocal(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleString("en-US", { 
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function reapplyDateFormatting() {
+        const createdEl = document.getElementById("created-time");
+        if (createdEl?.dataset.datetime) {
+            createdEl.textContent = "Created: " + formatDateTimeUtcToLocal(createdEl.dataset.datetime);
+        }
+
+        const installEl = document.getElementById("install-time");
+        if (installEl?.dataset.datetime) {
+            installEl.textContent = "Installation: " + formatDateTimeUtcToLocal(installEl.dataset.datetime);
+        }
+    }
+
+    reapplyDateFormatting();
     setInterval(fetchOrderDetails, 10000);
 });
