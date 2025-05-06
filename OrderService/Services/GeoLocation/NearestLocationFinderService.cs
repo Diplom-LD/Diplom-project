@@ -37,7 +37,7 @@ namespace OrderService.Services.GeoLocation
         {
             _logger.LogInformation("🔍 Поиск ближайшего подходящего склада...");
 
-            // 1️⃣ Получаем **все** склады, а не только те, что полностью соответствуют
+            // 1️ Получаем **все** склады, а не только те, что полностью соответствуют
             var allWarehouses = await _warehouseAvailabilityService.GetAllWarehousesAsync();
             if (allWarehouses.Count == 0)
             {
@@ -45,11 +45,11 @@ namespace OrderService.Services.GeoLocation
                 return new NearestLocationResultDTO();
             }
 
-            // 2️⃣ Сортируем склады по расстоянию до точки установки
+            // 2️ Сортируем склады по расстоянию до точки установки
             var sortedWarehouses = allWarehouses.OrderBy(w =>
                 DistanceCalculator.CalculateDistance(latitude, longitude, w.Latitude, w.Longitude)).ToList();
 
-            // 3️⃣ Проверяем склады по порядку, пока не найдём тот, где есть всё
+            // 3️ Проверяем склады по порядку, пока не найдём тот, где есть всё
             WarehouseDTO? nearestWarehouse = null;
             foreach (var warehouse in sortedWarehouses)
             {
@@ -70,7 +70,7 @@ namespace OrderService.Services.GeoLocation
                 return new NearestLocationResultDTO();
             }
 
-            // 4️⃣ Получение ресурсов с выбранного склада
+            // 4️ Получение ресурсов с выбранного склада
             var equipment = (await _warehouseAvailabilityService.GetAvailableEquipmentAsync(nearestWarehouse.Id.ToString(), requiredModelName))
                 .Select(e => new OrderEquipmentDTO
                 {
@@ -91,8 +91,9 @@ namespace OrderService.Services.GeoLocation
             _logger.LogInformation("📦 Получено: {EquipmentCount} оборудования, {MaterialCount} материалов, {ToolCount} инструментов",
                 equipment.Count, materials.Count, tools.Count);
 
-            // 5️⃣ Поиск ближайших техников
+            // 5️ Поиск ближайших техников
             var technicians = await FindTechniciansAsync(latitude, longitude, requestedTechnicianIds);
+
             if (technicians.Count == 0)
             {
                 _logger.LogWarning("⚠️ Нет доступных техников!");
@@ -107,7 +108,7 @@ namespace OrderService.Services.GeoLocation
 
             _logger.LogInformation("✅ Найдено {TechnicianCount} доступных техников.", technicians.Count);
 
-            // 6️⃣ Построение маршрутов
+            // 6️ Построение маршрутов
             var routes = await _optimizedRouteService.BuildOptimizedRouteAsync(latitude, longitude, [nearestWarehouse], technicians);
             _logger.LogInformation("✅ Построено {RouteCount} маршрутов.", routes.Count);
 
